@@ -175,6 +175,7 @@
         <button id="view3d">3D</button>
         <hr>
         <button id="roofBtn" data-i18n-title="roofBtnT">🏠 Roof</button>
+        <button id="doorsBtn" data-i18n-title="doorsBtnT">🚪 Doors</button>
       </div>
     </div>
   </div>
@@ -358,7 +359,8 @@ en: {
   variant:'Idea:', variantAddT:'Copy the current idea into a new one', rename:'Rename', variantNotesT:'Notes for this idea (AI assistants read these too)',
   describe:'Describe', describeT:'Plain-text summary + checks — also what an AI assistant sees',
   underlay:'Floor-plan photo:', underlayLoad:'Load…', underlayMove:'Move', underlayMoveT:'Drag the background image', calib:'Scale', calibT:'Click 2 points with a known distance to set the scale',
-  roofBtn:'🏠 Roof', roofBtnT:'Show/hide roof and ceilings in 3D', viewMenuT:'View — 2D, 3D or both, and the roof toggle',
+  roofBtn:'🏠 Roof', roofBtnT:'Show/hide roof and ceilings in 3D', viewMenuT:'View — 2D, 3D or both, plus roof and door toggles',
+  doorsBtn:'🚪 Doors', doorsBtnT:'Show real doors (frame + leaf) in 3D — renders include them when on',
   gStepLbl:n=>`Step ${n}/4`,
   gStep1Text:'Welcome! What are you planning?',
   gReno:'🏚 Renovating a house', gNew:'🏗 Building new',
@@ -458,7 +460,8 @@ da: {
   variant:'Idé:', variantAddT:'Kopiér den aktuelle idé til en ny', rename:'Omdøb', variantNotesT:'Noter til denne idé (AI-assistenter læser dem også)',
   describe:'Beskriv', describeT:'Tekst-resumé + tjek — også hvad en AI-assistent ser',
   underlay:'Plantegnings-foto:', underlayLoad:'Indlæs…', underlayMove:'Flyt', underlayMoveT:'Træk baggrundsbilledet', calib:'Målestok', calibT:'Klik 2 punkter med kendt afstand for at sætte målestokken',
-  roofBtn:'🏠 Tag', roofBtnT:'Vis/skjul tag og lofter i 3D', viewMenuT:'Visning — 2D, 3D eller begge, og tag til/fra',
+  roofBtn:'🏠 Tag', roofBtnT:'Vis/skjul tag og lofter i 3D', viewMenuT:'Visning — 2D, 3D eller begge, plus tag- og dør-visning',
+  doorsBtn:'🚪 Døre', doorsBtnT:'Vis rigtige døre (karm + dørblad) i 3D — renders tager dem med når de er slået til',
   gStepLbl:n=>`Trin ${n}/4`,
   gStep1Text:'Velkommen! Hvad skal du i gang med?',
   gReno:'🏚 Renovere et hus', gNew:'🏗 Bygge nyt',
@@ -1945,6 +1948,12 @@ document.getElementById('underlayOpacity').oninput=e=>{ if(underlay){ underlay.o
 document.getElementById('underlayClear').onclick=()=>{ underlay=null; underlayImg=null; saveUnderlay(); draw(); };
 
 let showRoof=false;
+let showDoors = PREFS.showDoors !== false;   // real door leaves in 3D — renders follow this
+document.getElementById('doorsBtn').onclick=()=>{
+  showDoors=!showDoors;
+  PREFS.showDoors=showDoors; savePrefs();
+  updateViewBtn(); rebuild3d();
+};
 document.getElementById('roofBtn').onclick=()=>{
   if(!S.base.roof){ openRoofDialog(); return; }
   showRoof=!showRoof;
@@ -1961,6 +1970,7 @@ function updateViewBtn(){
     const lbl = m==='only2d' ? '2D' : m==='only3d' ? '3D' : '2D+3D';
     const b=document.getElementById('viewMenuBtn'); if(b) b.textContent='👁 '+lbl+' ▾';
     const r=document.getElementById('roofBtn'); if(r) r.textContent=(showRoof?'☑ ':'☐ ')+T('roofBtn');
+    const dbtn=document.getElementById('doorsBtn'); if(dbtn) dbtn.textContent=(showDoors?'☑ ':'☐ ')+T('doorsBtn');
     for(const [id,mode] of [['view2d','only2d'],['viewBoth',''],['view3d','only3d']])
       document.getElementById(id)?.classList.toggle('fsel', m===mode);
   }catch(e){}
@@ -2697,6 +2707,9 @@ function rebuild3d(){
   const matNew=new THREE.MeshLambertMaterial({color:0x7fd4a8});
   const matGlass=new THREE.MeshLambertMaterial({color:0x9fd3ff,transparent:true,opacity:0.4});
   const matFloor=new THREE.MeshLambertMaterial({color:0x8a7b64});
+  const matDoor=new THREE.MeshLambertMaterial({color:0xa88a5e});
+  const matDoorFrame=new THREE.MeshLambertMaterial({color:0xefe9dd});
+  const matHandle=new THREE.MeshLambertMaterial({color:0x3a3f46});
   const H=wallH();
   let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
   const byWall={};
@@ -2725,6 +2738,27 @@ function rebuild3d(){
       addBox(cur,a,0,HH,mat);
       addBox(a,b,top,HH,mat);
       if(o.type==='window'){ addBox(a,b,0,sill,mat); addBox(a+0.02,b-0.02,sill,top,matGlass); }
+      else if(o.type==='door' && showDoors){
+        // real door: frame (karm) + slightly-open leaf hinged per the 2D swing arrows
+        const dirX=Math.cos(ang), dirZ=Math.sin(ang), perX=-Math.sin(ang), perZ=Math.cos(ang);
+        const place=(lx,ly,mesh)=>{ mesh.position.set(w.from[0]+dirX*lx, zoff+ly, w.from[1]+dirZ*lx); mesh.rotation.y=-ang; group.add(mesh); };
+        for(const jx of [a+0.03, b-0.03]) place(jx, top/2, new THREE.Mesh(new THREE.BoxGeometry(0.06, top, t+0.04), matDoorFrame));
+        place((a+b)/2, top-0.03, new THREE.Mesh(new THREE.BoxGeometry(b-a, 0.06, t+0.04), matDoorFrame));
+        const d = o.flipH ? -1 : 1;                 // hinge side along the wall
+        const s = o.flipV ? 1 : -1;                 // which side of the wall it swings toward
+        const hingeLocal = o.flipH ? b-0.05 : a+0.05;
+        const leafLen=Math.max(0.1,(b-a)-0.1), leafH=top-0.06;
+        const pivot=new THREE.Group();
+        pivot.position.set(w.from[0]+dirX*hingeLocal, zoff+leafH/2+0.02, w.from[1]+dirZ*hingeLocal);
+        pivot.rotation.y=-ang - s*d*0.5;            // ~29° ajar so renders show the door and light passes
+        const leaf=new THREE.Mesh(new THREE.BoxGeometry(leafLen,leafH,0.045), matDoor);
+        leaf.position.set(d*leafLen/2,0,0);
+        pivot.add(leaf);
+        const handle=new THREE.Mesh(new THREE.BoxGeometry(0.13,0.035,0.10), matHandle);
+        handle.position.set(d*(leafLen-0.12), 1.0-leafH/2, 0);
+        pivot.add(handle);
+        group.add(pivot);
+      }
       cur=b;
     }
     addBox(cur,L,0,HH,mat);
