@@ -117,18 +117,18 @@
       <button class="menubtn"><span data-i18n="menuPlan">Plan</span> ▾</button>
       <div class="dropdown">
         <button id="describeBtn" data-i18n="describe" data-i18n-title="describeT">Describe</button>
-        <button id="roofDialogBtn" data-ph="hus ideer" data-i18n="roofMenu" data-i18n-title="roofEditT">🏠 Roof…</button>
-        <button id="lightsMenuBtn" data-ph="ideer" data-i18n="lightsMenu" data-i18n-title="lightsT">☀ Roof light…</button>
-        <hr data-ph="ideer">
-        <div class="ddlabel" data-ph="hus" data-i18n="underlay">Underlay:</div>
-        <button id="underlayBtn" data-ph="hus" data-i18n="underlayLoad">Load…</button>
+        <button id="roofDialogBtn" data-i18n="roofMenu" data-i18n-title="roofEditT">🏠 Roof…</button>
+        <button id="lightsMenuBtn" data-i18n="lightsMenu" data-i18n-title="lightsT">☀ Roof light…</button>
+        <hr>
+        <div class="ddlabel" data-i18n="underlay">Underlay:</div>
+        <button id="underlayBtn" data-i18n="underlayLoad">Load…</button>
         <input type="file" id="underlayFile" accept="image/*">
-        <button class="tool" data-tool="underlay" data-ph="hus" data-i18n="underlayMove" data-i18n-title="underlayMoveT">Move</button>
-        <button class="tool" data-tool="calib" data-ph="hus" data-i18n="calib" data-i18n-title="calibT">Calib</button>
-        <div class="ddrow" data-ph="hus"><input type="range" id="underlayOpacity" min="0" max="100" value="45"><button id="underlayClear" class="danger" style="width:auto">✕</button></div>
-        <hr data-ph="hus ideer">
-        <div class="ddlabel" data-ph="hus ideer" data-i18n="newWalls">New walls:</div>
-        <select id="wallKind" data-ph="hus ideer">
+        <button class="tool" data-tool="underlay" data-i18n="underlayMove" data-i18n-title="underlayMoveT">Move</button>
+        <button class="tool" data-tool="calib" data-i18n="calib" data-i18n-title="calibT">Calib</button>
+        <div class="ddrow"><input type="range" id="underlayOpacity" min="0" max="100" value="45"><button id="underlayClear" class="danger" style="width:auto">✕</button></div>
+        <hr>
+        <div class="ddlabel" data-i18n="newWalls">New walls:</div>
+        <select id="wallKind">
           <option value="base" data-i18n="wallKindBase">Existing (base)</option>
           <option value="new" selected data-i18n="wallKindNew">New (variant)</option>
         </select>
@@ -3153,7 +3153,7 @@ function applyPhase(){
   const stepIntro = guide && guide.step===1;
   const P=PHASES[phase]||PHASES.ideer;
   const allow = stepIntro ? ['select'] : P.tools;
-  document.querySelectorAll('button.tool').forEach(b=>{
+  document.querySelectorAll('#toolbar button.tool').forEach(b=>{
     b.style.display=(!allow||allow.includes(b.dataset.tool))?'':'none';
   });
   // toolbar row is contextual; the menubar row NEVER changes outside the intro wizard
