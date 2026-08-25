@@ -104,14 +104,13 @@
     <div class="menu">
       <button class="menubtn"><span data-i18n="menuFile">File</span> <span id="fileDot">●</span> ▾</button>
       <div class="dropdown">
+        <button id="newPlanBtn" data-i18n="newPlan" data-i18n-title="newPlanT">🆕 New house plan</button>
         <button id="linkFile" data-i18n="linkFile" data-i18n-title="linkFileT">📂 Open house plan…</button>
         <button id="saveAsBtn" data-i18n="saveAs" data-i18n-title="saveAsT">💾 Save a copy as…</button>
         <span id="fileStatus" data-i18n="notLinked">✓ saved automatically in this browser</span>
         <hr>
         <button id="versionsBtn" data-i18n-title="versionsT">🕘 <span data-i18n="menuVersions">Version history</span></button>
         <button id="settingsBtn" data-i18n-title="settingsT">⚙ <span data-i18n="menuSettings">Settings</span></button>
-        <hr>
-        <button id="resetAll" class="danger" data-i18n="reset" data-i18n-title="resetT">Reset</button>
       </div>
     </div>
     <div class="menu" id="planMenu">
@@ -352,6 +351,9 @@ const I18N = {
 en: {
   linkFile:'📂 Open house plan…', linkFileT:'Open a plan file (.json) — your changes then save back to it automatically, and outside edits (e.g. from an AI assistant) appear live', notLinked:'✓ saved automatically in this browser', settingsT:'Settings',
   saveAs:'💾 Save a copy as…', saveAsT:'Save the current plan as a file on disk — it then keeps auto-saving there',
+  newPlan:'🆕 New house plan', newPlanT:'Start a fresh, empty plan — the current one is kept in 🕘 Version history, and any open file is left untouched',
+  confirmNew:'Start a new, empty house plan?\n\nThe current plan is saved to 🕘 Version history first, and the open plan file (if any) is left untouched.',
+  'ver_before-new':'before new plan',
   toolSelect:'Select', toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
   toolRoom:'⬛ Room', toolRoomT:'Drag a rectangle to make a room — four walls plus a room name in one go. Snaps onto nearby walls and reuses them; hold Shift for no snapping.',
   undoT:'Undo (Ctrl+Z)', redoT:'Redo (Ctrl+Y)',
@@ -453,6 +455,9 @@ en: {
 da: {
   linkFile:'📂 Åbn husplan…', linkFileT:'Åbn en plan-fil (.json) — dine ændringer gemmes automatisk tilbage i den, og ændringer udefra (fx fra en AI-assistent) vises med det samme', notLinked:'✓ gemmes automatisk i denne browser', settingsT:'Indstillinger',
   saveAs:'💾 Gem som…', saveAsT:'Gem den aktuelle plan som en fil på disken — derefter gemmes der automatisk dertil',
+  newPlan:'🆕 Ny husplan', newPlanT:'Start en frisk, tom plan — den nuværende gemmes i 🕘 Versionshistorik, og en evt. åben fil røres ikke',
+  confirmNew:'Start en ny, tom husplan?\n\nDen nuværende plan gemmes først i 🕘 Versionshistorik, og en evt. åben plan-fil røres ikke.',
+  'ver_before-new':'før ny plan',
   toolSelect:'Vælg', toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
   toolRoom:'⬛ Rum', toolRoomT:'Træk et rektangel for at lave et rum — fire vægge og et rumnavn på én gang. Snapper til nærliggende vægge og genbruger dem; hold Shift for ingen snap.',
   undoT:'Fortryd (Ctrl+Z)', redoT:'Gentag (Ctrl+Y)',
@@ -2283,11 +2288,16 @@ function showRenderResult(url){
   };
   ov.style.display='flex';
 }
-document.getElementById('resetAll').onclick=async()=>{
-  if(confirm(LANG==='da' ? 'Nulstil til en TOM plan? (Overskriver også den linkede fil.)' : 'Reset to an EMPTY plan? (Also overwrites the linked file.)')){
-    await saveVersion('before-reset');
-    adoptPlan(defaultPlan()); changed();
-  }
+document.getElementById('newPlanBtn').onclick=async()=>{
+  if(!confirm(T('confirmNew'))) return;
+  await saveVersion('before-new');
+  fileHandle=null; lastMtime=0; dirty=false;
+  try{ await idbKV.set('planHandle', null); }catch(e){}
+  setStatus('', T('notLinked'));
+  const btn=document.getElementById('linkFile');
+  btn.textContent=T('linkFile'); btn.onclick=pickPlanFile;
+  adoptPlan(defaultPlan());
+  changed();
 };
 
 /* ==================== version history dialog ==================== */
