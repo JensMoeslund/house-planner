@@ -188,6 +188,10 @@
     <button class="tool active" data-tool="select" data-i18n="toolSelect" data-i18n-title="toolSelectT">Select</button>
     <button class="tool" data-tool="wall" data-i18n="toolWall" data-i18n-title="toolWallT">Wall</button>
     <button class="tool" data-tool="room" data-i18n="toolRoom" data-i18n-title="toolRoomT">⬛ Room</button>
+    <select id="wallTypeSel" data-ph="hus ideer" data-i18n-title="wallTypeT">
+      <option value="outer" data-i18n="wallTypeOuter">Outer wall (35 cm)</option>
+      <option value="inner" data-i18n="wallTypeInner">Inner wall (10 cm)</option>
+    </select>
     <button class="tool" data-tool="door" data-i18n="toolDoor" data-i18n-title="toolDoorT">Door</button>
     <button class="tool" data-tool="window" data-i18n="toolWindow" data-i18n-title="toolWindowT">Window</button>
     <button class="tool" data-tool="label" data-i18n="toolLabel" data-i18n-title="toolLabelT">Label</button>
@@ -356,6 +360,8 @@ en: {
   'ver_before-new':'before new plan',
   toolSelect:'Select', toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
   toolRoom:'⬛ Room', toolRoomT:'Drag a rectangle to make a room — four walls plus a room name in one go. Snaps onto nearby walls and reuses them; hold Shift for no snapping.',
+  wallTypeOuter:'Outer wall (35 cm)', wallTypeInner:'Inner wall (10 cm)',
+  wallTypeT:'Wall thickness for new walls — outer walls for the shell, inner walls for room dividers. Fine-tune any wall in its properties.',
   undoT:'Undo (Ctrl+Z)', redoT:'Redo (Ctrl+Y)',
   toolDoor:'Door', toolDoorT:'Click on a wall (D)', toolWindow:'Window', toolWindowT:'Click on a wall (N)',
   toolLabel:'Label', toolLabelT:'Place a text label (L)', toolSketch:'✏ Sketch', toolSketchT:'Freehand sketch with a note — an AI assistant can turn it into walls (S)',
@@ -460,6 +466,8 @@ da: {
   'ver_before-new':'før ny plan',
   toolSelect:'Vælg', toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
   toolRoom:'⬛ Rum', toolRoomT:'Træk et rektangel for at lave et rum — fire vægge og et rumnavn på én gang. Snapper til nærliggende vægge og genbruger dem; hold Shift for ingen snap.',
+  wallTypeOuter:'Ydervæg (35 cm)', wallTypeInner:'Indervæg (10 cm)',
+  wallTypeT:'Vægtykkelse for nye vægge — ydervægge til skallen, indervægge til rumdelere. Finjustér enhver væg i dens egenskaber.',
   undoT:'Fortryd (Ctrl+Z)', redoT:'Gentag (Ctrl+Y)',
   toolDoor:'Dør', toolDoorT:'Klik på en væg (D)', toolWindow:'Vindue', toolWindowT:'Klik på en væg (N)',
   toolLabel:'Tekst', toolLabelT:'Placér en tekst (L)', toolSketch:'✏ Skitse', toolSketchT:'Frihåndsskitse med note — en AI-assistent kan lave den om til vægge (S)',
@@ -1054,10 +1062,11 @@ function roomEdgeWalls(x1,y1,x2,y2){
   return out.map(s=>s.map(v=>+v.toFixed(3)));
 }
 
+const drawWallT=()=>document.getElementById('wallTypeSel').value==='outer' ? 0.35 : 0.10;
 function addWallSegment(x1,y1,x2,y2){
   let kind=document.getElementById('wallKind').value;
   if(kind==='base' && !editingNutid()){ kind='new'; flashHint(T('hintBaseDowngrade')); }
-  const wall={id:nextId('wall'), from:[x1,y1], to:[x2,y2], t:kind==='base'?0.35:0.1, notes:''};
+  const wall={id:nextId('wall'), from:[x1,y1], to:[x2,y2], t:drawWallT(), notes:''};
   (kind==='base'?S.base.walls:cv().walls).push(wall);
   return wall;
 }
@@ -1534,7 +1543,7 @@ c2d.addEventListener('pointerdown', e=>{
       if(hit.isBase && !editingNutid()){
         if(nearEnd){
           const p = nearEnd===2 ? w.to : w.from;
-          const ext = {id:nextId('wall'), from:[...p], to:[...p], t:0.1, notes:T('extensionOf')+' '+w.id};
+          const ext = {id:nextId('wall'), from:[...p], to:[...p], t:drawWallT(), notes:T('extensionOf')+' '+w.id};
           cv().walls.push(ext);
           sel={type:'wall',id:ext.id,w:ext,isBase:false}; updateProps();
           dragging={type:'end',w:ext,end:2,fresh:true,baseId:w.id,grabEnd:nearEnd};
@@ -3125,6 +3134,11 @@ function changed(){
 refreshVariants();
 applySplit();
 snapshotNow();
+{ // wall-type preset: remember the choice; sensible default = outer on an empty plan, inner otherwise
+  const sel=document.getElementById('wallTypeSel');
+  sel.value = PREFS.wallType || (S.base.walls.length ? 'inner' : 'outer');
+  sel.onchange=()=>{ PREFS.wallType=sel.value; savePrefs(); };
+}
 
 /* ==================== phases: the toolbar only shows the current phase's tools.
    1 Huset (draw the base) · 2 Detaljer (doors/windows/names/furniture) · 3 Idéer (everything).
