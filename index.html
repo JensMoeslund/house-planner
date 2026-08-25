@@ -2750,7 +2750,7 @@ function rebuild3d(){
         const leafLen=Math.max(0.1,(b-a)-0.1), leafH=top-0.06;
         const pivot=new THREE.Group();
         pivot.position.set(w.from[0]+dirX*hingeLocal, zoff+leafH/2+0.02, w.from[1]+dirZ*hingeLocal);
-        pivot.rotation.y=-ang - s*d*0.5;            // ~29° ajar so renders show the door and light passes
+        pivot.rotation.y=-ang - s*d*Math.PI/2;      // fully open, flat against the swing side — matches the 2D arc
         const leaf=new THREE.Mesh(new THREE.BoxGeometry(leafLen,leafH,0.045), matDoor);
         leaf.position.set(d*leafLen/2,0,0);
         pivot.add(leaf);
