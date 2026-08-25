@@ -104,22 +104,22 @@
         <button id="resetAll" class="danger" data-i18n="reset" data-i18n-title="resetT">Reset</button>
       </div>
     </div>
-    <div class="menu">
+    <div class="menu" id="planMenu">
       <button class="menubtn"><span data-i18n="menuPlan">Plan</span> ▾</button>
       <div class="dropdown">
-        <button id="describeBtn" data-i18n="describe" data-i18n-title="describeT">Describe</button>
-        <button id="roofDialogBtn" data-i18n="roofMenu" data-i18n-title="roofEditT">🏠 Roof…</button>
-        <button id="lightsMenuBtn" data-i18n="lightsMenu" data-i18n-title="lightsT">☀ Roof light…</button>
-        <hr>
-        <div class="ddlabel" data-i18n="underlay">Underlay:</div>
-        <button id="underlayBtn" data-i18n="underlayLoad">Load…</button>
+        <button id="describeBtn" data-ph="ideer" data-i18n="describe" data-i18n-title="describeT">Describe</button>
+        <button id="roofDialogBtn" data-ph="hus" data-i18n="roofMenu" data-i18n-title="roofEditT">🏠 Roof…</button>
+        <button id="lightsMenuBtn" data-ph="ideer" data-i18n="lightsMenu" data-i18n-title="lightsT">☀ Roof light…</button>
+        <hr data-ph="ideer">
+        <div class="ddlabel" data-ph="hus" data-i18n="underlay">Underlay:</div>
+        <button id="underlayBtn" data-ph="hus" data-i18n="underlayLoad">Load…</button>
         <input type="file" id="underlayFile" accept="image/*">
-        <button class="tool" data-tool="underlay" data-i18n="underlayMove" data-i18n-title="underlayMoveT">Move</button>
-        <button class="tool" data-tool="calib" data-i18n="calib" data-i18n-title="calibT">Calib</button>
-        <div class="ddrow"><input type="range" id="underlayOpacity" min="0" max="100" value="45"><button id="underlayClear" class="danger" style="width:auto">✕</button></div>
-        <hr>
-        <div class="ddlabel" data-i18n="newWalls">New walls:</div>
-        <select id="wallKind">
+        <button class="tool" data-tool="underlay" data-ph="hus" data-i18n="underlayMove" data-i18n-title="underlayMoveT">Move</button>
+        <button class="tool" data-tool="calib" data-ph="hus" data-i18n="calib" data-i18n-title="calibT">Calib</button>
+        <div class="ddrow" data-ph="hus"><input type="range" id="underlayOpacity" min="0" max="100" value="45"><button id="underlayClear" class="danger" style="width:auto">✕</button></div>
+        <hr data-ph="hus ideer">
+        <div class="ddlabel" data-ph="hus ideer" data-i18n="newWalls">New walls:</div>
+        <select id="wallKind" data-ph="hus ideer">
           <option value="base" data-i18n="wallKindBase">Existing (base)</option>
           <option value="new" selected data-i18n="wallKindNew">New (variant)</option>
         </select>
@@ -220,12 +220,15 @@
   <div id="pane3d">
     <div id="c3dwrap" style="width:100%;height:100%"></div>
     <div id="sunPanel">
-      <button id="walkBtn" data-i18n="walkBtn" data-i18n-title="walkBtnT">🚶 Walk</button>
-      <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="sunChk"> <i data-i18n="sunChk" style="font-style:normal">☀ Sun</i></label>
-      <button id="lightsBtn" data-i18n="lightsMenu" data-i18n-title="lightsT" style="padding:2px 8px">☀ Roof light…</button>
-      <input type="range" id="sunDay" min="1" max="365" value="229" data-i18n-title="sunDayT">
-      <input type="range" id="sunMin" min="240" max="1380" step="10" value="870" data-i18n-title="sunMinT">
-      <span id="sunLabel"></span>
+      <button id="inspectBtn" data-i18n-title="inspectT">🔍 <span data-i18n="inspect">Inspect</span> ▾</button>
+      <span id="inspectBody" style="display:none;align-items:center;gap:8px">
+        <button id="walkBtn" data-i18n="walkBtn" data-i18n-title="walkBtnT">🚶 Walk</button>
+        <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="sunChk"> <i data-i18n="sunChk" style="font-style:normal">☀ Sun</i></label>
+        <button id="lightsBtn" data-i18n="lightsMenu" data-i18n-title="lightsT" style="padding:2px 8px">☀ Roof light…</button>
+        <input type="range" id="sunDay" min="1" max="365" value="229" data-i18n-title="sunDayT">
+        <input type="range" id="sunMin" min="240" max="1380" step="10" value="870" data-i18n-title="sunMinT">
+        <span id="sunLabel"></span>
+      </span>
     </div>
     <div id="err3d" data-i18n-html="err3d">3D needs internet on first load (Three.js from unpkg.com).<br>2D works fully offline.</div>
   </div>
@@ -360,6 +363,7 @@ en: {
   phaseHus:'1 · House', phaseHusT:'Draw the house: rooms, walls, floor-plan photo, measuring',
   phaseDet:'2 · Details', phaseDetT:'Doors, windows, room names and furniture',
   phaseIdeer:'3 · Ideas', phaseIdeerT:'Everything: try renovation ideas, compare, export and render',
+  inspect:'Inspect', inspectT:'Walk around inside, and see the sunlight for any date and time',
   glbT:'Export the 3D model as .glb — open in Blender and render with Cycles. Enable 🏠 Roof first if the roof should be included.',
   render:'📷 Render', renderT:'Photorealistic render of the current 3D view. Default: progressive path tracing in this browser (click again to stop). Configurable in ⚙ Settings to use a render server instead. Enable 🏠 Roof for interiors!',
   setRenderMode:'Render', renderModeNative:'In this browser (no setup needed)', renderModeServer:'On a render server (Blender/Cycles)',
@@ -458,6 +462,7 @@ da: {
   phaseHus:'1 · Huset', phaseHusT:'Tegn huset: rum, vægge, plantegnings-foto, opmåling',
   phaseDet:'2 · Detaljer', phaseDetT:'Døre, vinduer, rumnavne og møbler',
   phaseIdeer:'3 · Idéer', phaseIdeerT:'Alt: prøv renoverings-idéer, sammenlign, eksportér og render',
+  inspect:'Inspicér', inspectT:'Gå rundt indeni, og se sollyset på en valgfri dato og tid',
   glbT:'Eksportér 3D-modellen som .glb — åbn i Blender og render med Cycles. Slå 🏠 Tag til først, hvis taget skal med.',
   render:'📷 Render', renderT:'Fotorealistisk render af den aktuelle 3D-visning. Standard: progressiv path tracing i browseren (klik igen for at stoppe). Kan i ⚙ Indstillinger sættes til en render-server i stedet. Slå 🏠 Tag til for interiør!',
   setRenderMode:'Render', renderModeNative:'I denne browser (ingen opsætning)', renderModeServer:'På en render-server (Blender/Cycles)',
@@ -3047,6 +3052,11 @@ function applyPhase(){
   document.getElementById('variantGrp').style.display = (!stepIntro && P.variants)?'':'none';
   document.getElementById('exportMenu').style.display = (!stepIntro && P.exportM)?'':'none';
   document.getElementById('phaseTabs').style.display = guide?'none':'';
+  document.querySelectorAll('[data-ph]').forEach(el=>{
+    const own = el.dataset.ph.split(' ').includes(phase) && !stepIntro;
+    el.style.display = own ? '' : 'none';
+  });
+  document.getElementById('planMenu').style.display = (phase==='detaljer' || stepIntro) ? 'none' : '';
   for(const b of document.querySelectorAll('#phaseTabs button'))
     b.classList.toggle('active', b.dataset.phase===phase);
   if(allow && !allow.includes(tool)) setTool('select'); else draw();
@@ -3090,6 +3100,12 @@ document.getElementById('gPhoto').onclick=()=>document.getElementById('underlayB
 document.getElementById('gBack').onclick=()=>{ if(guide && guide.step>1){ guide.step--; applyGuide(); } };
 document.getElementById('gNext').onclick=()=>{ if(!guide) return; if(guide.step>=4) finishGuide(); else { guide.step++; applyGuide(); } };
 document.getElementById('gSkip').onclick=finishGuide;
+document.getElementById('inspectBtn').onclick=()=>{
+  const b=document.getElementById('inspectBody');
+  const open=b.style.display==='none';
+  b.style.display=open?'flex':'none';
+  document.getElementById('inspectBtn').innerHTML='🔍 <span>'+T('inspect')+'</span> '+(open?'▴':'▾');
+};
 if(!PREFS.guideDone && !S.base.walls.length && S.variants.every(v=>!(v.walls||[]).length)){
   guide={step:1, kind:null};
 } else {
