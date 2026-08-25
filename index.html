@@ -114,8 +114,8 @@
     <div class="menu" id="planMenu">
       <button class="menubtn"><span data-i18n="menuPlan">Plan</span> ▾</button>
       <div class="dropdown">
-        <button id="describeBtn" data-ph="ideer" data-i18n="describe" data-i18n-title="describeT">Describe</button>
-        <button id="roofDialogBtn" data-ph="hus" data-i18n="roofMenu" data-i18n-title="roofEditT">🏠 Roof…</button>
+        <button id="describeBtn" data-i18n="describe" data-i18n-title="describeT">Describe</button>
+        <button id="roofDialogBtn" data-ph="hus ideer" data-i18n="roofMenu" data-i18n-title="roofEditT">🏠 Roof…</button>
         <button id="lightsMenuBtn" data-ph="ideer" data-i18n="lightsMenu" data-i18n-title="lightsT">☀ Roof light…</button>
         <hr data-ph="ideer">
         <div class="ddlabel" data-ph="hus" data-i18n="underlay">Underlay:</div>
@@ -3054,15 +3054,15 @@ function applyPhase(){
   document.querySelectorAll('button.tool').forEach(b=>{
     b.style.display=(!allow||allow.includes(b.dataset.tool))?'':'none';
   });
+  // toolbar row is contextual; the menubar row NEVER changes outside the intro wizard
   document.getElementById('furnMenu').style.display = (!stepIntro && P.furn)?'':'none';
-  document.getElementById('variantGrp').style.display = (!stepIntro && P.variants)?'':'none';
-  document.getElementById('exportMenu').style.display = (!stepIntro && P.exportM)?'':'none';
+  document.getElementById('variantGrp').style.display = guide ? (guide.step===4?'':'none') : '';
+  document.getElementById('exportMenu').style.display = guide ? (guide.step===4?'':'none') : '';
+  document.getElementById('planMenu').style.display = stepIntro ? 'none' : '';
   document.getElementById('phaseTabs').style.display = guide?'none':'';
   document.querySelectorAll('[data-ph]').forEach(el=>{
-    const own = el.dataset.ph.split(' ').includes(phase) && !stepIntro;
-    el.style.display = own ? '' : 'none';
+    el.style.display = el.dataset.ph.split(' ').includes(phase) ? '' : 'none';
   });
-  document.getElementById('planMenu').style.display = (phase==='detaljer' || stepIntro) ? 'none' : '';
   for(const b of document.querySelectorAll('#phaseTabs button'))
     b.classList.toggle('active', b.dataset.phase===phase);
   if(allow && !allow.includes(tool)) setTool('select'); else draw();
