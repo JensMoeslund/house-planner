@@ -1,0 +1,73 @@
+{
+ "meta": {
+  "format": "house-plan/1",
+  "units": "meters",
+  "axes": "x = east, y = south (NORTH is -y, 'up' in the 2D view). Use compass directions, never left/right.",
+  "wallHeight": 2.5,
+  "activeVariant": "idea-1",
+  "site": null,
+  "notes": "Demo house. 'Nutid (as-is)' is the ground truth; 'Idea 1' opens the kitchen to the living room and adds a roof window."
+ },
+ "base": {
+  "walls": [
+   {"id": "north", "from": [0, 0], "to": [10, 0], "t": 0.35, "notes": "north facade"},
+   {"id": "east", "from": [10, 0], "to": [10, 6], "t": 0.35, "notes": "east gable"},
+   {"id": "south", "from": [10, 6], "to": [0, 6], "t": 0.35, "notes": "south facade, garden side"},
+   {"id": "west", "from": [0, 6], "to": [0, 0], "t": 0.35, "notes": "west gable"},
+   {"id": "kitchen-wall", "from": [4, 0], "to": [4, 6], "t": 0.1, "notes": "between kitchen (west) and living room"},
+   {"id": "bed-wall", "from": [7, 0], "to": [7, 6], "t": 0.1, "notes": "between living room and bedroom (east)"}
+  ],
+  "openings": [
+   {"id": "front-door", "wall": "north", "at": 5.5, "width": 1.0, "type": "door"},
+   {"id": "kitchen-window", "wall": "north", "at": 2.0, "width": 1.6, "type": "window"},
+   {"id": "living-window", "wall": "south", "at": 4.5, "width": 2.4, "type": "window", "sill": 0.3},
+   {"id": "bed-window", "wall": "east", "at": 3.0, "width": 1.2, "type": "window"},
+   {"id": "kitchen-door", "wall": "kitchen-wall", "at": 4.8, "width": 0.9, "type": "door"},
+   {"id": "bed-door", "wall": "bed-wall", "at": 1.2, "width": 0.9, "type": "door"}
+  ],
+  "floors": [],
+  "roof": {
+   "pitched": {"x1": 0, "x2": 10, "yN": 0, "yS": 6, "pitch": 25, "eave": 0.45, "top": 2.5, "spacing": 1.0, "gableEave": 0.25, "notes": "gable W-truss preset"}
+  }
+ },
+ "variants": [
+  {
+   "id": "nutid",
+   "name": "Nutid (as-is)",
+   "notes": "The house as it is today. Only this variant can change existing walls.",
+   "demolish": [], "removeOpenings": [], "walls": [], "openings": [],
+   "labels": [
+    {"id": "l1", "at": [2.0, 3.0], "text": "kitchen"},
+    {"id": "l2", "at": [5.5, 3.0], "text": "living room"},
+    {"id": "l3", "at": [8.5, 3.0], "text": "bedroom"}
+   ],
+   "furniture": [], "sketch": []
+  },
+  {
+   "id": "idea-1",
+   "name": "Idea 1 — open kitchen",
+   "notes": "Demolish most of the kitchen wall (a pier is kept at the north end), close the old kitchen door, add an island and a south-facing roof window over the new open space.",
+   "demolish": ["kitchen-wall"],
+   "removeOpenings": ["kitchen-door"],
+   "walls": [
+    {"id": "kept-pier", "from": [4, 0], "to": [4, 1.2], "t": 0.1, "partial": "kitchen-wall", "notes": "kept part of kitchen-wall (partial demolition)"}
+   ],
+   "openings": [],
+   "labels": [
+    {"id": "i1", "at": [3.5, 3.2], "text": "open kitchen / living"},
+    {"id": "i2", "at": [8.5, 3.0], "text": "bedroom"}
+   ],
+   "furniture": [
+    {"id": "f1", "kind": "koekkenoe", "at": [3.0, 2.2], "angle": 0, "w": 2.0, "d": 0.9, "h": 0.9},
+    {"id": "f2", "kind": "underskab", "at": [1.6, 0.55], "angle": 0, "w": 2.6, "d": 0.6, "h": 0.9},
+    {"id": "f3", "kind": "spisebord", "at": [5.5, 4.2], "angle": 0, "w": 1.8, "d": 0.95, "h": 0.74},
+    {"id": "f4", "kind": "sofa", "at": [5.8, 1.2], "angle": 0, "w": 2.2, "d": 0.95, "h": 0.8},
+    {"id": "f5", "kind": "seng", "at": [8.6, 4.5], "angle": 0, "w": 1.8, "d": 2.0, "h": 0.5}
+   ],
+   "sketch": [],
+   "roofWindows": [
+    {"x": 3.0, "side": "S", "w": 0.78, "len": 1.4, "sOff": 1.2, "notes": "roof window over the open kitchen"}
+   ]
+  }
+ ]
+}
