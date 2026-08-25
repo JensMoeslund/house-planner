@@ -911,6 +911,60 @@ window.__walkDot=(x,y,ang)=>{ walkPos = x==null ? null : {x,y,ang:ang||0}; draw(
 let panning=null, dragging=null, calibPts=[], sketchStroke=null;
 let measures=[], measureStart=null;
 let lenBuf='';   // typed wall length while drawing ("3.2" + Enter)
+
+/* room tool helpers: snap rectangle edges onto nearby existing walls, and only
+   build the wall pieces that do not already exist (reuse the outside walls) */
+function snapRectEdge(coord, lo, hi, vertical){
+  let best=null;
+  for(const {w} of visibleWalls()){
+    const isV=Math.abs(w.from[0]-w.to[0])<0.05, isH=Math.abs(w.from[1]-w.to[1])<0.05;
+    if(vertical ? !isV : !isH) continue;
+    const line = vertical ? (w.from[0]+w.to[0])/2 : (w.from[1]+w.to[1])/2;
+    const s1 = vertical ? Math.min(w.from[1],w.to[1]) : Math.min(w.from[0],w.to[0]);
+    const s2 = vertical ? Math.max(w.from[1],w.to[1]) : Math.max(w.from[0],w.to[0]);
+    if(s2<lo-0.1 || s1>hi+0.1) continue;             // wall does not overlap this side's span
+    const d=Math.abs(line-coord);
+    if(d<0.35 && (!best||d<best.d)) best={d,line};
+  }
+  return best ? +best.line.toFixed(3) : coord;
+}
+function roomRect(ax,ay,bx,by){
+  let x1=Math.min(ax,bx), x2=Math.max(ax,bx), y1=Math.min(ay,by), y2=Math.max(ay,by);
+  const sx1=snapRectEdge(x1,y1,y2,true),  sx2=snapRectEdge(x2,y1,y2,true);
+  const sy1=snapRectEdge(y1,x1,x2,false), sy2=snapRectEdge(y2,x1,x2,false);
+  if(sx2-sx1>0.4){ x1=sx1; x2=sx2; }
+  if(sy2-sy1>0.4){ y1=sy1; y2=sy2; }
+  return {x1,y1,x2,y2};
+}
+function roomEdgeWalls(x1,y1,x2,y2){
+  const edges=[[x1,y1,x2,y1],[x2,y1,x2,y2],[x2,y2,x1,y2],[x1,y2,x1,y1]];
+  const out=[];
+  for(const [ax,ay,bx,by] of edges){
+    const L=Math.hypot(bx-ax,by-ay); if(L<0.05) continue;
+    const ux=(bx-ax)/L, uy=(by-ay)/L;
+    const cover=[];
+    for(const {w} of visibleWalls()){
+      const wl=wallLen(w); if(wl<0.05) continue;
+      const wux=(w.to[0]-w.from[0])/wl, wuy=(w.to[1]-w.from[1])/wl;
+      if(Math.abs(ux*wuy-uy*wux)>0.06) continue;                       // not parallel
+      const perp=Math.abs((w.from[0]-ax)*uy-(w.from[1]-ay)*ux);
+      if(perp>Math.max(0.3,(w.t||0.35)/2+0.12)) continue;              // not on this line
+      const t1=(w.from[0]-ax)*ux+(w.from[1]-ay)*uy;
+      const t2=(w.to[0]-ax)*ux+(w.to[1]-ay)*uy;
+      const a=Math.max(0,Math.min(t1,t2)), b=Math.min(L,Math.max(t1,t2));
+      if(b-a>0.05) cover.push([a,b]);
+    }
+    cover.sort((p,q)=>p[0]-q[0]);
+    let cur=0;
+    for(const [a,b] of cover){
+      if(a-cur>0.12) out.push([ax+ux*cur,ay+uy*cur,ax+ux*a,ay+uy*a]);
+      cur=Math.max(cur,b);
+    }
+    if(L-cur>0.12) out.push([ax+ux*cur,ay+uy*cur,ax+ux*L,ay+uy*L]);
+  }
+  return out.map(s=>s.map(v=>+v.toFixed(3)));
+}
+
 function addWallSegment(x1,y1,x2,y2){
   let kind=document.getElementById('wallKind').value;
   if(kind==='base' && !editingNutid()){ kind='new'; flashHint(T('hintBaseDowngrade')); }
@@ -1124,15 +1178,16 @@ function draw(){
     ctx.fillStyle='#bfe1ff'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
     ctx.fillText(lenBuf ? lenBuf+' m ↵' : Lp.toFixed(2)+' m', lpx, lpy-10);
   }
-  // room-rectangle preview with live dimensions
+  // room-rectangle preview with live dimensions (snapped onto nearby existing walls)
   if(dragging?.type==='room'){
     const [rx2,ry2]=snap(mouse.wx,mouse.wy);
-    const [rp1x,rp1y]=W2S(dragging.x0,dragging.y0), [rp2x,rp2y]=W2S(rx2,ry2);
+    const rr=roomRect(dragging.x0,dragging.y0,rx2,ry2);
+    const [rp1x,rp1y]=W2S(rr.x1,rr.y1), [rp2x,rp2y]=W2S(rr.x2,rr.y2);
     ctx.strokeStyle='#4da3ff'; ctx.lineWidth=2.5; ctx.setLineDash([6,4]);
-    ctx.strokeRect(Math.min(rp1x,rp2x),Math.min(rp1y,rp2y),Math.abs(rp2x-rp1x),Math.abs(rp2y-rp1y));
+    ctx.strokeRect(rp1x,rp1y,rp2x-rp1x,rp2y-rp1y);
     ctx.setLineDash([]);
     ctx.fillStyle='#bfe1ff'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
-    ctx.fillText(Math.abs(rx2-dragging.x0).toFixed(2)+' × '+Math.abs(ry2-dragging.y0).toFixed(2)+' m',
+    ctx.fillText((rr.x2-rr.x1).toFixed(2)+' × '+(rr.y2-rr.y1).toFixed(2)+' m',
       (rp1x+rp2x)/2, (rp1y+rp2y)/2);
   }
   // live length while dragging a wall endpoint
@@ -1462,12 +1517,13 @@ c2d.addEventListener('pointermove', e=>{
 });
 c2d.addEventListener('pointerup', ()=>{
   if(dragging?.type==='room'){
-    const [x2,y2]=snap(mouse.wx,mouse.wy);
-    const x1=dragging.x0, y1=dragging.y0;
+    const [mx,my]=snap(mouse.wx,mouse.wy);
+    const x0=dragging.x0, y0=dragging.y0;
     dragging=null;
-    if(Math.abs(x2-x1)>0.5 && Math.abs(y2-y1)>0.5){
-      addWallSegment(x1,y1,x2,y1); addWallSegment(x2,y1,x2,y2);
-      addWallSegment(x2,y2,x1,y2); addWallSegment(x1,y2,x1,y1);
+    if(Math.abs(mx-x0)>0.5 && Math.abs(my-y0)>0.5){
+      const {x1,y1,x2,y2}=roomRect(x0,y0,mx,my);
+      const segs=roomEdgeWalls(x1,y1,x2,y2);       // only the pieces that do not exist yet
+      for(const [a,b,c,d] of segs) addWallSegment(a,b,c,d);
       changed();
       const name=prompt(T('promptLabel'),'');
       if(name){
