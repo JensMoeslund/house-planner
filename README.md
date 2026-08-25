@@ -1,76 +1,73 @@
-# 🏠 Renovation Planner
+# 🏠 House Planner
 
-A single-file, agent-friendly floor-plan tool for planning house renovations — and new builds.
-Trace your house as it is today, then sketch any number of renovation *ideas* on top of it,
-compare them in 2D and live 3D, simulate sunlight, and render photorealistic previews.
+**Plan your house — and every idea you have for it.**
 
-**One HTML file. No build step, no account, no backend required.** Open `index.html` in
-Chrome/Edge and start drawing. The 2D editor works fully offline; 3D and rendering fetch
-three.js from a CDN on first load.
+Draw your home as it is today, then try out renovation ideas on top: knock down a wall,
+open up the kitchen, add a roof window — and instantly see each idea in 3D, walk through
+it, check where the sunlight lands, and get photorealistic pictures.
 
-## The core idea: *as-is* vs *ideas*
+It's **one HTML file**. No installation, no account, no server. Open `index.html` in
+Chrome or Edge and start drawing. It's also **agent-native**: an AI assistant can work on
+your plan with you (more below).
 
-Every plan has a **Nutid (as-is)** variant — the ground truth of how the house is today —
-plus any number of **idea** variants. While an idea is active, existing walls, doors and
-windows are **locked**:
+## How it works
 
-- Deleting an existing door/window closes it *only in that idea*.
-- Dragging an existing wall's endpoint *outward* draws a new extension wall; dragging it
-  *inward along the wall* performs a **partial demolition** (the removed span shows dashed
-  red, the kept part stays, doors on the kept part are carried over).
-- 🔨 marks a whole wall as demolished in that idea. Nothing you do in an idea can ever
-  corrupt the as-is plan — a mode badge (🏠 AS-IS / 💡 IDEA) always shows where you are.
+1. **Draw your house as it is today.** Draw walls directly (they snap to straight
+   angles — hold Shift for odd ones), or load a photo of your floor plan and trace over
+   it. Add doors, windows, room names.
+2. **Copy it into an idea.** Press **+** and give the idea a name.
+3. **Change things — safely.** In an idea, the real house is protected: deleting a door
+   only closes it *in that idea*, and dragging a wall's end inward demolishes just that
+   part (shown dashed red). You can never accidentally mess up the "today" plan, and a
+   badge always shows which one you're editing.
+4. **Compare and decide.** Flip between ideas, look at them in 3D, walk around inside
+   (WASD + mouse), turn on the sun for any date and time, and render pretty pictures.
 
-For gut renovations or new builds, each idea has a **clean-slate** toggle that hides the
-red demolished-wall markers entirely.
+Also fine for **new builds**: start from the empty plan and just draw — and each idea has
+a "clean slate" switch that hides the demolition markings entirely.
 
-## Features
+## Nice things it does
 
-- 2D editor with 45°/90° angle snapping (hold **Shift** for free angles), corner magnets,
-  measuring tool, room areas, text labels, furniture (kitchen, bath, bedroom)
-- Trace from a photo/scan: load a floor-plan image as underlay, two-click scale calibration
-- Live 3D view with walk-through mode (WASD + mouse)
-- Sun simulation for any location/date/time (set lat/lon in ⚙ Settings)
-- Roof presets: gable roof with W-trusses, or flat roof — plus per-idea roof windows
-  (velux), skylight strips and glass gables (☀ dialog)
-- Photorealistic rendering, three ways (⚙ Settings → Render):
-  1. **In the browser** (default) — progressive GPU path tracing, no setup
-  2. **Local Blender** — downloads a single self-contained Python script; run
-     `blender --background --python render-<idea>.py` and get a Cycles render, no server
-  3. **Render server** — POST the scene to a self-hosted Blender/Cycles HTTP service
-     (endpoints: `POST /render`, `GET /status?id=`, `GET /result?id=`)
-- Version history: automatic snapshots (every 5 min, on variant switch, before file
-  reloads/resets) with one-click restore — plus divergence detection between the browser
-  copy and a linked plan file
-- Exports: PNG plan, .glb 3D model, Blender render script
-- English + Danish UI (auto-detected, switchable in ⚙)
+- Live 3D view + walk-through mode
+- Sunlight simulation for your exact location, any date and time
+- Roofs in two clicks: classic gable roof with trusses, or flat roof — plus roof windows,
+  skylight strips and glass gables per idea
+- Photorealistic pictures, three ways (⚙ Settings): right **in the browser** (default,
+  zero setup), via a **downloaded script for Blender** on your own computer, or on a
+  self-hosted **render server**
+- Automatic version history with one-click restore — experiments are always undoable
+- Room areas, measuring tool, furniture (kitchen, bath, bedroom), PNG and 3D (.glb) export
+- English and Danish
 
-## Working with files
+## Saving
 
-By default the plan lives in the browser (localStorage). Click **🔗 Link plan file** to
-bind it to a `house-plan.json` on disk — the tool then saves your edits there and
-hot-reloads external edits (from a text editor, a script, or an AI agent) within ~1 s.
+Your plan lives in the browser automatically. Click **🔗** to also save it as a
+`house-plan.json` file on disk — a small, human-readable file you can back up, share, or
+let an AI assistant edit.
 
-The file format is a small, human-readable JSON schema — see [docs/SPEC.md](docs/SPEC.md).
+## Agent-native
 
-## For AI agents
+The plan file is designed so AI assistants can read and edit it directly: you sketch an
+intention or write a note, the assistant does the geometry, the tool picks up the change
+within a second — and everything the assistant does is protected by the same rules and
+version history as your own edits.
 
-This tool is designed to be co-driven by AI agents: the plan file is the API.
-An agent edits `house-plan.json`; the tool hot-reloads; the human sees the change
-instantly and can push back by hand. See [docs/AGENTS.md](docs/AGENTS.md).
+- File format: [docs/SPEC.md](docs/SPEC.md)
+- Guide for agents: [docs/AGENTS.md](docs/AGENTS.md)
 
-## Demo
+## Try it
 
-Load [demo/demo-plan.json](demo/demo-plan.json) via **🔗 Link plan file** for a small
-example house with an as-is plan and a renovation idea.
+Open `index.html`, click **🔗 Link plan file**, and pick
+[demo/demo-plan.json](demo/demo-plan.json) — a small example house with a "today" plan
+and an open-kitchen idea.
 
 ## Roadmap
 
-- Bundled fully-offline build (vendored three.js/path tracer)
-- Publishable reference implementation of the render server (Python + Blender, Docker)
-- Dimensioned drawing export (SVG/PDF with measurements) for contractor quotes
-- Variant comparison overlay
-- Typed wall lengths while drawing, live validation badges, touch support
+- Fully-offline bundle (no CDN needed for 3D/rendering)
+- Ready-to-run render server (Python + Blender, Docker)
+- Printable drawings with measurements (for contractor quotes)
+- Side-by-side comparison of two ideas
+- Type exact wall lengths while drawing · touch support
 
 ## License
 
