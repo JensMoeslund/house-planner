@@ -1007,6 +1007,7 @@ window.__walkDot=(x,y,ang)=>{ walkPos = x==null ? null : {x,y,ang:ang||0}; draw(
 let panning=null, dragging=null, calibPts=[], sketchStroke=null;
 let measures=[], measureStart=null;
 let lenBuf='';   // typed wall length while drawing ("3.2" + Enter)
+let roomStart=null;  // room tool click-then-click mode: first corner armed
 
 /* room tool helpers: snap rectangle edges onto nearby existing walls, and only
    build the wall pieces that do not already exist (reuse the outside walls) */
@@ -1063,6 +1064,20 @@ function roomEdgeWalls(x1,y1,x2,y2){
 }
 
 const drawWallT=()=>document.getElementById('wallTypeSel').value==='outer' ? 0.35 : 0.10;
+function commitRoom(x0,y0,mx,my,noSnap){
+  if(Math.abs(mx-x0)<=0.5 || Math.abs(my-y0)<=0.5) return;
+  const {x1,y1,x2,y2}=roomRect(x0,y0,mx,my,noSnap);
+  const segs = noSnap
+    ? [[x1,y1,x2,y1],[x2,y1,x2,y2],[x2,y2,x1,y2],[x1,y2,x1,y1]]   // Shift: free rectangle, all four walls
+    : roomEdgeWalls(x1,y1,x2,y2);                                  // only the pieces that do not exist yet
+  for(const [a,b,c,d] of segs) addWallSegment(a,b,c,d);
+  changed();
+  const name=prompt(T('promptLabel'),'');
+  if(name){
+    cv().labels.push({id:nextId('label'), at:[+((x1+x2)/2).toFixed(2), +((y1+y2)/2).toFixed(2)], text:name});
+    changed();
+  }
+}
 function addWallSegment(x1,y1,x2,y2){
   let kind=document.getElementById('wallKind').value;
   if(kind==='base' && !editingNutid()){ kind='new'; flashHint(T('hintBaseDowngrade')); }
@@ -1277,9 +1292,10 @@ function draw(){
     ctx.fillText(lenBuf ? lenBuf+' m ↵' : Lp.toFixed(2)+' m', lpx, lpy-10);
   }
   // room-rectangle preview with live dimensions (snapped onto nearby existing walls)
-  if(dragging?.type==='room'){
+  if(dragging?.type==='room' || (tool==='room' && roomStart)){
+    const anchor = dragging?.type==='room' ? {x:dragging.x0, y:dragging.y0} : roomStart;
     const [rx2,ry2]= mouse.shift ? [Math.round(mouse.wx*20)/20, Math.round(mouse.wy*20)/20] : snap(mouse.wx,mouse.wy);
-    const rr=roomRect(dragging.x0,dragging.y0,rx2,ry2,mouse.shift);
+    const rr=roomRect(anchor.x,anchor.y,rx2,ry2,mouse.shift);
     const [rp1x,rp1y]=W2S(rr.x1,rr.y1), [rp2x,rp2y]=W2S(rr.x2,rr.y2);
     ctx.strokeStyle='#4da3ff'; ctx.lineWidth=2.5; ctx.setLineDash([6,4]);
     ctx.strokeRect(rp1x,rp1y,rp2x-rp1x,rp2y-rp1y);
@@ -1431,7 +1447,7 @@ c2d.addEventListener('pointerdown', e=>{
   const r=c2d.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top;
   const [wx,wy]=S2W(px,py);
   if(e.button===1 || (e.button===0&&e.altKey)){ panning={px,py,ox:view.ox,oy:view.oy}; return; }
-  if(e.button===2){ if(drawing){drawing=null; lenBuf=''; draw();} return; }
+  if(e.button===2){ if(drawing||roomStart){drawing=null; roomStart=null; lenBuf=''; draw();} return; }
   if(e.button!==0) return;
 
   if(tool==='wall'){
@@ -1446,6 +1462,10 @@ c2d.addEventListener('pointerdown', e=>{
   }
   if(tool==='room'){
     const [sx,sy]= e.shiftKey ? [Math.round(wx*20)/20, Math.round(wy*20)/20] : snap(wx,wy);
+    if(roomStart){                              // click-then-click: second click completes the room
+      commitRoom(roomStart.x, roomStart.y, sx, sy, e.shiftKey);
+      roomStart=null; draw(); return;
+    }
     dragging={type:'room', x0:sx, y0:sy};
     draw(); return;
   }
@@ -1611,7 +1631,7 @@ c2d.addEventListener('pointermove', e=>{
     }
     draw(); return;
   }
-  if(drawing||tool==='wall'||(tool==='measure'&&measureStart)) draw();
+  if(drawing||tool==='wall'||(tool==='room'&&roomStart)||(tool==='measure'&&measureStart)) draw();
 });
 c2d.addEventListener('pointerup', ()=>{
   if(dragging?.type==='room'){
@@ -1619,18 +1639,10 @@ c2d.addEventListener('pointerup', ()=>{
     const [mx,my]= noSnap ? [Math.round(mouse.wx*20)/20, Math.round(mouse.wy*20)/20] : snap(mouse.wx,mouse.wy);
     const x0=dragging.x0, y0=dragging.y0;
     dragging=null;
-    if(Math.abs(mx-x0)>0.5 && Math.abs(my-y0)>0.5){
-      const {x1,y1,x2,y2}=roomRect(x0,y0,mx,my,noSnap);
-      const segs = noSnap
-        ? [[x1,y1,x2,y1],[x2,y1,x2,y2],[x2,y2,x1,y2],[x1,y2,x1,y1]]   // Shift: free rectangle, all four walls
-        : roomEdgeWalls(x1,y1,x2,y2);                                  // only the pieces that do not exist yet
-      for(const [a,b,c,d] of segs) addWallSegment(a,b,c,d);
-      changed();
-      const name=prompt(T('promptLabel'),'');
-      if(name){
-        cv().labels.push({id:nextId('label'), at:[+((x1+x2)/2).toFixed(2), +((y1+y2)/2).toFixed(2)], text:name});
-        changed();
-      }
+    if(Math.hypot(mx-x0,my-y0)<0.2){
+      roomStart={x:x0, y:y0};                   // it was a click — arm click-then-click mode
+    } else if(Math.abs(mx-x0)>0.5 && Math.abs(my-y0)>0.5){
+      commitRoom(x0,y0,mx,my,noSnap);
     }
     draw(); return;
   }
@@ -1717,7 +1729,7 @@ window.addEventListener('keydown', e=>{
       lenBuf=''; draw(); return;
     }
   }
-  if(k==='escape'){ drawing=null; sel=null; calibPts=[]; sketchStroke=null; measures=[]; measureStart=null; lenBuf=''; if(dragging?.type==='room') dragging=null; updateProps(); draw(); }
+  if(k==='escape'){ drawing=null; sel=null; calibPts=[]; sketchStroke=null; measures=[]; measureStart=null; lenBuf=''; roomStart=null; if(dragging?.type==='room') dragging=null; updateProps(); draw(); }
   else if(k==='v') setTool('select');
   else if(k==='m') setTool('measure');
   else if(k==='w') setTool('wall');
@@ -1885,7 +1897,7 @@ function renameWall(w, newId){
 
 /* ============================ toolbar ============================ */
 function setTool(t){
-  tool=t; drawing=null; calibPts=[]; sketchStroke=null; lenBuf='';
+  tool=t; drawing=null; calibPts=[]; sketchStroke=null; lenBuf=''; roomStart=null;
   if(t!=='measure'){ measures=[]; measureStart=null; }
   document.querySelectorAll('button.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));
   c2d.style.cursor = t==='select'?'default':t==='underlay'?'move':'crosshair';
