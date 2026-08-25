@@ -40,6 +40,9 @@
   .ddlabel{color:var(--dim); font-size:10px; margin-top:3px; padding:0 2px; text-transform:uppercase; letter-spacing:.05em;}
   .ddrow{display:flex; gap:5px; align-items:center;}
   .ddrow input[type=range]{flex:1;}
+  .furnGrid{display:grid; grid-template-columns:1fr 1fr; gap:4px;}
+  .furnGrid button{text-align:left; font-size:12px; padding:3px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .furnGrid button.fsel{border-color:var(--accent); background:rgba(77,163,255,.15);}
   #fileDot{font-size:9px; color:var(--dim); vertical-align:middle;}
   #fileDot.linked{color:#5dd39e;} #fileDot.conflict{color:#ffd166;}
   #modeBadge{padding:3px 9px; border-radius:10px; font-weight:700; font-size:11px; white-space:nowrap; cursor:default;}
@@ -141,7 +144,11 @@
     <button class="tool" data-tool="sketch" data-i18n="toolSketch" data-i18n-title="toolSketchT">✏ Sketch</button>
     <button class="tool" data-tool="measure" data-i18n="toolMeasure" data-i18n-title="toolMeasureT">📏 Measure</button>
     <button class="tool" data-tool="furn" data-i18n="toolFurn" data-i18n-title="toolFurnT">🍳 Furniture</button>
-    <select id="furnKind"></select>
+    <select id="furnKind" style="display:none"></select>
+    <div class="menu">
+      <button class="menubtn" id="furnMenuBtn">🗄 ▾</button>
+      <div class="dropdown" id="furnDrop" style="min-width:290px;max-height:62vh;overflow:auto"></div>
+    </div>
   </div>
   <div class="grp">
     <span id="modeBadge" class="nutid">🏠 NUTID</span>
@@ -349,7 +356,9 @@ en: {
   statusLine:(name,e,d,n)=>`${name} — ${e} existing, ${d} demolished, ${n} new`,
   sunUp:e=>` · sun ${e}°`, sunDown:' · below horizon', setLocHint:' · ⚙ set location',
   reloaded:'(reloaded)', resumeLink:'one click on 🔗 re-links the plan file', resumeBtn:'🔗 Resume ',
-  furn_underskab:'base cabinet/counter', furn_overskab:'wall cabinet', furn_koekkenoe:'kitchen island', furn_komfur:'stove', furn_vask:'sink', furn_koeleskab:'fridge', furn_opvasker:'dishwasher', furn_spisebord:'table', furn_sofa:'sofa', furn_seng:'bed', furn_toilet:'toilet', furn_brus:'shower', furn_badekar:'bathtub', furn_garderobeskab:'wardrobe', furn_skrivebord:'desk',
+  furn_underskab:'base cabinet/counter', furn_overskab:'wall cabinet', furn_koekkenoe:'kitchen island', furn_komfur:'stove', furn_vask:'sink', furn_koeleskab:'fridge', furn_opvasker:'dishwasher', furn_spisebord:'dining table', furn_sofa:'sofa', furn_seng:'bed', furn_toilet:'toilet', furn_brus:'shower', furn_badekar:'bathtub', furn_garderobeskab:'wardrobe', furn_skrivebord:'desk',
+  furn_stol:'chair', furn_laenestol:'armchair', furn_sofabord:'coffee table', furn_tvbord:'TV bench', furn_braendeovn:'wood stove', furn_potteplante:'plant', furn_barneseng:'crib', furn_sengebord:'bedside table', furn_kommode:'dresser', furn_vaskemaskine:'washing machine', furn_toerretumbler:'dryer', furn_reol:'bookcase',
+  furnCatKitchen:'Kitchen', furnCatLiving:'Living & dining', furnCatBed:'Bedroom', furnCatBath:'Bathroom & laundry', furnCatOffice:'Office & storage',
   furnW:'Width (m)', furnD:'Depth (m)', furnH:'Height (m)', furnA:'Angle (°)', rotBtn:'↻ Rotate 90° (R)', delFurn:'Delete furniture',
   versionsT:'Version history — restore an earlier state of the plan', versionsTitle:'🕘 Version history (this browser)',
   versionsNote:'Automatic snapshots: every 5 min while editing, on variant switch, before file reloads, resets and restores. Last 60 are kept.',
@@ -432,6 +441,8 @@ da: {
   sunUp:e=>` · sol ${e}°`, sunDown:' · under horisonten', setLocHint:' · ⚙ sæt placering',
   reloaded:'(genindlæst)', resumeLink:'ét klik på 🔗 genoptager fil-linket', resumeBtn:'🔗 Genoptag ',
   furn_underskab:'underskab/bordplade', furn_overskab:'overskab', furn_koekkenoe:'køkkenø', furn_komfur:'komfur', furn_vask:'vask', furn_koeleskab:'køleskab', furn_opvasker:'opvaskemaskine', furn_spisebord:'spisebord', furn_sofa:'sofa', furn_seng:'seng', furn_toilet:'toilet', furn_brus:'brusekabine', furn_badekar:'badekar', furn_garderobeskab:'garderobeskab', furn_skrivebord:'skrivebord',
+  furn_stol:'stol', furn_laenestol:'lænestol', furn_sofabord:'sofabord', furn_tvbord:'tv-bord', furn_braendeovn:'brændeovn', furn_potteplante:'potteplante', furn_barneseng:'barneseng', furn_sengebord:'sengebord', furn_kommode:'kommode', furn_vaskemaskine:'vaskemaskine', furn_toerretumbler:'tørretumbler', furn_reol:'reol',
+  furnCatKitchen:'Køkken', furnCatLiving:'Stue & spisestue', furnCatBed:'Soveværelse', furnCatBath:'Bad & bryggers', furnCatOffice:'Kontor & opbevaring',
   furnW:'Bredde (m)', furnD:'Dybde (m)', furnH:'Højde (m)', furnA:'Vinkel (°)', rotBtn:'↻ Rotér 90° (R)', delFurn:'Slet møbel',
   versionsT:'Versionshistorik — gendan en tidligere tilstand af planen', versionsTitle:'🕘 Versionshistorik (denne browser)',
   versionsNote:'Automatiske snapshots: hvert 5. minut under redigering, ved variantskift, før fil-genindlæsning, nulstilling og gendannelse. De sidste 60 gemmes.',
@@ -485,25 +496,64 @@ function applyI18n(){
   const fk = document.getElementById('furnKind'), cur = fk.value;
   fk.innerHTML = Object.keys(FURN).map(k=>`<option value="${k}">${T('furn_'+k)}</option>`).join('');
   if(cur && FURN[cur]) fk.value = cur;
+  buildFurnPicker();
 }
 const WALL_H_DEFAULT = 2.5, DOOR_H = 2.1, SILL_H = 0.9;
 const FURN = {
-  underskab: {name:'underskab', w:1.8, d:0.6, h:0.9, z:0, color:0x8a6f4d, c2d:'138,111,77'},
-  overskab:  {name:'overskab',  w:1.8, d:0.35,h:0.7, z:1.45, color:0x9c815d, c2d:'156,129,93'},
-  koekkenoe: {name:'køkkenø',   w:2.0, d:0.9, h:0.9, z:0, color:0x7d6a52, c2d:'125,106,82'},
-  komfur:    {name:'komfur',    w:0.6, d:0.6, h:0.9, z:0, color:0x666a70, c2d:'102,106,112'},
-  vask:      {name:'vask',      w:0.6, d:0.6, h:0.9, z:0, color:0x7f9aa8, c2d:'127,154,168'},
-  koeleskab: {name:'køleskab',  w:0.7, d:0.65,h:1.85,z:0, color:0x9aa2ad, c2d:'154,162,173'},
-  opvasker:  {name:'opvasker',  w:0.6, d:0.6, h:0.85,z:0, color:0x85888f, c2d:'133,136,143'},
-  spisebord: {name:'spisebord', w:1.8, d:0.95,h:0.74,z:0, color:0xa08054, c2d:'160,128,84'},
-  sofa:      {name:'sofa',      w:2.2, d:0.95,h:0.8, z:0, color:0x6d7f8f, c2d:'109,127,143'},
-  seng:      {name:'seng',      w:1.8, d:2.0, h:0.5, z:0, color:0x7d6f92, c2d:'125,111,146'},
-  toilet:    {name:'toilet',    w:0.4, d:0.65,h:0.42,z:0, color:0xd8dde2, c2d:'216,221,226'},
-  brus:      {name:'brus',      w:0.9, d:0.9, h:2.0, z:0, color:0x9fc4d8, c2d:'159,196,216'},
-  badekar:   {name:'badekar',   w:1.7, d:0.75,h:0.55,z:0, color:0xd8dde2, c2d:'216,221,226'},
-  garderobeskab:{name:'garderobeskab', w:1.2, d:0.6, h:2.2, z:0, color:0x8a7a63, c2d:'138,122,99'},
-  skrivebord:{name:'skrivebord',w:1.4, d:0.7, h:0.74,z:0, color:0xa08054, c2d:'160,128,84'},
+  underskab: {name:'underskab', e:'🗄', w:1.8, d:0.6, h:0.9, z:0, color:0x8a6f4d, c2d:'138,111,77'},
+  overskab:  {name:'overskab',  e:'🗃', w:1.8, d:0.35,h:0.7, z:1.45, color:0x9c815d, c2d:'156,129,93'},
+  koekkenoe: {name:'køkkenø',   e:'🏝', w:2.0, d:0.9, h:0.9, z:0, color:0x7d6a52, c2d:'125,106,82'},
+  komfur:    {name:'komfur',    e:'🍳', w:0.6, d:0.6, h:0.9, z:0, color:0x666a70, c2d:'102,106,112'},
+  vask:      {name:'vask',      e:'🚰', w:0.6, d:0.6, h:0.9, z:0, color:0x7f9aa8, c2d:'127,154,168'},
+  koeleskab: {name:'køleskab',  e:'🧊', w:0.7, d:0.65,h:1.85,z:0, color:0x9aa2ad, c2d:'154,162,173'},
+  opvasker:  {name:'opvasker',  e:'🫧', w:0.6, d:0.6, h:0.85,z:0, color:0x85888f, c2d:'133,136,143'},
+  spisebord: {name:'spisebord', e:'🍽', w:1.8, d:0.95,h:0.74,z:0, color:0xa08054, c2d:'160,128,84'},
+  stol:      {name:'stol',      e:'🪑', w:0.45,d:0.45,h:0.9, z:0, color:0x8a6f4d, c2d:'138,111,77'},
+  sofa:      {name:'sofa',      e:'🛋', w:2.2, d:0.95,h:0.8, z:0, color:0x6d7f8f, c2d:'109,127,143'},
+  laenestol: {name:'lænestol',  e:'💺', w:0.85,d:0.85,h:0.75,z:0, color:0x6d7f8f, c2d:'109,127,143'},
+  sofabord:  {name:'sofabord',  e:'🪵', w:1.1, d:0.6, h:0.45,z:0, color:0xa08054, c2d:'160,128,84'},
+  tvbord:    {name:'tv-bord',   e:'📺', w:1.6, d:0.45,h:0.5, z:0, color:0x55585e, c2d:'85,88,94'},
+  braendeovn:{name:'brændeovn', e:'🔥', w:0.5, d:0.4, h:1.0, z:0, color:0x2f3236, c2d:'47,50,54'},
+  potteplante:{name:'potteplante', e:'🪴', w:0.4, d:0.4, h:1.2, z:0, color:0x4c7a4c, c2d:'76,122,76'},
+  seng:      {name:'seng',      e:'🛏', w:1.8, d:2.0, h:0.5, z:0, color:0x7d6f92, c2d:'125,111,146'},
+  barneseng: {name:'barneseng', e:'👶', w:0.7, d:1.3, h:0.8, z:0, color:0x7d6f92, c2d:'125,111,146'},
+  sengebord: {name:'sengebord', e:'⏰', w:0.45,d:0.4, h:0.55,z:0, color:0x8a6f4d, c2d:'138,111,77'},
+  garderobeskab:{name:'garderobeskab', e:'👕', w:1.2, d:0.6, h:2.2, z:0, color:0x8a7a63, c2d:'138,122,99'},
+  kommode:   {name:'kommode',   e:'🧺', w:1.0, d:0.45,h:0.8, z:0, color:0x8a7a63, c2d:'138,122,99'},
+  toilet:    {name:'toilet',    e:'🚽', w:0.4, d:0.65,h:0.42,z:0, color:0xd8dde2, c2d:'216,221,226'},
+  brus:      {name:'brus',      e:'🚿', w:0.9, d:0.9, h:2.0, z:0, color:0x9fc4d8, c2d:'159,196,216'},
+  badekar:   {name:'badekar',   e:'🛁', w:1.7, d:0.75,h:0.55,z:0, color:0xd8dde2, c2d:'216,221,226'},
+  vaskemaskine:{name:'vaskemaskine', e:'🌀', w:0.6, d:0.6, h:0.85,z:0, color:0x9aa2ad, c2d:'154,162,173'},
+  toerretumbler:{name:'tørretumbler', e:'💨', w:0.6, d:0.6, h:0.85,z:0, color:0x9aa2ad, c2d:'154,162,173'},
+  skrivebord:{name:'skrivebord',e:'🖥', w:1.4, d:0.7, h:0.74,z:0, color:0xa08054, c2d:'160,128,84'},
+  reol:      {name:'reol',      e:'📚', w:0.8, d:0.35,h:1.9, z:0, color:0x8a7a63, c2d:'138,122,99'},
 };
+const FURN_CATS=[
+  ['furnCatKitchen', ['underskab','overskab','koekkenoe','komfur','vask','koeleskab','opvasker']],
+  ['furnCatLiving',  ['spisebord','stol','sofa','laenestol','sofabord','tvbord','braendeovn','potteplante']],
+  ['furnCatBed',     ['seng','barneseng','sengebord','garderobeskab','kommode']],
+  ['furnCatBath',    ['toilet','brus','badekar','vaskemaskine','toerretumbler']],
+  ['furnCatOffice',  ['skrivebord','reol']],
+];
+function updateFurnBtn(){
+  const k=document.getElementById('furnKind').value||'underskab';
+  const el=document.getElementById('furnMenuBtn');
+  if(el && FURN[k]) el.textContent=(FURN[k].e||'🍳')+' '+T('furn_'+k)+' ▾';
+}
+function buildFurnPicker(){
+  const drop=document.getElementById('furnDrop'); if(!drop) return;
+  const cur=document.getElementById('furnKind').value;
+  drop.innerHTML=FURN_CATS.map(([cat,kinds])=>
+    `<div class="ddlabel">${T(cat)}</div><div class="furnGrid">`+
+    kinds.map(k=>`<button data-fk="${k}" class="${k===cur?'fsel':''}">${FURN[k].e||'▫'} ${T('furn_'+k)}</button>`).join('')+
+    `</div>`).join('');
+  for(const b of drop.querySelectorAll('button[data-fk]')) b.onclick=()=>{
+    document.getElementById('furnKind').value=b.dataset.fk;
+    setTool('furn');
+    buildFurnPicker();
+  };
+  updateFurnBtn();
+}
 applyI18n();
 function floorZAt(x,y){
   let best=null;
@@ -847,6 +897,8 @@ const W2S = (x,y)=>[(x-view.ox)*view.ppm, (y-view.oy)*view.ppm];
 const S2W = (x,y)=>[x/view.ppm+view.ox, y/view.ppm+view.oy];
 
 let tool='select', drawing=null, sel=null, mouse={wx:0,wy:0};
+let walkPos=null;   // {x,y,ang} — position/heading in the 2D plan while walking in 3D
+window.__walkDot=(x,y,ang)=>{ walkPos = x==null ? null : {x,y,ang:ang||0}; draw(); };  // debug/agent hook
 let panning=null, dragging=null, calibPts=[], sketchStroke=null;
 let measures=[], measureStart=null;
 let clipboard=null;
@@ -962,6 +1014,18 @@ function draw(){
   if(!cv().hideDemolished) for(const w of S.base.walls) if(rem.has(w.id)) drawWall(w,'removed',sel?.id===w.id);
   for(const {w,kind} of visibleWalls()) drawWall(w,(kind==='new'&&w.partial)?'base':kind,sel?.id===w.id);
   for(const {o} of visibleOpenings()) drawOpening(o, sel?.id===o.id);
+
+  // "you are here" marker while walking in 3D
+  if(walkPos){
+    const [wx2,wy2]=W2S(walkPos.x,walkPos.y);
+    ctx.save();
+    ctx.translate(wx2,wy2); ctx.rotate(walkPos.ang);
+    ctx.fillStyle='rgba(255,80,80,.22)';
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,30,-0.46,0.46); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#ff5050'; ctx.strokeStyle='#fff'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,6,0,7); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
 
   // sketch strokes
   ctx.strokeStyle='#c792ea'; ctx.lineWidth=2; ctx.setLineDash([7,5]);
@@ -2352,6 +2416,7 @@ async function init3d(){
       controls.target.copy(camera.position).addScaledVector(dir,3);
       controls.enabled=true;
       controls.update();
+      walkPos=null; draw();
     });
     const wkeys={};
     window.addEventListener('keydown',e=>{ wkeys[e.code]=true; });
@@ -2368,6 +2433,12 @@ async function init3d(){
         if(wkeys['KeyA']||wkeys['ArrowLeft']) plc.moveRight(-sp);
         if(wkeys['KeyD']||wkeys['ArrowRight']) plc.moveRight(sp);
         camera.position.y = floorZAt(camera.position.x, camera.position.z) + 1.6;
+        // "you are here" on the 2D plan
+        const wdir=new THREE.Vector3(); camera.getWorldDirection(wdir);
+        const wp={x:camera.position.x, y:camera.position.z, ang:Math.atan2(wdir.z, wdir.x)};
+        if(!walkPos || Math.hypot(wp.x-walkPos.x, wp.y-walkPos.y)>0.03 || Math.abs(wp.ang-walkPos.ang)>0.02){
+          walkPos=wp; draw();
+        }
       } else if(!ptActive) controls.update();
       if(ptActive && pt){
         pt.renderSample();
