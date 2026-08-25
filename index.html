@@ -102,8 +102,9 @@
     <div class="menu">
       <button class="menubtn"><span data-i18n="menuFile">File</span> <span id="fileDot">●</span> ▾</button>
       <div class="dropdown">
-        <button id="linkFile" data-i18n="linkFile" data-i18n-title="linkFileT">🔗 Link plan file</button>
-        <span id="fileStatus" data-i18n="notLinked">not linked (browser-only)</span>
+        <button id="linkFile" data-i18n="linkFile" data-i18n-title="linkFileT">📂 Open house plan…</button>
+        <button id="saveAsBtn" data-i18n="saveAs" data-i18n-title="saveAsT">💾 Save a copy as…</button>
+        <span id="fileStatus" data-i18n="notLinked">✓ saved automatically in this browser</span>
         <hr>
         <button id="versionsBtn" data-i18n-title="versionsT">🕘 <span data-i18n="menuVersions">Version history</span></button>
         <button id="settingsBtn" data-i18n-title="settingsT">⚙ <span data-i18n="menuSettings">Settings</span></button>
@@ -345,7 +346,8 @@ let LANG = PREFS.lang || ((navigator.language||'en').toLowerCase().startsWith('d
 
 const I18N = {
 en: {
-  linkFile:'🔗 Link plan file', linkFileT:'Save your plan as a file on disk — the tool keeps it in sync and picks up outside edits (e.g. from an AI assistant)', notLinked:'not linked (browser-only)', settingsT:'Settings',
+  linkFile:'📂 Open house plan…', linkFileT:'Open a plan file (.json) — your changes then save back to it automatically, and outside edits (e.g. from an AI assistant) appear live', notLinked:'✓ saved automatically in this browser', settingsT:'Settings',
+  saveAs:'💾 Save a copy as…', saveAsT:'Save the current plan as a file on disk — it then keeps auto-saving there',
   toolSelect:'Select', toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
   toolRoom:'⬛ Room', toolRoomT:'Drag a rectangle to make a room — four walls plus a room name in one go. Snaps onto nearby walls and reuses them; hold Shift for no snapping.',
   undoT:'Undo (Ctrl+Z)', redoT:'Redo (Ctrl+Y)',
@@ -410,7 +412,7 @@ en: {
   promptVariantName:'Name for the new variant (copies current):', promptRename:'Rename variant:', promptLabel:'Room label:', promptSketch:'Optional note for this sketch (what should the agent do here)?',
   statusLine:(name,e,d,n)=>`${name} — ${e} existing, ${d} demolished, ${n} new`,
   sunUp:e=>` · sun ${e}°`, sunDown:' · below horizon', setLocHint:' · ⚙ set location',
-  reloaded:'(reloaded)', resumeLink:'one click on 🔗 re-links the plan file', resumeBtn:'🔗 Resume ',
+  reloaded:'(reloaded)', resumeLink:'click 📂 once to reopen your plan file', resumeBtn:'📂 Reopen ',
   furn_underskab:'base cabinet/counter', furn_overskab:'wall cabinet', furn_koekkenoe:'kitchen island', furn_komfur:'stove', furn_vask:'sink', furn_koeleskab:'fridge', furn_opvasker:'dishwasher', furn_spisebord:'dining table', furn_sofa:'sofa', furn_seng:'bed', furn_toilet:'toilet', furn_brus:'shower', furn_badekar:'bathtub', furn_garderobeskab:'wardrobe', furn_skrivebord:'desk',
   furn_stol:'chair', furn_laenestol:'armchair', furn_sofabord:'coffee table', furn_tvbord:'TV bench', furn_braendeovn:'wood stove', furn_potteplante:'plant', furn_barneseng:'crib', furn_sengebord:'bedside table', furn_kommode:'dresser', furn_vaskemaskine:'washing machine', furn_toerretumbler:'dryer', furn_reol:'bookcase',
   furnCatKitchen:'Kitchen', furnCatLiving:'Living & dining', furnCatBed:'Bedroom', furnCatBath:'Bathroom & laundry', furnCatOffice:'Office & storage',
@@ -444,7 +446,8 @@ en: {
   lightsNote:'x-positions are plan coordinates (metres, east axis). Roof window: w = width, len = length up the slope, off = distance from the eave. Requires a pitched roof.',
 },
 da: {
-  linkFile:'🔗 Link plan-fil', linkFileT:'Gem din plan som en fil på disken — værktøjet holder den synkroniseret og opdager ændringer udefra (fx fra en AI-assistent)', notLinked:'ikke linket (kun browser)', settingsT:'Indstillinger',
+  linkFile:'📂 Åbn husplan…', linkFileT:'Åbn en plan-fil (.json) — dine ændringer gemmes automatisk tilbage i den, og ændringer udefra (fx fra en AI-assistent) vises med det samme', notLinked:'✓ gemmes automatisk i denne browser', settingsT:'Indstillinger',
+  saveAs:'💾 Gem som…', saveAsT:'Gem den aktuelle plan som en fil på disken — derefter gemmes der automatisk dertil',
   toolSelect:'Vælg', toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
   toolRoom:'⬛ Rum', toolRoomT:'Træk et rektangel for at lave et rum — fire vægge og et rumnavn på én gang. Snapper til nærliggende vægge og genbruger dem; hold Shift for ingen snap.',
   undoT:'Fortryd (Ctrl+Z)', redoT:'Gentag (Ctrl+Y)',
@@ -509,7 +512,7 @@ da: {
   promptVariantName:'Navn til den nye variant (kopierer den aktuelle):', promptRename:'Omdøb variant:', promptLabel:'Rum-navn:', promptSketch:'Valgfri note til skitsen (hvad skal agenten gøre her)?',
   statusLine:(name,e,d,n)=>`${name} — ${e} eksisterende, ${d} revet ned, ${n} nye`,
   sunUp:e=>` · sol ${e}°`, sunDown:' · under horisonten', setLocHint:' · ⚙ sæt placering',
-  reloaded:'(genindlæst)', resumeLink:'ét klik på 🔗 genoptager fil-linket', resumeBtn:'🔗 Genoptag ',
+  reloaded:'(genindlæst)', resumeLink:'ét klik på 📂 genåbner din plan-fil', resumeBtn:'📂 Genåbn ',
   furn_underskab:'underskab/bordplade', furn_overskab:'overskab', furn_koekkenoe:'køkkenø', furn_komfur:'komfur', furn_vask:'vask', furn_koeleskab:'køleskab', furn_opvasker:'opvaskemaskine', furn_spisebord:'spisebord', furn_sofa:'sofa', furn_seng:'seng', furn_toilet:'toilet', furn_brus:'brusekabine', furn_badekar:'badekar', furn_garderobeskab:'garderobeskab', furn_skrivebord:'skrivebord',
   furn_stol:'stol', furn_laenestol:'lænestol', furn_sofabord:'sofabord', furn_tvbord:'tv-bord', furn_braendeovn:'brændeovn', furn_potteplante:'potteplante', furn_barneseng:'barneseng', furn_sengebord:'sengebord', furn_kommode:'kommode', furn_vaskemaskine:'vaskemaskine', furn_toerretumbler:'tørretumbler', furn_reol:'reol',
   furnCatKitchen:'Køkken', furnCatLiving:'Stue & spisestue', furnCatBed:'Soveværelse', furnCatBath:'Bad & bryggers', furnCatOffice:'Kontor & opbevaring',
@@ -761,16 +764,27 @@ async function adoptHandle(h){
   setStatus('linked', '● '+h.name);
 }
 async function pickPlanFile(){
-  if(!window.showOpenFilePicker){ alert('File linking needs Chrome/Edge. Falling back to browser-only storage.'); return; }
+  if(!window.showOpenFilePicker){ alert('Opening a plan file needs Chrome or Edge — your plan is still saved automatically in this browser.'); return; }
   try{
     const [h] = await showOpenFilePicker({types:[{description:'Plan JSON', accept:{'application/json':['.json']}}]});
     if(await h.requestPermission({mode:'readwrite'}) !== 'granted') return;
     await adoptHandle(h);
     try{ await idbKV.set('planHandle', h); }catch(e){}
-    document.getElementById('linkFile').textContent='🔗 Link plan file';
+    document.getElementById('linkFile').textContent=T('linkFile');
   }catch(e){ if(e.name!=='AbortError'){ console.warn(e); alert('Could not link file: '+e.message); } }
 }
 document.getElementById('linkFile').onclick = pickPlanFile;
+document.getElementById('saveAsBtn').onclick = async()=>{
+  if(!window.showSaveFilePicker){ alert('Saving to a file needs Chrome or Edge.'); return; }
+  try{
+    const h=await showSaveFilePicker({suggestedName:'house-plan.json',
+      types:[{description:'House plan', accept:{'application/json':['.json']}}]});
+    fileHandle=h; lastMtime=0; dirty=true;
+    await writeFile();
+    try{ await idbKV.set('planHandle', h); }catch(e){}
+    setStatus('linked','● '+h.name);
+  }catch(e){ if(e.name!=='AbortError'){ console.warn(e); alert('Could not save: '+e.message); } }
+};
 // auto-resume the link on startup (Chrome can remember the grant — then this is fully silent)
 (async ()=>{
   try{
@@ -786,7 +800,7 @@ document.getElementById('linkFile').onclick = pickPlanFile;
       try{
         if(await h.requestPermission({mode:'readwrite'})==='granted'){
           await adoptHandle(h);
-          btn.textContent='🔗 Link plan file';
+          btn.textContent=T('linkFile');
           btn.onclick = pickPlanFile;
         } else pickPlanFile();
       }catch(e){ pickPlanFile(); }
