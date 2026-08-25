@@ -43,6 +43,8 @@
   .furnGrid{display:grid; grid-template-columns:1fr 1fr; gap:4px;}
   .furnGrid button{text-align:left; font-size:12px; padding:3px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .furnGrid button.fsel, .dropdown button.fsel{border-color:var(--accent); background:rgba(77,163,255,.15);}
+  #guideBar{display:flex; align-items:center; gap:10px; padding:7px 12px; background:#1d2b42; border-bottom:2px solid var(--accent); font-size:13px;}
+  #guideBar button{white-space:nowrap;}
   #fileDot{font-size:9px; color:var(--dim); vertical-align:middle;}
   #fileDot.linked{color:#5dd39e;} #fileDot.conflict{color:#ffd166;}
   #modeBadge{padding:3px 9px; border-radius:10px; font-weight:700; font-size:11px; white-space:nowrap; cursor:default;}
@@ -122,7 +124,7 @@
         </select>
       </div>
     </div>
-    <div class="menu">
+    <div class="menu" id="exportMenu">
       <button class="menubtn"><span data-i18n="menuExport">Export</span> ▾</button>
       <div class="dropdown">
         <button id="exportPng">🖼 PNG</button>
@@ -150,12 +152,12 @@
     <button class="tool" data-tool="measure" data-i18n="toolMeasure" data-i18n-title="toolMeasureT">📏 Measure</button>
     <button class="tool" data-tool="furn" data-i18n="toolFurn" data-i18n-title="toolFurnT">🍳 Furniture</button>
     <select id="furnKind" style="display:none"></select>
-    <div class="menu">
+    <div class="menu" id="furnMenu">
       <button class="menubtn" id="furnMenuBtn">🗄 ▾</button>
       <div class="dropdown" id="furnDrop" style="min-width:290px;max-height:62vh;overflow:auto"></div>
     </div>
   </div>
-  <div class="grp">
+  <div class="grp" id="variantGrp">
     <span id="modeBadge" class="nutid">🏠 NUTID</span>
     <select id="variantSel"></select>
     <button id="variantAdd" data-i18n-title="variantAddT">+</button>
@@ -184,6 +186,16 @@
   </div>
   <span id="tabWarn" style="display:none;color:#ffb454;font-weight:600"></span>
 </header>
+<div id="guideBar" style="display:none">
+  <span id="gStep" style="font-weight:700;color:var(--accent);white-space:nowrap"></span>
+  <span id="gText" style="flex:1"></span>
+  <button id="gReno">🏚 Renovation</button>
+  <button id="gNew">🏗 New build</button>
+  <button id="gPhoto">📷 Load floor plan</button>
+  <button id="gBack">←</button>
+  <button id="gNext">Next →</button>
+  <button id="gSkip" style="opacity:.7"></button>
+</div>
 <div id="main">
   <div id="pane2d">
     <canvas id="c2d"></canvas>
@@ -330,6 +342,15 @@ en: {
   describe:'Describe', describeT:'Plain-text summary + checks — also what an AI assistant sees',
   underlay:'Floor-plan photo:', underlayLoad:'Load…', underlayMove:'Move', underlayMoveT:'Drag the background image', calib:'Scale', calibT:'Click 2 points with a known distance to set the scale',
   roofBtn:'🏠 Roof', roofBtnT:'Show/hide roof and ceilings in 3D', viewMenuT:'View — 2D, 3D or both, and the roof toggle',
+  gStepLbl:n=>`Step ${n}/4`,
+  gStep1Text:'Welcome! What are you planning?',
+  gReno:'🏚 Renovating a house', gNew:'🏗 Building new',
+  gStep2TextReno:'Draw your house as it is today. Easiest: load a photo of your floor plan and trace over it with the ⬛ Room tool (set the scale first). Click Next when the house is drawn.',
+  gStep2TextNew:'Draw the outer walls and rooms with the ⬛ Room tool — drag a rectangle per room; they snap together. Click Next when the shell is there.',
+  gPhoto:'📷 Load floor plan',
+  gStep3Text:'Now the details: put doors and windows into the walls, name the rooms (Tekst), and place furniture if you like.',
+  gStep4Text:'Done! Press + to copy your plan into an idea and start experimenting — nothing you do in an idea touches the house as it is today.',
+  gNext:'Next →', gFinish:'✔ Finish', gSkip:'Skip the guide',
   glbT:'Export the 3D model as .glb — open in Blender and render with Cycles. Enable 🏠 Roof first if the roof should be included.',
   render:'📷 Render', renderT:'Photorealistic render of the current 3D view. Default: progressive path tracing in this browser (click again to stop). Configurable in ⚙ Settings to use a render server instead. Enable 🏠 Roof for interiors!',
   setRenderMode:'Render', renderModeNative:'In this browser (no setup needed)', renderModeServer:'On a render server (Blender/Cycles)',
@@ -416,6 +437,15 @@ da: {
   describe:'Beskriv', describeT:'Tekst-resumé + tjek — også hvad en AI-assistent ser',
   underlay:'Plantegnings-foto:', underlayLoad:'Indlæs…', underlayMove:'Flyt', underlayMoveT:'Træk baggrundsbilledet', calib:'Målestok', calibT:'Klik 2 punkter med kendt afstand for at sætte målestokken',
   roofBtn:'🏠 Tag', roofBtnT:'Vis/skjul tag og lofter i 3D', viewMenuT:'Visning — 2D, 3D eller begge, og tag til/fra',
+  gStepLbl:n=>`Trin ${n}/4`,
+  gStep1Text:'Velkommen! Hvad skal du i gang med?',
+  gReno:'🏚 Renovere et hus', gNew:'🏗 Bygge nyt',
+  gStep2TextReno:'Tegn dit hus som det er i dag. Nemmest: indlæs et foto af din plantegning og tegn ovenpå med ⬛ Rum-værktøjet (sæt målestokken først). Klik Næste når huset er tegnet.',
+  gStep2TextNew:'Tegn ydervægge og rum med ⬛ Rum-værktøjet — træk et rektangel pr. rum; de snapper sammen. Klik Næste når skallen er der.',
+  gPhoto:'📷 Indlæs plantegning',
+  gStep3Text:'Nu detaljerne: sæt døre og vinduer i væggene, navngiv rummene (Tekst), og placér evt. møbler.',
+  gStep4Text:'Færdig! Tryk + for at kopiere din plan til en idé og eksperimentere løs — intet du gør i en idé rører huset som det er i dag.',
+  gNext:'Næste →', gFinish:'✔ Afslut', gSkip:'Spring guiden over',
   glbT:'Eksportér 3D-modellen som .glb — åbn i Blender og render med Cycles. Slå 🏠 Tag til først, hvis taget skal med.',
   render:'📷 Render', renderT:'Fotorealistisk render af den aktuelle 3D-visning. Standard: progressiv path tracing i browseren (klik igen for at stoppe). Kan i ⚙ Indstillinger sættes til en render-server i stedet. Slå 🏠 Tag til for interiør!',
   setRenderMode:'Render', renderModeNative:'I denne browser (ingen opsætning)', renderModeServer:'På en render-server (Blender/Cycles)',
@@ -916,6 +946,7 @@ const S2W = (x,y)=>[x/view.ppm+view.ox, y/view.ppm+view.oy];
 
 let tool='select', drawing=null, sel=null, mouse={wx:0,wy:0};
 let walkPos=null;   // {x,y,ang} — position/heading in the 2D plan while walking in 3D
+let guide=null;     // {step:1..4, kind:'reno'|'new'|null} — beginner wizard, active only on empty plans
 window.__walkDot=(x,y,ang)=>{ walkPos = x==null ? null : {x,y,ang:ang||0}; draw(); };  // debug/agent hook
 let panning=null, dragging=null, calibPts=[], sketchStroke=null;
 let measures=[], measureStart=null;
@@ -1235,7 +1266,7 @@ function draw(){
   document.getElementById('stats').textContent =
     T('statusLine')(cv().name, S.base.walls.length, cv().demolish.length, cv().walls.length);
   document.getElementById('firstRun').style.display =
-    (S.base.walls.length || cv().walls.length || underlay) ? 'none' : '';
+    (S.base.walls.length || cv().walls.length || underlay || guide) ? 'none' : '';
 }
 
 function drawWall(w, kind, isSel){
@@ -2983,6 +3014,59 @@ function changed(){
 refreshVariants();
 resize();
 snapshotNow();
+
+/* ==================== beginner guide (staged workflow on empty plans) ==================== */
+function applyGuide(){
+  const bar=document.getElementById('guideBar'); if(!bar) return;
+  if(!guide){
+    bar.style.display='none';
+    document.querySelectorAll('button.tool').forEach(b=>b.style.display='');
+    document.getElementById('furnMenu').style.display='';
+    document.getElementById('variantGrp').style.display='';
+    document.getElementById('exportMenu').style.display='';
+    draw(); return;
+  }
+  bar.style.display='flex';
+  const st=guide.step;
+  document.getElementById('gStep').textContent=T('gStepLbl')(st);
+  document.getElementById('gText').textContent =
+    st===1 ? T('gStep1Text')
+    : st===2 ? (guide.kind==='new' ? T('gStep2TextNew') : T('gStep2TextReno'))
+    : st===3 ? T('gStep3Text') : T('gStep4Text');
+  document.getElementById('gReno').textContent=T('gReno');
+  document.getElementById('gNew').textContent=T('gNew');
+  document.getElementById('gPhoto').textContent=T('gPhoto');
+  document.getElementById('gReno').style.display = st===1?'':'none';
+  document.getElementById('gNew').style.display  = st===1?'':'none';
+  document.getElementById('gPhoto').style.display = (st===2 && guide.kind!=='new')?'':'none';
+  document.getElementById('gBack').style.display = st>1?'':'none';
+  document.getElementById('gNext').style.display = st>1?'':'none';
+  document.getElementById('gNext').textContent = st===4?T('gFinish'):T('gNext');
+  document.getElementById('gSkip').textContent = T('gSkip');
+  const allow = st===1?['select'] : st===2?['select','room','wall','measure','underlay','calib'] : st===3?['select','door','window','label','furn'] : null;
+  document.querySelectorAll('button.tool').forEach(b=>{
+    b.style.display = (!allow || allow.includes(b.dataset.tool)) ? '' : 'none';
+  });
+  document.getElementById('furnMenu').style.display = st>=3?'':'none';
+  document.getElementById('variantGrp').style.display = st===4?'':'none';
+  document.getElementById('exportMenu').style.display = st===4?'':'none';
+  if(allow && !allow.includes(tool)) setTool('select');
+  draw();
+}
+function finishGuide(){
+  guide=null; PREFS.guideDone=true; savePrefs(); applyGuide();
+}
+document.getElementById('gReno').onclick=()=>{ guide.kind='reno'; guide.step=2; applyGuide(); };
+document.getElementById('gNew').onclick=()=>{ guide.kind='new'; guide.step=2; applyGuide(); };
+document.getElementById('gPhoto').onclick=()=>document.getElementById('underlayBtn').click();
+document.getElementById('gBack').onclick=()=>{ if(guide && guide.step>1){ guide.step--; applyGuide(); } };
+document.getElementById('gNext').onclick=()=>{ if(!guide) return; if(guide.step>=4) finishGuide(); else { guide.step++; applyGuide(); } };
+document.getElementById('gSkip').onclick=finishGuide;
+if(!PREFS.guideDone && !S.base.walls.length && S.variants.every(v=>!(v.walls||[]).length)){
+  guide={step:1, kind:null};
+}
+applyGuide();
+
 init3d();
 </script>
 </body>
