@@ -136,8 +136,13 @@
     </div>
   </div>
   <div class="grp">
+    <button id="undoBtn" data-i18n-title="undoT">↶</button>
+    <button id="redoBtn" data-i18n-title="redoT">↷</button>
+  </div>
+  <div class="grp">
     <button class="tool active" data-tool="select" data-i18n="toolSelect" data-i18n-title="toolSelectT">Select</button>
     <button class="tool" data-tool="wall" data-i18n="toolWall" data-i18n-title="toolWallT">Wall</button>
+    <button class="tool" data-tool="room" data-i18n="toolRoom" data-i18n-title="toolRoomT">⬛ Room</button>
     <button class="tool" data-tool="door" data-i18n="toolDoor" data-i18n-title="toolDoorT">Door</button>
     <button class="tool" data-tool="window" data-i18n="toolWindow" data-i18n-title="toolWindowT">Window</button>
     <button class="tool" data-tool="label" data-i18n="toolLabel" data-i18n-title="toolLabelT">Label</button>
@@ -306,7 +311,9 @@ let LANG = PREFS.lang || ((navigator.language||'en').toLowerCase().startsWith('d
 const I18N = {
 en: {
   linkFile:'🔗 Link plan file', linkFileT:'Save your plan as a file on disk — the tool keeps it in sync and picks up outside edits (e.g. from an AI assistant)', notLinked:'not linked (browser-only)', settingsT:'Settings',
-  toolSelect:'Select', toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain',
+  toolSelect:'Select', toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
+  toolRoom:'⬛ Room', toolRoomT:'Drag a rectangle to make a room — four walls plus a room name in one go',
+  undoT:'Undo (Ctrl+Z)', redoT:'Redo (Ctrl+Y)',
   toolDoor:'Door', toolDoorT:'Click on a wall (D)', toolWindow:'Window', toolWindowT:'Click on a wall (N)',
   toolLabel:'Label', toolLabelT:'Place a text label (L)', toolSketch:'✏ Sketch', toolSketchT:'Freehand sketch with a note — an AI assistant can turn it into walls (S)',
   toolMeasure:'📏 Measure', toolMeasureT:'Measure distance (M): click two points; Esc clears', toolFurn:'🍳 Furniture', toolFurnT:'Place furniture (F) — click in the plan; R rotates selection',
@@ -390,7 +397,9 @@ en: {
 },
 da: {
   linkFile:'🔗 Link plan-fil', linkFileT:'Gem din plan som en fil på disken — værktøjet holder den synkroniseret og opdager ændringer udefra (fx fra en AI-assistent)', notLinked:'ikke linket (kun browser)', settingsT:'Indstillinger',
-  toolSelect:'Vælg', toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden',
+  toolSelect:'Vælg', toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
+  toolRoom:'⬛ Rum', toolRoomT:'Træk et rektangel for at lave et rum — fire vægge og et rumnavn på én gang',
+  undoT:'Fortryd (Ctrl+Z)', redoT:'Gentag (Ctrl+Y)',
   toolDoor:'Dør', toolDoorT:'Klik på en væg (D)', toolWindow:'Vindue', toolWindowT:'Klik på en væg (N)',
   toolLabel:'Tekst', toolLabelT:'Placér en tekst (L)', toolSketch:'✏ Skitse', toolSketchT:'Frihåndsskitse med note — en AI-assistent kan lave den om til vægge (S)',
   toolMeasure:'📏 Mål', toolMeasureT:'Mål afstand (M): klik to punkter; Esc rydder', toolFurn:'🍳 Møbel', toolFurnT:'Placér møbel (F) — klik i planen; R roterer valgt møbel',
@@ -901,6 +910,14 @@ let walkPos=null;   // {x,y,ang} — position/heading in the 2D plan while walki
 window.__walkDot=(x,y,ang)=>{ walkPos = x==null ? null : {x,y,ang:ang||0}; draw(); };  // debug/agent hook
 let panning=null, dragging=null, calibPts=[], sketchStroke=null;
 let measures=[], measureStart=null;
+let lenBuf='';   // typed wall length while drawing ("3.2" + Enter)
+function addWallSegment(x1,y1,x2,y2){
+  let kind=document.getElementById('wallKind').value;
+  if(kind==='base' && !editingNutid()){ kind='new'; flashHint(T('hintBaseDowngrade')); }
+  const wall={id:nextId('wall'), from:[x1,y1], to:[x2,y2], t:kind==='base'?0.35:0.1, notes:''};
+  (kind==='base'?S.base.walls:cv().walls).push(wall);
+  return wall;
+}
 let clipboard=null;
 function copySel(){
   if(!sel) return;
@@ -1096,15 +1113,34 @@ function draw(){
       ctx.fillText(A.toFixed(1)+' m²', px, py+14);
     }
   }
-  // wall preview
+  // wall preview + live length (type a number + Enter for an exact length)
   if(drawing){
     const [x2,y2]=snappedMouse();
     ctx.strokeStyle='#4da3ff'; ctx.lineWidth=3; ctx.setLineDash([6,4]);
     ctx.beginPath(); ctx.moveTo(...W2S(drawing.x,drawing.y)); ctx.lineTo(...W2S(x2,y2)); ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle='#4da3ff'; ctx.font='12px sans-serif'; ctx.textAlign='left';
-    const [mx,my]=W2S((drawing.x+x2)/2,(drawing.y+y2)/2);
-    ctx.fillText(dist(drawing.x,drawing.y,x2,y2).toFixed(2)+' m', mx+10, my-8);
+    const Lp=dist(drawing.x,drawing.y,x2,y2);
+    const [lpx,lpy]=W2S((drawing.x+x2)/2,(drawing.y+y2)/2);
+    ctx.fillStyle='#bfe1ff'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(lenBuf ? lenBuf+' m ↵' : Lp.toFixed(2)+' m', lpx, lpy-10);
+  }
+  // room-rectangle preview with live dimensions
+  if(dragging?.type==='room'){
+    const [rx2,ry2]=snap(mouse.wx,mouse.wy);
+    const [rp1x,rp1y]=W2S(dragging.x0,dragging.y0), [rp2x,rp2y]=W2S(rx2,ry2);
+    ctx.strokeStyle='#4da3ff'; ctx.lineWidth=2.5; ctx.setLineDash([6,4]);
+    ctx.strokeRect(Math.min(rp1x,rp2x),Math.min(rp1y,rp2y),Math.abs(rp2x-rp1x),Math.abs(rp2y-rp1y));
+    ctx.setLineDash([]);
+    ctx.fillStyle='#bfe1ff'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(Math.abs(rx2-dragging.x0).toFixed(2)+' × '+Math.abs(ry2-dragging.y0).toFixed(2)+' m',
+      (rp1x+rp2x)/2, (rp1y+rp2y)/2);
+  }
+  // live length while dragging a wall endpoint
+  if(dragging?.type==='end'){
+    const dw=dragging.w, dp=dragging.end===1?dw.from:dw.to;
+    const [dpx,dpy]=W2S(dp[0],dp[1]);
+    ctx.fillStyle='#bfe1ff'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(wallLen(dw).toFixed(2)+' m', dpx, dpy-12);
   }
   ctx.fillStyle='#ffd166';
   for(const p of calibPts){ const [px,py]=W2S(p[0],p[1]); ctx.beginPath(); ctx.arc(px,py,5,0,7); ctx.fill(); }
@@ -1242,20 +1278,22 @@ c2d.addEventListener('pointerdown', e=>{
   const r=c2d.getBoundingClientRect(), px=e.clientX-r.left, py=e.clientY-r.top;
   const [wx,wy]=S2W(px,py);
   if(e.button===1 || (e.button===0&&e.altKey)){ panning={px,py,ox:view.ox,oy:view.oy}; return; }
-  if(e.button===2){ if(drawing){drawing=null; draw();} return; }
+  if(e.button===2){ if(drawing){drawing=null; lenBuf=''; draw();} return; }
   if(e.button!==0) return;
 
   if(tool==='wall'){
     const [sx,sy]=snappedMouse();
     if(!drawing) drawing={x:sx,y:sy};
     else if(dist(drawing.x,drawing.y,sx,sy)>0.05){
-      let kind=document.getElementById('wallKind').value;
-      if(kind==='base' && !editingNutid()){ kind='new'; flashHint(T('hintBaseDowngrade')); }
-      const wall={id:nextId('wall'), from:[drawing.x,drawing.y], to:[sx,sy], t:kind==='base'?0.35:0.1, notes:''};
-      (kind==='base'?S.base.walls:cv().walls).push(wall);
+      addWallSegment(drawing.x,drawing.y,sx,sy);
       drawing={x:sx,y:sy};
       changed();
     }
+    draw(); return;
+  }
+  if(tool==='room'){
+    const [sx,sy]=snap(wx,wy);
+    dragging={type:'room', x0:sx, y0:sy};
     draw(); return;
   }
   if(tool==='door'||tool==='window'){
@@ -1423,6 +1461,22 @@ c2d.addEventListener('pointermove', e=>{
   if(drawing||tool==='wall'||(tool==='measure'&&measureStart)) draw();
 });
 c2d.addEventListener('pointerup', ()=>{
+  if(dragging?.type==='room'){
+    const [x2,y2]=snap(mouse.wx,mouse.wy);
+    const x1=dragging.x0, y1=dragging.y0;
+    dragging=null;
+    if(Math.abs(x2-x1)>0.5 && Math.abs(y2-y1)>0.5){
+      addWallSegment(x1,y1,x2,y1); addWallSegment(x2,y1,x2,y2);
+      addWallSegment(x2,y2,x1,y2); addWallSegment(x1,y2,x1,y1);
+      changed();
+      const name=prompt(T('promptLabel'),'');
+      if(name){
+        cv().labels.push({id:nextId('label'), at:[+((x1+x2)/2).toFixed(2), +((y1+y2)/2).toFixed(2)], text:name});
+        changed();
+      }
+    }
+    draw(); return;
+  }
   if(dragging?.type==='furnresize') updateProps();
   if(sketchStroke){
     if(sketchStroke.points.length>1){
@@ -1490,7 +1544,23 @@ window.addEventListener('keydown', e=>{
   if((e.ctrlKey||e.metaKey) && k==='y'){ e.preventDefault(); redo(); return; }
   if((e.ctrlKey||e.metaKey) && k==='c'){ copySel(); return; }
   if((e.ctrlKey||e.metaKey) && k==='v'){ e.preventDefault(); pasteClipboard(); return; }
-  if(k==='escape'){ drawing=null; sel=null; calibPts=[]; sketchStroke=null; measures=[]; measureStart=null; updateProps(); draw(); }
+  if(tool==='wall' && drawing && !e.ctrlKey && !e.metaKey){
+    if(/^[0-9]$/.test(e.key) || e.key==='.' || e.key===','){ lenBuf+=(e.key===','?'.':e.key); draw(); return; }
+    if(k==='backspace' && lenBuf){ lenBuf=lenBuf.slice(0,-1); draw(); return; }
+    if(k==='enter' && lenBuf){
+      const L=parseFloat(lenBuf);
+      if(L>0.04 && isFinite(L)){
+        const [mx2,my2]=snappedMouse();
+        const ang=(mx2===drawing.x && my2===drawing.y) ? 0 : Math.atan2(my2-drawing.y, mx2-drawing.x);
+        const ex=+(drawing.x+Math.cos(ang)*L).toFixed(3), ey=+(drawing.y+Math.sin(ang)*L).toFixed(3);
+        addWallSegment(drawing.x,drawing.y,ex,ey);
+        drawing={x:ex,y:ey};
+        changed();
+      }
+      lenBuf=''; draw(); return;
+    }
+  }
+  if(k==='escape'){ drawing=null; sel=null; calibPts=[]; sketchStroke=null; measures=[]; measureStart=null; lenBuf=''; if(dragging?.type==='room') dragging=null; updateProps(); draw(); }
   else if(k==='v') setTool('select');
   else if(k==='m') setTool('measure');
   else if(k==='w') setTool('wall');
@@ -1658,13 +1728,15 @@ function renameWall(w, newId){
 
 /* ============================ toolbar ============================ */
 function setTool(t){
-  tool=t; drawing=null; calibPts=[]; sketchStroke=null;
+  tool=t; drawing=null; calibPts=[]; sketchStroke=null; lenBuf='';
   if(t!=='measure'){ measures=[]; measureStart=null; }
   document.querySelectorAll('button.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));
   c2d.style.cursor = t==='select'?'default':t==='underlay'?'move':'crosshair';
   draw();
 }
 document.querySelectorAll('button.tool').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+document.getElementById('undoBtn').onclick=()=>undo();
+document.getElementById('redoBtn').onclick=()=>redo();
 
 const vsel=document.getElementById('variantSel');
 function refreshLightToggles(){
