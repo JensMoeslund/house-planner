@@ -312,7 +312,7 @@ const I18N = {
 en: {
   linkFile:'🔗 Link plan file', linkFileT:'Save your plan as a file on disk — the tool keeps it in sync and picks up outside edits (e.g. from an AI assistant)', notLinked:'not linked (browser-only)', settingsT:'Settings',
   toolSelect:'Select', toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
-  toolRoom:'⬛ Room', toolRoomT:'Drag a rectangle to make a room — four walls plus a room name in one go',
+  toolRoom:'⬛ Room', toolRoomT:'Drag a rectangle to make a room — four walls plus a room name in one go. Snaps onto nearby walls and reuses them; hold Shift for no snapping.',
   undoT:'Undo (Ctrl+Z)', redoT:'Redo (Ctrl+Y)',
   toolDoor:'Door', toolDoorT:'Click on a wall (D)', toolWindow:'Window', toolWindowT:'Click on a wall (N)',
   toolLabel:'Label', toolLabelT:'Place a text label (L)', toolSketch:'✏ Sketch', toolSketchT:'Freehand sketch with a note — an AI assistant can turn it into walls (S)',
@@ -398,7 +398,7 @@ en: {
 da: {
   linkFile:'🔗 Link plan-fil', linkFileT:'Gem din plan som en fil på disken — værktøjet holder den synkroniseret og opdager ændringer udefra (fx fra en AI-assistent)', notLinked:'ikke linket (kun browser)', settingsT:'Indstillinger',
   toolSelect:'Vælg', toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
-  toolRoom:'⬛ Rum', toolRoomT:'Træk et rektangel for at lave et rum — fire vægge og et rumnavn på én gang',
+  toolRoom:'⬛ Rum', toolRoomT:'Træk et rektangel for at lave et rum — fire vægge og et rumnavn på én gang. Snapper til nærliggende vægge og genbruger dem; hold Shift for ingen snap.',
   undoT:'Fortryd (Ctrl+Z)', redoT:'Gentag (Ctrl+Y)',
   toolDoor:'Dør', toolDoorT:'Klik på en væg (D)', toolWindow:'Vindue', toolWindowT:'Klik på en væg (N)',
   toolLabel:'Tekst', toolLabelT:'Placér en tekst (L)', toolSketch:'✏ Skitse', toolSketchT:'Frihåndsskitse med note — en AI-assistent kan lave den om til vægge (S)',
@@ -928,8 +928,9 @@ function snapRectEdge(coord, lo, hi, vertical){
   }
   return best ? +best.line.toFixed(3) : coord;
 }
-function roomRect(ax,ay,bx,by){
+function roomRect(ax,ay,bx,by,noSnap){
   let x1=Math.min(ax,bx), x2=Math.max(ax,bx), y1=Math.min(ay,by), y2=Math.max(ay,by);
+  if(noSnap) return {x1,y1,x2,y2};
   const sx1=snapRectEdge(x1,y1,y2,true),  sx2=snapRectEdge(x2,y1,y2,true);
   const sy1=snapRectEdge(y1,x1,x2,false), sy2=snapRectEdge(y2,x1,x2,false);
   if(sx2-sx1>0.4){ x1=sx1; x2=sx2; }
@@ -1180,8 +1181,8 @@ function draw(){
   }
   // room-rectangle preview with live dimensions (snapped onto nearby existing walls)
   if(dragging?.type==='room'){
-    const [rx2,ry2]=snap(mouse.wx,mouse.wy);
-    const rr=roomRect(dragging.x0,dragging.y0,rx2,ry2);
+    const [rx2,ry2]= mouse.shift ? [Math.round(mouse.wx*20)/20, Math.round(mouse.wy*20)/20] : snap(mouse.wx,mouse.wy);
+    const rr=roomRect(dragging.x0,dragging.y0,rx2,ry2,mouse.shift);
     const [rp1x,rp1y]=W2S(rr.x1,rr.y1), [rp2x,rp2y]=W2S(rr.x2,rr.y2);
     ctx.strokeStyle='#4da3ff'; ctx.lineWidth=2.5; ctx.setLineDash([6,4]);
     ctx.strokeRect(rp1x,rp1y,rp2x-rp1x,rp2y-rp1y);
@@ -1347,7 +1348,7 @@ c2d.addEventListener('pointerdown', e=>{
     draw(); return;
   }
   if(tool==='room'){
-    const [sx,sy]=snap(wx,wy);
+    const [sx,sy]= e.shiftKey ? [Math.round(wx*20)/20, Math.round(wy*20)/20] : snap(wx,wy);
     dragging={type:'room', x0:sx, y0:sy};
     draw(); return;
   }
@@ -1517,12 +1518,15 @@ c2d.addEventListener('pointermove', e=>{
 });
 c2d.addEventListener('pointerup', ()=>{
   if(dragging?.type==='room'){
-    const [mx,my]=snap(mouse.wx,mouse.wy);
+    const noSnap=mouse.shift;
+    const [mx,my]= noSnap ? [Math.round(mouse.wx*20)/20, Math.round(mouse.wy*20)/20] : snap(mouse.wx,mouse.wy);
     const x0=dragging.x0, y0=dragging.y0;
     dragging=null;
     if(Math.abs(mx-x0)>0.5 && Math.abs(my-y0)>0.5){
-      const {x1,y1,x2,y2}=roomRect(x0,y0,mx,my);
-      const segs=roomEdgeWalls(x1,y1,x2,y2);       // only the pieces that do not exist yet
+      const {x1,y1,x2,y2}=roomRect(x0,y0,mx,my,noSnap);
+      const segs = noSnap
+        ? [[x1,y1,x2,y1],[x2,y1,x2,y2],[x2,y2,x1,y2],[x1,y2,x1,y1]]   // Shift: free rectangle, all four walls
+        : roomEdgeWalls(x1,y1,x2,y2);                                  // only the pieces that do not exist yet
       for(const [a,b,c,d] of segs) addWallSegment(a,b,c,d);
       changed();
       const name=prompt(T('promptLabel'),'');
