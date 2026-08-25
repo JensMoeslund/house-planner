@@ -63,6 +63,9 @@ and an open-kitchen idea.
 
 ## Roadmap
 
+- Furniture styles: pick the *look* of each piece (round vs. rectangular dining table,
+  corner sofa vs. two-seater, freestanding vs. built-in tub …) so the model matches what
+  you would actually put in your house
 - Fully-offline bundle (no CDN needed for 3D/rendering)
 - Ready-to-run render server (Python + Blender, Docker)
 - Printable drawings with measurements (for contractor quotes)
