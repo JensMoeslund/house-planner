@@ -42,7 +42,7 @@
   .ddrow input[type=range]{flex:1;}
   .furnGrid{display:grid; grid-template-columns:1fr 1fr; gap:4px;}
   .furnGrid button{text-align:left; font-size:12px; padding:3px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .furnGrid button.fsel{border-color:var(--accent); background:rgba(77,163,255,.15);}
+  .furnGrid button.fsel, .dropdown button.fsel{border-color:var(--accent); background:rgba(77,163,255,.15);}
   #fileDot{font-size:9px; color:var(--dim); vertical-align:middle;}
   #fileDot.linked{color:#5dd39e;} #fileDot.conflict{color:#ffd166;}
   #modeBadge{padding:3px 9px; border-radius:10px; font-weight:700; font-size:11px; white-space:nowrap; cursor:default;}
@@ -171,8 +171,16 @@
     </div>
   </div>
   <div class="grp">
-    <button id="view2d">2D</button><button id="viewBoth">2D+3D</button><button id="view3d">3D</button>
-    <button id="roofBtn" data-i18n="roofBtn" data-i18n-title="roofBtnT">🏠 Roof</button>
+    <div class="menu">
+      <button class="menubtn" id="viewMenuBtn" data-i18n-title="viewMenuT">👁 2D+3D ▾</button>
+      <div class="dropdown" style="min-width:150px">
+        <button id="view2d">2D</button>
+        <button id="viewBoth">2D+3D</button>
+        <button id="view3d">3D</button>
+        <hr>
+        <button id="roofBtn" data-i18n-title="roofBtnT">🏠 Roof</button>
+      </div>
+    </div>
   </div>
   <span id="tabWarn" style="display:none;color:#ffb454;font-weight:600"></span>
 </header>
@@ -321,7 +329,7 @@ en: {
   variant:'Idea:', variantAddT:'Copy the current idea into a new one', rename:'Rename', variantNotesT:'Notes for this idea (AI assistants read these too)',
   describe:'Describe', describeT:'Plain-text summary + checks — also what an AI assistant sees',
   underlay:'Floor-plan photo:', underlayLoad:'Load…', underlayMove:'Move', underlayMoveT:'Drag the background image', calib:'Scale', calibT:'Click 2 points with a known distance to set the scale',
-  roofBtn:'🏠 Roof', roofBtnT:'Show/hide roof and ceilings in 3D',
+  roofBtn:'🏠 Roof', roofBtnT:'Show/hide roof and ceilings in 3D', viewMenuT:'View — 2D, 3D or both, and the roof toggle',
   glbT:'Export the 3D model as .glb — open in Blender and render with Cycles. Enable 🏠 Roof first if the roof should be included.',
   render:'📷 Render', renderT:'Photorealistic render of the current 3D view. Default: progressive path tracing in this browser (click again to stop). Configurable in ⚙ Settings to use a render server instead. Enable 🏠 Roof for interiors!',
   setRenderMode:'Render', renderModeNative:'In this browser (no setup needed)', renderModeServer:'On a render server (Blender/Cycles)',
@@ -407,7 +415,7 @@ da: {
   variant:'Idé:', variantAddT:'Kopiér den aktuelle idé til en ny', rename:'Omdøb', variantNotesT:'Noter til denne idé (AI-assistenter læser dem også)',
   describe:'Beskriv', describeT:'Tekst-resumé + tjek — også hvad en AI-assistent ser',
   underlay:'Plantegnings-foto:', underlayLoad:'Indlæs…', underlayMove:'Flyt', underlayMoveT:'Træk baggrundsbilledet', calib:'Målestok', calibT:'Klik 2 punkter med kendt afstand for at sætte målestokken',
-  roofBtn:'🏠 Tag', roofBtnT:'Vis/skjul tag og lofter i 3D',
+  roofBtn:'🏠 Tag', roofBtnT:'Vis/skjul tag og lofter i 3D', viewMenuT:'Visning — 2D, 3D eller begge, og tag til/fra',
   glbT:'Eksportér 3D-modellen som .glb — åbn i Blender og render med Cycles. Slå 🏠 Tag til først, hvis taget skal med.',
   render:'📷 Render', renderT:'Fotorealistisk render af den aktuelle 3D-visning. Standard: progressiv path tracing i browseren (klik igen for at stoppe). Kan i ⚙ Indstillinger sættes til en render-server i stedet. Slå 🏠 Tag til for interiør!',
   setRenderMode:'Render', renderModeNative:'I denne browser (ingen opsætning)', renderModeServer:'På en render-server (Blender/Cycles)',
@@ -506,6 +514,7 @@ function applyI18n(){
   fk.innerHTML = Object.keys(FURN).map(k=>`<option value="${k}">${T('furn_'+k)}</option>`).join('');
   if(cur && FURN[cur]) fk.value = cur;
   buildFurnPicker();
+  if(typeof updateViewBtn==='function') updateViewBtn();
 }
 const WALL_H_DEFAULT = 2.5, DOOR_H = 2.1, SILL_H = 0.9;
 const FURN = {
@@ -1871,12 +1880,23 @@ let showRoof=false;
 document.getElementById('roofBtn').onclick=()=>{
   if(!S.base.roof){ openRoofDialog(); return; }
   showRoof=!showRoof;
-  document.getElementById('roofBtn').classList.toggle('on',showRoof);
+  updateViewBtn();
   rebuild3d();
 };
-document.getElementById('view2d').onclick=()=>{ document.body.className='only2d'; resize(); };
-document.getElementById('view3d').onclick=()=>{ document.body.className='only3d'; resize(); };
-document.getElementById('viewBoth').onclick=()=>{ document.body.className=''; resize(); };
+updateViewBtn();
+document.getElementById('view2d').onclick=()=>{ document.body.className='only2d'; resize(); updateViewBtn(); };
+document.getElementById('view3d').onclick=()=>{ document.body.className='only3d'; resize(); updateViewBtn(); };
+document.getElementById('viewBoth').onclick=()=>{ document.body.className=''; resize(); updateViewBtn(); };
+function updateViewBtn(){
+  try{
+    const m=document.body.className;
+    const lbl = m==='only2d' ? '2D' : m==='only3d' ? '3D' : '2D+3D';
+    const b=document.getElementById('viewMenuBtn'); if(b) b.textContent='👁 '+lbl+' ▾';
+    const r=document.getElementById('roofBtn'); if(r) r.textContent=(showRoof?'☑ ':'☐ ')+T('roofBtn');
+    for(const [id,mode] of [['view2d','only2d'],['viewBoth',''],['view3d','only3d']])
+      document.getElementById(id)?.classList.toggle('fsel', m===mode);
+  }catch(e){}
+}
 
 document.getElementById('exportPng').onclick=()=>{
   const a=document.createElement('a');
