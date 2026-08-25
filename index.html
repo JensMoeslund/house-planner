@@ -45,6 +45,7 @@
   .furnGrid button.fsel, .dropdown button.fsel{border-color:var(--accent); background:rgba(77,163,255,.15);}
   #guideBar{display:flex; align-items:center; gap:10px; padding:7px 12px; background:#1d2b42; border-bottom:2px solid var(--accent); font-size:13px;}
   #guideBar button{white-space:nowrap;}
+  #phaseTabs button.active{background:var(--accent); color:#10131a; border-color:var(--accent); font-weight:600;}
   #fileDot{font-size:9px; color:var(--dim); vertical-align:middle;}
   #fileDot.linked{color:#5dd39e;} #fileDot.conflict{color:#ffd166;}
   #modeBadge{padding:3px 9px; border-radius:10px; font-weight:700; font-size:11px; white-space:nowrap; cursor:default;}
@@ -136,6 +137,11 @@
         </select>
       </div>
     </div>
+  </div>
+  <div class="grp" id="phaseTabs">
+    <button data-phase="hus" data-i18n="phaseHus" data-i18n-title="phaseHusT">1 · House</button>
+    <button data-phase="detaljer" data-i18n="phaseDet" data-i18n-title="phaseDetT">2 · Details</button>
+    <button data-phase="ideer" data-i18n="phaseIdeer" data-i18n-title="phaseIdeerT">3 · Ideas</button>
   </div>
   <div class="grp">
     <button id="undoBtn" data-i18n-title="undoT">↶</button>
@@ -351,6 +357,9 @@ en: {
   gStep3Text:'Now the details: put doors and windows into the walls, name the rooms (Tekst), and place furniture if you like.',
   gStep4Text:'Done! Press + to copy your plan into an idea and start experimenting — nothing you do in an idea touches the house as it is today.',
   gNext:'Next →', gFinish:'✔ Finish', gSkip:'Skip the guide',
+  phaseHus:'1 · House', phaseHusT:'Draw the house: rooms, walls, floor-plan photo, measuring',
+  phaseDet:'2 · Details', phaseDetT:'Doors, windows, room names and furniture',
+  phaseIdeer:'3 · Ideas', phaseIdeerT:'Everything: try renovation ideas, compare, export and render',
   glbT:'Export the 3D model as .glb — open in Blender and render with Cycles. Enable 🏠 Roof first if the roof should be included.',
   render:'📷 Render', renderT:'Photorealistic render of the current 3D view. Default: progressive path tracing in this browser (click again to stop). Configurable in ⚙ Settings to use a render server instead. Enable 🏠 Roof for interiors!',
   setRenderMode:'Render', renderModeNative:'In this browser (no setup needed)', renderModeServer:'On a render server (Blender/Cycles)',
@@ -446,6 +455,9 @@ da: {
   gStep3Text:'Nu detaljerne: sæt døre og vinduer i væggene, navngiv rummene (Tekst), og placér evt. møbler.',
   gStep4Text:'Færdig! Tryk + for at kopiere din plan til en idé og eksperimentere løs — intet du gør i en idé rører huset som det er i dag.',
   gNext:'Næste →', gFinish:'✔ Afslut', gSkip:'Spring guiden over',
+  phaseHus:'1 · Huset', phaseHusT:'Tegn huset: rum, vægge, plantegnings-foto, opmåling',
+  phaseDet:'2 · Detaljer', phaseDetT:'Døre, vinduer, rumnavne og møbler',
+  phaseIdeer:'3 · Idéer', phaseIdeerT:'Alt: prøv renoverings-idéer, sammenlign, eksportér og render',
   glbT:'Eksportér 3D-modellen som .glb — åbn i Blender og render med Cycles. Slå 🏠 Tag til først, hvis taget skal med.',
   render:'📷 Render', renderT:'Fotorealistisk render af den aktuelle 3D-visning. Standard: progressiv path tracing i browseren (klik igen for at stoppe). Kan i ⚙ Indstillinger sættes til en render-server i stedet. Slå 🏠 Tag til for interiør!',
   setRenderMode:'Render', renderModeNative:'I denne browser (ingen opsætning)', renderModeServer:'På en render-server (Blender/Cycles)',
@@ -3015,19 +3027,43 @@ refreshVariants();
 resize();
 snapshotNow();
 
-/* ==================== beginner guide (staged workflow on empty plans) ==================== */
+/* ==================== phases: the toolbar only shows the current phase's tools.
+   1 Huset (draw the base) · 2 Detaljer (doors/windows/names/furniture) · 3 Idéer (everything).
+   The beginner guide walks through the same phases on an empty plan. ==================== */
+const PHASES={
+  hus:      {tools:['select','room','wall','measure','underlay','calib'], furn:false, variants:false, exportM:false},
+  detaljer: {tools:['select','door','window','label','furn'], furn:true, variants:false, exportM:false},
+  ideer:    {tools:null, furn:true, variants:true, exportM:true},
+};
+let phase='ideer';
+function applyPhase(){
+  const stepIntro = guide && guide.step===1;
+  const P=PHASES[phase]||PHASES.ideer;
+  const allow = stepIntro ? ['select'] : P.tools;
+  document.querySelectorAll('button.tool').forEach(b=>{
+    b.style.display=(!allow||allow.includes(b.dataset.tool))?'':'none';
+  });
+  document.getElementById('furnMenu').style.display = (!stepIntro && P.furn)?'':'none';
+  document.getElementById('variantGrp').style.display = (!stepIntro && P.variants)?'':'none';
+  document.getElementById('exportMenu').style.display = (!stepIntro && P.exportM)?'':'none';
+  document.getElementById('phaseTabs').style.display = guide?'none':'';
+  for(const b of document.querySelectorAll('#phaseTabs button'))
+    b.classList.toggle('active', b.dataset.phase===phase);
+  if(allow && !allow.includes(tool)) setTool('select'); else draw();
+}
+function setPhase(p){
+  phase=p;
+  if(!guide){ PREFS.phase=p; savePrefs(); }
+  applyPhase();
+}
+for(const b of document.querySelectorAll('#phaseTabs button')) b.onclick=()=>setPhase(b.dataset.phase);
+
 function applyGuide(){
   const bar=document.getElementById('guideBar'); if(!bar) return;
-  if(!guide){
-    bar.style.display='none';
-    document.querySelectorAll('button.tool').forEach(b=>b.style.display='');
-    document.getElementById('furnMenu').style.display='';
-    document.getElementById('variantGrp').style.display='';
-    document.getElementById('exportMenu').style.display='';
-    draw(); return;
-  }
+  if(!guide){ bar.style.display='none'; applyPhase(); return; }
   bar.style.display='flex';
   const st=guide.step;
+  phase = st===3 ? 'detaljer' : st===4 ? 'ideer' : 'hus';
   document.getElementById('gStep').textContent=T('gStepLbl')(st);
   document.getElementById('gText').textContent =
     st===1 ? T('gStep1Text')
@@ -3043,18 +3079,10 @@ function applyGuide(){
   document.getElementById('gNext').style.display = st>1?'':'none';
   document.getElementById('gNext').textContent = st===4?T('gFinish'):T('gNext');
   document.getElementById('gSkip').textContent = T('gSkip');
-  const allow = st===1?['select'] : st===2?['select','room','wall','measure','underlay','calib'] : st===3?['select','door','window','label','furn'] : null;
-  document.querySelectorAll('button.tool').forEach(b=>{
-    b.style.display = (!allow || allow.includes(b.dataset.tool)) ? '' : 'none';
-  });
-  document.getElementById('furnMenu').style.display = st>=3?'':'none';
-  document.getElementById('variantGrp').style.display = st===4?'':'none';
-  document.getElementById('exportMenu').style.display = st===4?'':'none';
-  if(allow && !allow.includes(tool)) setTool('select');
-  draw();
+  applyPhase();
 }
 function finishGuide(){
-  guide=null; PREFS.guideDone=true; savePrefs(); applyGuide();
+  guide=null; PREFS.guideDone=true; PREFS.phase=phase; savePrefs(); applyGuide();
 }
 document.getElementById('gReno').onclick=()=>{ guide.kind='reno'; guide.step=2; applyGuide(); };
 document.getElementById('gNew').onclick=()=>{ guide.kind='new'; guide.step=2; applyGuide(); };
@@ -3064,6 +3092,8 @@ document.getElementById('gNext').onclick=()=>{ if(!guide) return; if(guide.step>
 document.getElementById('gSkip').onclick=finishGuide;
 if(!PREFS.guideDone && !S.base.walls.length && S.variants.every(v=>!(v.walls||[]).length)){
   guide={step:1, kind:null};
+} else {
+  phase = PREFS.phase || 'ideer';
 }
 applyGuide();
 
