@@ -63,14 +63,25 @@ and an open-kitchen idea.
 
 ## Roadmap
 
+**Beginner-friendliness (next up)**
+- Room tool: drag a rectangle → four walls + a room name (no wall-chain drawing needed)
+- Visible Undo/Redo buttons
+- Live wall length at the cursor while drawing; type a number to make it exact
+- "Try the example house" button on the empty-plan screen
+- Touch support: pinch zoom, two-finger pan, bigger grab handles
+- "Saved automatically in this browser" reassurance in the File menu
+
+**Deciding between ideas**
+- Compare two ideas: overlay with color-coded differences, side-by-side view, and a
+  plain-language difference summary
+
+**Later**
 - Furniture styles: pick the *look* of each piece (round vs. rectangular dining table,
   corner sofa vs. two-seater, freestanding vs. built-in tub …) so the model matches what
   you would actually put in your house
 - Fully-offline bundle (no CDN needed for 3D/rendering)
 - Ready-to-run render server (Python + Blender, Docker)
 - Printable drawings with measurements (for contractor quotes)
-- Side-by-side comparison of two ideas
-- Type exact wall lengths while drawing · touch support
 
 ## License
 
