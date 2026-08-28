@@ -13,14 +13,28 @@
   html,body{height:100%; overflow:hidden;}
   body{font:13px/1.4 "Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--fg); display:flex; flex-direction:column;}
   header{display:flex; flex-direction:column; background:var(--panel); border-bottom:1px solid var(--border);}
-  #menubar{display:flex; align-items:center; gap:8px; padding:5px 10px; border-bottom:1px solid var(--border);}
-  #toolbar{display:flex; align-items:center; gap:4px; padding:4px 10px; background:#23272f;}
+  #titlebar{display:flex; align-items:center; gap:8px; padding:4px 10px; border-bottom:1px solid var(--border);}
+  #ribbonTabs{display:flex; align-items:flex-end; gap:2px; padding:4px 8px 0; border-bottom:1px solid var(--border);}
+  #ribbonTabs .rtab{background:transparent; border:1px solid transparent; border-bottom:none; border-radius:5px 5px 0 0; padding:5px 13px; font-size:12.5px; color:var(--dim); margin-bottom:-1px;}
+  #ribbonTabs .rtab:hover{color:var(--fg); border-color:transparent;}
+  #ribbonTabs .rtab.active{background:#23272f; color:var(--accent); font-weight:600; border-color:var(--border); border-bottom:1px solid #23272f;}
+  #ribbonTabs .menu{margin-bottom:-1px;}
+  #ribbonTabs .menubtn{background:var(--accent); color:#10131a; font-weight:600; border:1px solid var(--accent); border-radius:5px 5px 0 0; border-bottom:none; padding:5px 13px; font-size:12.5px; margin-right:4px;}
+  #ribbon{background:#23272f; padding:4px 8px;}
+  #ribbon .rpanel{display:none; align-items:stretch; gap:2px;}
+  #ribbon .rpanel.active{display:flex;}
+  .rgroup{display:flex; flex-direction:column; align-items:center; gap:3px; padding:2px 8px;}
+  .rgroup .rbtns{display:flex; align-items:center; gap:4px; flex:1;}
+  .rgroup .rcap{font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:.05em; user-select:none;}
+  .rgsep{width:1px; background:var(--border); margin:2px 0;}
+  #ribbon button{background:transparent; border-color:transparent;}
+  #ribbon button:hover{background:var(--panel2); border-color:var(--border);}
+  #ribbon button.tool.active{background:var(--accent); color:#10131a; border-color:var(--accent); font-weight:600;}
+  #ribbon button.fsel, #roofBtn.on{background:rgba(77,163,255,.18); border-color:var(--accent);}
+  #ribbon select{background:var(--panel2);}
   #logo{font-size:17px; margin-right:2px; cursor:default; user-select:none;}
   #rightGrp{margin-left:auto; display:flex; align-items:center; gap:8px;}
   .tsep{width:1px; height:20px; background:var(--border); margin:0 6px;}
-  #phaseTabs{display:flex; gap:0; margin-left:6px; border:1px solid var(--border); border-radius:7px; overflow:hidden;}
-  #phaseTabs button{border:none; border-radius:0; background:transparent; padding:4px 11px;}
-  #phaseTabs button+button{border-left:1px solid var(--border);}
   .grp{display:flex; align-items:center; gap:4px;}
   .grp label{color:var(--dim); font-size:12px;}
   button, select{
@@ -52,7 +66,6 @@
   .furnGrid button.fsel, .dropdown button.fsel{border-color:var(--accent); background:rgba(77,163,255,.15);}
   #guideBar{display:flex; align-items:center; gap:10px; padding:7px 12px; background:#1d2b42; border-bottom:2px solid var(--accent); font-size:13px;}
   #guideBar button{white-space:nowrap;}
-  #phaseTabs button.active{background:var(--accent); color:#10131a; font-weight:600;}
   #fileDot{font-size:9px; color:var(--dim); vertical-align:middle;}
   #fileDot.linked{color:#5dd39e;} #fileDot.conflict{color:#ffd166;}
   #modeBadge{padding:3px 9px; border-radius:10px; font-weight:700; font-size:11px; white-space:nowrap; cursor:default;}
@@ -99,110 +112,172 @@
 </head>
 <body>
 <header>
-<div id="menubar">
+<div id="titlebar">
   <span id="logo" title="House Planner">🏠</span>
-    <div class="menu">
-      <button class="menubtn"><span data-i18n="menuFile">File</span> <span id="fileDot">●</span> ▾</button>
-      <div class="dropdown">
-        <button id="newPlanBtn" data-i18n="newPlan" data-i18n-title="newPlanT">🆕 New house plan</button>
-        <button id="linkFile" data-i18n="linkFile" data-i18n-title="linkFileT">📂 Open house plan…</button>
-        <button id="saveAsBtn" data-i18n="saveAs" data-i18n-title="saveAsT">💾 Save a copy as…</button>
-        <span id="fileStatus" data-i18n="notLinked">✓ saved automatically in this browser</span>
-        <hr>
-        <button id="versionsBtn" data-i18n-title="versionsT">🕘 <span data-i18n="menuVersions">Version history</span></button>
-        <button id="settingsBtn" data-i18n-title="settingsT">⚙ <span data-i18n="menuSettings">Settings</span></button>
-      </div>
+  <div id="rightGrp">
+    <span id="tabWarn" style="display:none;color:#ffb454;font-weight:600"></span>
+    <span id="modeBadge" class="nutid">🏠 NUTID</span>
+  </div>
+</div>
+<div id="ribbonTabs">
+  <div class="menu">
+    <button class="menubtn"><span data-i18n="menuFile">File</span> <span id="fileDot">●</span></button>
+    <div class="dropdown">
+      <button id="newPlanBtn" data-i18n="newPlan" data-i18n-title="newPlanT">🆕 New house plan</button>
+      <button id="linkFile" data-i18n="linkFile" data-i18n-title="linkFileT">📂 Open house plan…</button>
+      <button id="saveAsBtn" data-i18n="saveAs" data-i18n-title="saveAsT">💾 Save a copy as…</button>
+      <span id="fileStatus" data-i18n="notLinked">✓ saved automatically in this browser</span>
+      <hr>
+      <button id="versionsBtn" data-i18n-title="versionsT">🕘 <span data-i18n="menuVersions">Version history</span></button>
+      <button id="settingsBtn" data-i18n-title="settingsT">⚙ <span data-i18n="menuSettings">Settings</span></button>
     </div>
-    <div class="menu" id="planMenu">
-      <button class="menubtn"><span data-i18n="menuPlan">Plan</span> ▾</button>
-      <div class="dropdown">
-        <button id="describeBtn" data-i18n="describe" data-i18n-title="describeT">Describe</button>
-        <button id="roofDialogBtn" data-i18n="roofMenu" data-i18n-title="roofEditT">🏠 Roof…</button>
-        <button id="lightsMenuBtn" data-i18n="lightsMenu" data-i18n-title="lightsT">☀ Roof light…</button>
-        <hr>
-        <div class="ddlabel" data-i18n="underlay">Underlay:</div>
+  </div>
+  <button class="rtab active" data-rtab="huset" data-panel="draw" data-i18n-title="tabTodayT"><span data-i18n="tabToday">1 · The house today</span></button>
+  <button class="rtab" data-rtab="ideer" data-panel="draw" data-i18n-title="tabIdeasT"><span data-i18n="tabIdeas">2 · Ideas</span></button>
+  <button class="rtab" data-rtab="view"><span data-i18n="tabView">View</span></button>
+  <button class="rtab" data-rtab="export" id="exportMenu"><span data-i18n="menuExport">Export</span></button>
+</div>
+<div id="ribbon">
+  <div class="rpanel active" data-rpanel="draw">
+    <div class="rgroup">
+      <div class="rbtns">
+        <button id="undoBtn" data-i18n-title="undoT">↶</button>
+        <button id="redoBtn" data-i18n-title="redoT">↷</button>
+      </div>
+      <div class="rcap" data-i18n="rgHistory">History</div>
+    </div>
+    <div class="rgsep"></div>
+    <div class="rgroup" id="variantGrp" data-wmode="ideer">
+      <div class="rbtns">
+        <select id="variantSel"></select>
+        <button id="variantAdd" data-i18n-title="variantAddT">+</button>
+        <div class="menu">
+          <button class="menubtn" data-i18n-title="variantMoreT">⋯</button>
+          <div class="dropdown" style="min-width:210px">
+            <button id="variantRen" data-i18n="rename">Rename</button>
+            <button id="variantNotes" data-i18n="variantNotesM" data-i18n-title="variantNotesT">📝 Notes</button>
+            <button id="variantHideDem" data-i18n-title="hideDemT"></button>
+            <hr>
+            <button id="variantDel" class="danger" data-i18n="variantDelM">✕ Delete variant</button>
+          </div>
+        </div>
+      </div>
+      <div class="rcap" data-i18n="rgIdea">Idea</div>
+    </div>
+    <div class="rgsep"></div>
+    <div class="rgroup" data-wmode="huset">
+      <div class="rbtns">
         <button id="underlayBtn" data-i18n="underlayLoad">Load…</button>
         <input type="file" id="underlayFile" accept="image/*">
         <button class="tool" data-tool="underlay" data-i18n="underlayMove" data-i18n-title="underlayMoveT">Move</button>
         <button class="tool" data-tool="calib" data-i18n="calib" data-i18n-title="calibT">Calib</button>
-        <div class="ddrow"><input type="range" id="underlayOpacity" min="0" max="100" value="45"><button id="underlayClear" class="danger" style="width:auto">✕</button></div>
-        <hr>
-        <div class="ddlabel" data-i18n="newWalls">New walls:</div>
-        <select id="wallKind">
+        <input type="range" id="underlayOpacity" min="0" max="100" value="45">
+        <button id="underlayClear" class="danger">✕</button>
+      </div>
+      <div class="rcap" data-i18n="rgUnderlay">Underlay</div>
+    </div>
+    <div class="rgsep"></div>
+    <div class="rgroup">
+      <div class="rbtns">
+        <button class="tool active" data-tool="select" data-i18n="toolSelect" data-i18n-title="toolSelectT">🖱</button>
+        <button class="tool" data-tool="wall" data-i18n="toolWall" data-i18n-title="toolWallT">Wall</button>
+        <button class="tool" data-tool="room" data-i18n="toolRoom" data-i18n-title="toolRoomT">⬛ Room</button>
+        <select id="wallTypeSel" data-i18n-title="wallTypeT">
+          <option value="outer" data-i18n="wallTypeOuter">Outer wall (35 cm)</option>
+          <option value="inner" data-i18n="wallTypeInner">Inner wall (10 cm)</option>
+        </select>
+        <select id="wallKind" style="display:none">
           <option value="base" data-i18n="wallKindBase">Existing (base)</option>
           <option value="new" selected data-i18n="wallKindNew">New (variant)</option>
         </select>
       </div>
+      <div class="rcap" data-i18n="rgDraw">Draw</div>
     </div>
-    <div class="menu" id="exportMenu">
-      <button class="menubtn"><span data-i18n="menuExport">Export</span> ▾</button>
-      <div class="dropdown">
+    <div class="rgsep"></div>
+    <div class="rgroup">
+      <div class="rbtns">
+        <button class="tool" data-tool="door" data-i18n="toolDoor" data-i18n-title="toolDoorT">Door</button>
+        <button class="tool" data-tool="window" data-i18n="toolWindow" data-i18n-title="toolWindowT">Window</button>
+        <button class="tool" data-tool="velux" data-i18n="toolVelux" data-i18n-title="toolVeluxT">☀ Velux</button>
+        <label id="veluxFreeLbl" style="display:none;align-items:center;gap:4px;font-size:11px;color:var(--dim);cursor:pointer" data-i18n-title="veluxFreeT"><input type="checkbox" id="veluxFree"> <span data-i18n="veluxFree">may cut trusses</span></label>
+      </div>
+      <div class="rcap" data-i18n="rgOpenings">Openings</div>
+    </div>
+    <div class="rgsep"></div>
+    <div class="rgroup">
+      <div class="rbtns">
+        <button class="tool" data-tool="label" data-i18n="toolLabel" data-i18n-title="toolLabelT">Label</button>
+        <button class="tool" data-tool="measure" data-i18n="toolMeasure" data-i18n-title="toolMeasureT">📏 Measure</button>
+      </div>
+      <div class="rcap" data-i18n="rgAnnotate">Annotate</div>
+    </div>
+    <div class="rgsep"></div>
+    <div class="rgroup">
+      <div class="rbtns">
+        <button class="tool" data-tool="furn" data-i18n="toolFurn" data-i18n-title="toolFurnT">🍳 Furniture</button>
+        <select id="furnKind" style="display:none"></select>
+        <div class="menu" id="furnMenu">
+          <button class="menubtn" id="furnMenuBtn">🗄 ▾</button>
+          <div class="dropdown" id="furnDrop" style="min-width:290px;max-height:62vh;overflow:auto"></div>
+        </div>
+      </div>
+      <div class="rcap" data-i18n="rgFurniture">Furniture</div>
+    </div>
+    <div class="rgsep"></div>
+    <div class="rgroup" data-wmode="huset">
+      <div class="rbtns">
+        <button id="roofDialogBtn" data-i18n="roofMenu" data-i18n-title="roofEditT">🏠 Roof…</button>
+        <button id="lightsMenuBtn" data-i18n="lightsMenu" data-i18n-title="lightsT">☀ Roof light…</button>
+      </div>
+      <div class="rcap" data-i18n="rgHouse">House</div>
+    </div>
+    <div class="rgsep"></div>
+    <div class="rgroup" data-wmode="ideer">
+      <div class="rbtns">
+        <button class="tool" data-tool="sketch" data-i18n="toolSketch" data-i18n-title="toolSketchT">✏ Sketch</button>
+        <button id="describeBtn" data-i18n="describe" data-i18n-title="describeT">Describe</button>
+      </div>
+      <div class="rcap" data-i18n="rgSketchAI">Sketch & describe</div>
+    </div>
+  </div>
+  <div class="rpanel" data-rpanel="view">
+    <div class="rgroup">
+      <div class="rbtns">
+        <button id="view2d">2D</button>
+        <button id="viewBoth">2D+3D</button>
+        <button id="view3d">3D</button>
+      </div>
+      <div class="rcap" data-i18n="rgLayout">Layout</div>
+    </div>
+    <div class="rgsep"></div>
+    <div class="rgroup">
+      <div class="rbtns">
+        <button id="roofBtn" data-i18n-title="roofBtnT">🏠 Roof</button>
+        <button id="doorsBtn" data-i18n-title="doorsBtnT">🚪 Doors</button>
+      </div>
+      <div class="rcap" data-i18n="rgShow">Show</div>
+    </div>
+  </div>
+  <div class="rpanel" data-rpanel="export">
+    <div class="rgroup">
+      <div class="rbtns">
         <button id="exportPng">🖼 PNG</button>
         <button id="exportGlb" data-i18n-title="glbT">📦 .glb</button>
+      </div>
+      <div class="rcap" data-i18n="rgImage">Image / 3D</div>
+    </div>
+    <div class="rgsep"></div>
+    <div class="rgroup">
+      <div class="rbtns">
         <button id="serverRender" data-i18n="render" data-i18n-title="renderT">🖥 Render</button>
         <select id="renderQuality" data-i18n-title="renderQualT">
           <option value="fast" data-i18n="renderFast">Fast</option>
           <option value="fine" selected data-i18n="renderFine">Fine</option>
         </select>
       </div>
-    </div>
-  <div id="phaseTabs">
-    <button data-phase="hus" data-i18n="phaseHus" data-i18n-title="phaseHusT">1 · House</button>
-    <button data-phase="detaljer" data-i18n="phaseDet" data-i18n-title="phaseDetT">2 · Details</button>
-    <button data-phase="ideer" data-i18n="phaseIdeer" data-i18n-title="phaseIdeerT">3 · Ideas</button>
-  </div>
-  <div id="rightGrp">
-    <span id="tabWarn" style="display:none;color:#ffb454;font-weight:600"></span>
-    <div class="grp" id="variantGrp">
-      <span id="modeBadge" class="nutid">🏠 NUTID</span>
-      <select id="variantSel"></select>
-      <button id="variantAdd" data-i18n-title="variantAddT">+</button>
-      <div class="menu">
-        <button class="menubtn" data-i18n-title="variantMoreT">⋯</button>
-        <div class="dropdown" style="min-width:210px;right:0;left:auto">
-          <button id="variantRen" data-i18n="rename">Rename</button>
-          <button id="variantNotes" data-i18n="variantNotesM" data-i18n-title="variantNotesT">📝 Notes</button>
-          <button id="variantHideDem" data-i18n-title="hideDemT"></button>
-          <hr>
-          <button id="variantDel" class="danger" data-i18n="variantDelM">✕ Delete variant</button>
-        </div>
-      </div>
-    </div>
-    <div class="menu">
-      <button class="menubtn" id="viewMenuBtn" data-i18n-title="viewMenuT">👁 2D+3D ▾</button>
-      <div class="dropdown" style="min-width:150px;right:0;left:auto">
-        <button id="view2d">2D</button>
-        <button id="viewBoth">2D+3D</button>
-        <button id="view3d">3D</button>
-        <hr>
-        <button id="roofBtn" data-i18n-title="roofBtnT">🏠 Roof</button>
-        <button id="doorsBtn" data-i18n-title="doorsBtnT">🚪 Doors</button>
-      </div>
+      <div class="rcap" data-i18n="rgRender">Render</div>
     </div>
   </div>
-</div>
-<div id="toolbar">
-  <button id="undoBtn" data-i18n-title="undoT">↶</button>
-  <button id="redoBtn" data-i18n-title="redoT">↷</button>
-  <span class="tsep"></span>
-    <button class="tool active" data-tool="select" data-i18n="toolSelect" data-i18n-title="toolSelectT">Select</button>
-    <button class="tool" data-tool="wall" data-i18n="toolWall" data-i18n-title="toolWallT">Wall</button>
-    <button class="tool" data-tool="room" data-i18n="toolRoom" data-i18n-title="toolRoomT">⬛ Room</button>
-    <select id="wallTypeSel" data-ph="hus ideer" data-i18n-title="wallTypeT">
-      <option value="outer" data-i18n="wallTypeOuter">Outer wall (35 cm)</option>
-      <option value="inner" data-i18n="wallTypeInner">Inner wall (10 cm)</option>
-    </select>
-    <button class="tool" data-tool="door" data-i18n="toolDoor" data-i18n-title="toolDoorT">Door</button>
-    <button class="tool" data-tool="window" data-i18n="toolWindow" data-i18n-title="toolWindowT">Window</button>
-    <button class="tool" data-tool="label" data-i18n="toolLabel" data-i18n-title="toolLabelT">Label</button>
-    <button class="tool" data-tool="sketch" data-i18n="toolSketch" data-i18n-title="toolSketchT">✏ Sketch</button>
-    <button class="tool" data-tool="measure" data-i18n="toolMeasure" data-i18n-title="toolMeasureT">📏 Measure</button>
-    <button class="tool" data-tool="furn" data-i18n="toolFurn" data-i18n-title="toolFurnT">🍳 Furniture</button>
-    <select id="furnKind" style="display:none"></select>
-    <div class="menu" id="furnMenu">
-      <button class="menubtn" id="furnMenuBtn">🗄 ▾</button>
-      <div class="dropdown" id="furnDrop" style="min-width:290px;max-height:62vh;overflow:auto"></div>
-    </div>
 </div>
 </header>
 <div id="guideBar" style="display:none">
@@ -358,12 +433,16 @@ en: {
   newPlan:'🆕 New house plan', newPlanT:'Start a fresh, empty plan — the current one is kept in 🕘 Version history, and any open file is left untouched',
   confirmNew:'Start a new, empty house plan?\n\nThe current plan is saved to 🕘 Version history first, and the open plan file (if any) is left untouched.',
   'ver_before-new':'before new plan',
-  toolSelect:'Select', toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
+  toolSelect:'🖱', toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
   toolRoom:'⬛ Room', toolRoomT:'Drag a rectangle to make a room — four walls plus a room name in one go. Snaps onto nearby walls and reuses them; hold Shift for no snapping.',
   wallTypeOuter:'Outer wall (35 cm)', wallTypeInner:'Inner wall (10 cm)',
   wallTypeT:'Wall thickness for new walls — outer walls for the shell, inner walls for room dividers. Fine-tune any wall in its properties.',
   undoT:'Undo (Ctrl+Z)', redoT:'Redo (Ctrl+Y)',
   toolDoor:'Door', toolDoorT:'Click on a wall (D)', toolWindow:'Window', toolWindowT:'Click on a wall (N)',
+  toolVelux:'☀ Velux', toolVeluxT:'Click the plan to place a roof window — it snaps into the free bays between the roof trusses',
+  veluxFree:'may cut trusses', veluxFreeT:'Unchecked: the window snaps into the free bays between trusses. Checked: place it anywhere, even through a truss.',
+  hintNoPitched:'Needs a pitched roof — create one via 🏠 Roof…', hintVeluxTooWide:'Window is wider than the bay between trusses — tick "may cut trusses" or make it narrower.',
+  veluxProps:'☀ Roof window (velux)', veluxSide:'roof side', veluxDel:'Delete roof window',
   toolLabel:'Label', toolLabelT:'Place a text label (L)', toolSketch:'✏ Sketch', toolSketchT:'Freehand sketch with a note — an AI assistant can turn it into walls (S)',
   toolMeasure:'📏 Measure', toolMeasureT:'Measure distance (M): click two points; Esc clears', toolFurn:'🍳 Furniture', toolFurnT:'Place furniture (F) — click in the plan; R rotates selection',
   newWalls:'Draw walls as:', wallKindBase:'Part of the existing house', wallKindNew:'New (this idea)',
@@ -395,7 +474,7 @@ en: {
   renderQualT:'Render quality: Fast ≈ 10 s (composition check), Fine = the final image', renderFast:'Fast', renderFine:'Fine',
   reset:'Reset', resetT:'Reset to an empty plan',
   legendKept:'existing (kept)', legendRemoved:'demolished here', legendNew:'new in this variant', legendSketch:'sketch (note for the AI assistant)',
-  firstRun:'<b>👋 Empty plan.</b><br>Draw walls with <b>W</b>, or load a photo of your floor plan (Plan ▾ → Load…) and trace over it (set the scale with <b>Scale</b>).<br>Draw the house <b>as it is today</b> first — then copy it (+) for each idea you want to try.',
+  firstRun:'<b>👋 Empty plan.</b><br>Draw walls with <b>W</b>, or load a photo of your floor plan (<b>1 · The house today → Load…</b>) and trace over it (set the scale with <b>Scale</b>).<br>Draw the house <b>as it is today</b> first — then switch to <b>2 · Ideas</b> and copy it (+) for each idea you want to try.',
   hintBar:'V select · W wall · D door · N window · L label · S sketch · Del delete · R = toggle demolish · walls snap to 45°/90° — hold Shift for free angles · drag empty/middle = pan · wheel = zoom',
   clickCycle:'click again to switch wall',
   walkBtn:'🚶 Walk', walkBtnT:'Walk around the house: WASD + mouse (Shift = run). Esc releases the mouse.',
@@ -448,6 +527,10 @@ en: {
   roofEditT:'Create/edit the roof (presets)', hintRoofCreated:'🏠 Roof created — the 🏠 button toggles it in 3D.',
   confirmRoofRemove:'Remove the roof from the plan?',
   menuFile:'File', menuPlan:'Plan', menuExport:'Export', menuVersions:'Version history', menuSettings:'Settings',
+  tabToday:'1 · The house today', tabTodayT:'Draw the house as it IS — walls here are the ground truth every idea builds on', tabIdeas:'2 · Ideas', tabIdeasT:'Try out renovation ideas — new walls, demolitions and sketches live in the selected idea, the real house stays untouched', tabView:'View',
+  rgHistory:'History', rgDraw:'Draw', rgOpenings:'Openings', rgAnnotate:'Annotate', rgFurniture:'Furniture',
+  rgHouse:'House', rgUnderlay:'Underlay', rgLayout:'Layout', rgShow:'Show', rgImage:'Image / 3D', rgRender:'Render',
+  rgIdea:'Idea', rgSketchAI:'Sketch & describe',
   roofMenu:'🏠 Roof…', variantMoreT:'More actions for this idea', variantNotesM:'📝 Notes', variantDelM:'✕ Delete idea',
   modeNutid:'🏠 TODAY', modeIdea:'💡 IDEA',
   modeNutidT:'You are editing the house as it is TODAY. Changes here show up in every idea.',
@@ -464,12 +547,16 @@ da: {
   newPlan:'🆕 Ny husplan', newPlanT:'Start en frisk, tom plan — den nuværende gemmes i 🕘 Versionshistorik, og en evt. åben fil røres ikke',
   confirmNew:'Start en ny, tom husplan?\n\nDen nuværende plan gemmes først i 🕘 Versionshistorik, og en evt. åben plan-fil røres ikke.',
   'ver_before-new':'før ny plan',
-  toolSelect:'Vælg', toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
+  toolSelect:'🖱', toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
   toolRoom:'⬛ Rum', toolRoomT:'Træk et rektangel for at lave et rum — fire vægge og et rumnavn på én gang. Snapper til nærliggende vægge og genbruger dem; hold Shift for ingen snap.',
   wallTypeOuter:'Ydervæg (35 cm)', wallTypeInner:'Indervæg (10 cm)',
   wallTypeT:'Vægtykkelse for nye vægge — ydervægge til skallen, indervægge til rumdelere. Finjustér enhver væg i dens egenskaber.',
   undoT:'Fortryd (Ctrl+Z)', redoT:'Gentag (Ctrl+Y)',
   toolDoor:'Dør', toolDoorT:'Klik på en væg (D)', toolWindow:'Vindue', toolWindowT:'Klik på en væg (N)',
+  toolVelux:'☀ Velux', toolVeluxT:'Klik på planen for at placere et ovenlysvindue — det snapper ind i de frie fag mellem spærene',
+  veluxFree:'må gå gennem spær', veluxFreeT:'Uden flueben: vinduet snapper ind i de frie fag mellem spærene. Med flueben: placér frit, også gennem et spær.',
+  hintNoPitched:'Kræver et saddeltag — opret det via 🏠 Tag…', hintVeluxTooWide:'Vinduet er bredere end faget mellem spærene — sæt flueben ved "må gå gennem spær" eller gør det smallere.',
+  veluxProps:'☀ Ovenlysvindue (velux)', veluxSide:'tagflade', veluxDel:'Slet ovenlysvindue',
   toolLabel:'Tekst', toolLabelT:'Placér en tekst (L)', toolSketch:'✏ Skitse', toolSketchT:'Frihåndsskitse med note — en AI-assistent kan lave den om til vægge (S)',
   toolMeasure:'📏 Mål', toolMeasureT:'Mål afstand (M): klik to punkter; Esc rydder', toolFurn:'🍳 Møbel', toolFurnT:'Placér møbel (F) — klik i planen; R roterer valgt møbel',
   newWalls:'Tegn vægge som:', wallKindBase:'Del af det eksisterende hus', wallKindNew:'Nye (denne idé)',
@@ -501,7 +588,7 @@ da: {
   renderQualT:'Render-kvalitet: Hurtig ≈ 10 s (kompositions-tjek), Fin = det færdige billede', renderFast:'Hurtig', renderFine:'Fin',
   reset:'Nulstil', resetT:'Nulstil til en tom plan',
   legendKept:'eksisterende (beholdt)', legendRemoved:'revet ned her', legendNew:'ny i denne variant', legendSketch:'skitse (note til AI-assistenten)',
-  firstRun:'<b>👋 Tom plan.</b><br>Tegn vægge med <b>W</b>, eller indlæs et foto af din plantegning (Plan ▾ → Indlæs…) og tegn ovenpå (sæt målestokken med <b>Målestok</b>).<br>Tegn huset <b>som det er i dag</b> først — kopiér det så (+) for hver idé du vil prøve.',
+  firstRun:'<b>👋 Tom plan.</b><br>Tegn vægge med <b>W</b>, eller indlæs et foto af din plantegning (<b>1 · Huset i dag → Indlæs…</b>) og tegn ovenpå (sæt målestokken med <b>Målestok</b>).<br>Tegn huset <b>som det er i dag</b> først — skift så til <b>2 · Idéer</b> og kopiér det (+) for hver idé du vil prøve.',
   hintBar:'V vælg · W væg · D dør · N vindue · L tekst · S skitse · Del slet · R = riv ned/behold · vægge snapper til 45°/90° — hold Shift for frie vinkler · træk tomt/midterklik = panorér · hjul = zoom',
   clickCycle:'klik igen for at skifte væg',
   walkBtn:'🚶 Gå-tur', walkBtnT:'Gå rundt i huset: WASD + mus (Shift = løb). Esc slipper musen igen.',
@@ -554,6 +641,10 @@ da: {
   roofEditT:'Opret/redigér taget (forudindstillinger)', hintRoofCreated:'🏠 Tag oprettet — 🏠-knappen slår det til/fra i 3D.',
   confirmRoofRemove:'Fjern taget fra planen?',
   menuFile:'Filer', menuPlan:'Plan', menuExport:'Eksport', menuVersions:'Versionshistorik', menuSettings:'Indstillinger',
+  tabToday:'1 · Huset i dag', tabTodayT:'Tegn huset som det ER — vægge her er grundlaget, som alle idéer bygger på', tabIdeas:'2 · Idéer', tabIdeasT:'Prøv renoverings-idéer — nye vægge, nedrivninger og skitser ligger i den valgte idé, det rigtige hus røres ikke', tabView:'Vis',
+  rgHistory:'Historik', rgDraw:'Tegn', rgOpenings:'Åbninger', rgAnnotate:'Notér', rgFurniture:'Møbler',
+  rgHouse:'Hus', rgUnderlay:'Plantegning', rgLayout:'Layout', rgShow:'Vis', rgImage:'Billede / 3D', rgRender:'Rendér',
+  rgIdea:'Idé', rgSketchAI:'Skitse & beskriv',
   roofMenu:'🏠 Tag…', variantMoreT:'Flere handlinger for denne idé', variantNotesM:'📝 Noter', variantDelM:'✕ Slet idé',
   modeNutid:'🏠 NUTID', modeIdea:'💡 IDÉ',
   modeNutidT:'Du redigerer huset som det er I DAG. Ændringer her slår igennem i alle idéer.',
@@ -581,6 +672,43 @@ for(const m of document.querySelectorAll('.menu')){
   });
 }
 document.addEventListener('click', ()=>document.querySelectorAll('.menu.open').forEach(x=>x.classList.remove('open')));
+/* workflow mode: tab 1 edits the real house (nutid variant, walls are base),
+   tab 2 edits the selected idea (walls are new-in-variant) */
+let wmode='huset', lastIdea=null, hideVariantGrp=false;
+function switchVariantTo(id){
+  if(cv().id===id) return;
+  saveVersion('variant-switch'); S.meta.activeVariant=id; sel=null; updateProps(); refreshVariants(); changed();
+}
+function setRtab(name){
+  const tab=document.querySelector(`#ribbonTabs .rtab[data-rtab="${name}"]`);
+  const panel=(tab&&tab.dataset.panel)||name;
+  document.querySelectorAll('#ribbonTabs .rtab').forEach(b=>b.classList.toggle('active', b.dataset.rtab===name));
+  document.querySelectorAll('#ribbon .rpanel').forEach(p=>p.classList.toggle('active', p.dataset.rpanel===panel));
+  if(name==='huset'||name==='ideer'){
+    wmode=name;
+    document.getElementById('wallKind').value = name==='huset' ? 'base' : 'new';
+    if(name==='huset' && cv().id!=='nutid'){ lastIdea=cv().id; switchVariantTo('nutid'); }
+    if(name==='ideer' && cv().id==='nutid'){
+      const t = S.variants.find(v=>v.id===lastIdea) ? lastIdea : (S.variants.find(v=>v.id!=='nutid')||{}).id;
+      if(t) switchVariantTo(t);
+    }
+    refreshRibbonGroups();
+  }
+}
+function refreshRibbonGroups(){
+  document.querySelectorAll('#ribbon .rpanel').forEach(p=>{
+    let pendingSep=null, seen=false;
+    for(const el of p.children){
+      if(el.classList.contains('rgsep')){ el.style.display='none'; pendingSep=el; continue; }
+      if(!el.classList.contains('rgroup')) continue;
+      const modeOk = (!el.dataset.wmode || el.dataset.wmode===wmode) && !(el.id==='variantGrp' && hideVariantGrp);
+      const any = modeOk && [...el.querySelector('.rbtns').children].some(c=>c.style.display!=='none');
+      el.style.display=any?'':'none';
+      if(any){ if(seen && pendingSep) pendingSep.style.display=''; seen=true; pendingSep=null; }
+    }
+  });
+}
+document.querySelectorAll('#ribbonTabs .rtab').forEach(b=>b.onclick=()=>setRtab(b.dataset.rtab));
 function applyI18n(){
   for(const el of document.querySelectorAll('[data-i18n]')) el.textContent = T(el.dataset.i18n);
   for(const el of document.querySelectorAll('[data-i18n-title]')) el.title = T(el.dataset.i18nTitle);
@@ -1252,17 +1380,38 @@ function draw(){
   // roof windows (velux) — dashed outline at their plan position
   if(S.base.roof?.pitched){
     const Pp=S.base.roof.pitched, thR=Pp.pitch*Math.PI/180, mYR=(Pp.yN+Pp.yS)/2;
+    // while placing/moving a velux: show the trusses so the free bays are visible
+    if(tool==='velux' || sel?.type==='velux' || dragging?.type==='velux'){
+      ctx.strokeStyle='rgba(170,140,95,.55)'; ctx.lineWidth=Math.max(1.5, 0.07*view.ppm);
+      const sp=Pp.spacing||1.0;
+      for(let sx=Pp.x1+0.45; sx<Pp.x2-0.1; sx+=sp){
+        ctx.beginPath(); ctx.moveTo(...W2S(sx,Pp.yN)); ctx.lineTo(...W2S(sx,Pp.yS)); ctx.stroke();
+      }
+    }
     for(const w of (cv().roofWindows||[])){
       const dirR=(w.side==='S')?1:-1;
       const s1=w.sOff??1.2, s2=s1+(w.len??1.4);
       const ya=mYR+dirR*s1*Math.cos(thR), yb=mYR+dirR*s2*Math.cos(thR);
       const [px,py]=W2S(w.x-w.w/2, Math.min(ya,yb));
       const wpx=w.w*view.ppm, hpx=Math.abs(yb-ya)*view.ppm;
-      ctx.strokeStyle='#ffd166'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+      const isSel = sel?.type==='velux' && sel.rw===w;
+      ctx.strokeStyle=isSel?'#4da3ff':'#ffd166'; ctx.lineWidth=isSel?2.5:2; ctx.setLineDash([6,4]);
       ctx.strokeRect(px,py,wpx,hpx);
       ctx.setLineDash([]);
-      ctx.fillStyle='#ffd166'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillStyle=isSel?'#4da3ff':'#ffd166'; ctx.font='10px sans-serif'; ctx.textAlign='center';
       ctx.fillText('☀ velux', px+wpx/2, py+hpx/2+3);
+    }
+    // live preview under the mouse (green = fits between trusses, red = does not)
+    if(tool==='velux' && !dragging){
+      const p=veluxPlace(mouse.wx, mouse.wy, 0.78, 1.4, document.getElementById('veluxFree').checked);
+      if(p){
+        const dirR=(p.side==='S')?1:-1;
+        const ya=mYR+dirR*p.sOff*Math.cos(thR), yb=mYR+dirR*(p.sOff+p.len)*Math.cos(thR);
+        const [px,py]=W2S(p.x-p.w/2, Math.min(ya,yb));
+        ctx.strokeStyle=p.ok?'#7be07b':'#ff6b6b'; ctx.lineWidth=2; ctx.setLineDash([5,4]);
+        ctx.strokeRect(px,py,p.w*view.ppm,Math.abs(yb-ya)*view.ppm);
+        ctx.setLineDash([]);
+      }
     }
   }
   // labels (+ room area if the label sits in an enclosed room)
@@ -1416,8 +1565,50 @@ function updateHoverTip(){
     hoverTip.style.display='';
   } else hoverTip.style.display='none';
 }
+/* velux placement: snap the window into the free bays between roof trusses */
+function veluxSnapX(mx,w){
+  const P=S.base.roof.pitched, sp=P.spacing||1.0, H=0.045; // half truss chord + a little clearance
+  const bounds=[P.x1];
+  for(let sx=P.x1+0.45; sx<P.x2-0.1; sx+=sp) bounds.push(sx-H, sx+H);
+  bounds.push(P.x2);
+  let best=null;
+  for(let i=0;i+1<bounds.length;i+=2){
+    const a=bounds[i], b=bounds[i+1];
+    if(b-a < w+0.01) continue;                       // bay too narrow for this window
+    const cx=Math.max(a+w/2+0.005, Math.min(b-w/2-0.005, mx));
+    const d=Math.abs(cx-mx);
+    if(!best || d<best.d) best={x:+cx.toFixed(2), d};
+  }
+  return best ? {x:best.x, ok:true} : {x:Math.round(mx*20)/20, ok:false};
+}
+// mouse (wx,wy) → roof-window fields {x, side, w, len, sOff}; ok=false if it can't fit between trusses
+function veluxPlace(wx,wy,w,len,free,offX=0,offS=0){
+  const P=S.base.roof?.pitched; if(!P) return null;
+  const th=P.pitch*Math.PI/180, cs=Math.cos(th), mY=(P.yN+P.yS)/2;
+  const slopeLen=(P.yS-P.yN)/2/cs;
+  const sc=(wy-mY)/cs + offS;                        // signed slope position of the window centre (+ = south)
+  const side = sc>=0 ? 'S' : 'N';
+  const sMag=Math.min(Math.max(0.05+len/2, Math.abs(sc)), Math.max(0.05+len/2, slopeLen-0.05-len/2));
+  const sOff=+(sMag-len/2).toFixed(2);
+  let x=wx+offX, ok=true;
+  if(free) x=Math.round(x*20)/20;
+  else { const s=veluxSnapX(x,w); x=s.x; ok=s.ok; }
+  x=+Math.max(P.x1+w/2, Math.min(P.x2-w/2, x)).toFixed(2);
+  return {x, side, w, len, sOff, ok};
+}
+
 function pick(wx,wy){
   const tol=8/view.ppm;
+  if(S.base.roof?.pitched){
+    const Pp=S.base.roof.pitched, thR=Pp.pitch*Math.PI/180, mYR=(Pp.yN+Pp.yS)/2;
+    for(const rw of (cv().roofWindows||[])){
+      const dirR=(rw.side==='S')?1:-1, s1=rw.sOff??1.2, s2=s1+(rw.len??1.4);
+      const ya=mYR+dirR*s1*Math.cos(thR), yb=mYR+dirR*s2*Math.cos(thR);
+      if(wx>rw.x-(rw.w??0.78)/2-tol && wx<rw.x+(rw.w??0.78)/2+tol &&
+         wy>Math.min(ya,yb)-tol && wy<Math.max(ya,yb)+tol)
+        return {type:'velux', rw};
+    }
+  }
   for(const {o} of visibleOpenings()){
     const w=findWall(o.wall); if(!w) continue;
     const n=nearestOnWall(w,wx,wy);
@@ -1504,6 +1695,16 @@ c2d.addEventListener('pointerdown', e=>{
     cv().furniture.push(f); sel={type:'furn',id:f.id,f}; changed(); updateProps();
     return;
   }
+  if(tool==='velux'){
+    if(!S.base.roof?.pitched){ flashHint(T('hintNoPitched')); return; }
+    const free=document.getElementById('veluxFree').checked;
+    const p=veluxPlace(wx,wy,0.78,1.4,free);
+    if(!p.ok && !free){ flashHint(T('hintVeluxTooWide')); return; }
+    const rw={x:p.x, side:p.side, w:p.w, len:p.len, sOff:p.sOff};
+    (cv().roofWindows ??= []).push(rw);
+    sel={type:'velux', rw}; changed(); updateProps();
+    return;
+  }
   if(tool==='underlay'){
     if(underlay) dragging={type:'underlay',wx,wy,x0:underlay.x,y0:underlay.y};
     return;
@@ -1555,6 +1756,11 @@ c2d.addEventListener('pointerdown', e=>{
         flashHint(T('hintOpeningLocked'));
       else dragging={type:'opening',o:hit.o};
     }
+    else if(hit.type==='velux'){
+      const rw=hit.rw, Pp=S.base.roof.pitched, csV=Math.cos(Pp.pitch*Math.PI/180), mYv=(Pp.yN+Pp.yS)/2;
+      const scV=((rw.side==='S')?1:-1)*((rw.sOff??1.2)+(rw.len??1.4)/2);
+      dragging={type:'velux', rw, offX:rw.x-wx, offS:scV-(wy-mYv)/csV};
+    }
     else if(hit.type==='furn') dragging={type:'furn',f:hit.f,wx,wy,x0:hit.f.at[0],y0:hit.f.at[1]};
     else if(hit.type==='label') dragging={type:'label',l:hit.l,wx,wy,x0:hit.l.at[0],y0:hit.l.at[1]};
     else if(hit.type==='wall'){
@@ -1603,6 +1809,11 @@ c2d.addEventListener('pointermove', e=>{
     else if(dragging.type==='furn'){
       dragging.f.at=[+(dragging.x0+(mouse.wx-dragging.wx)).toFixed(2), +(dragging.y0+(mouse.wy-dragging.wy)).toFixed(2)];
     }
+    else if(dragging.type==='velux'){
+      const rw=dragging.rw, free=document.getElementById('veluxFree').checked;
+      const p=veluxPlace(mouse.wx, mouse.wy, rw.w??0.78, rw.len??1.4, free, dragging.offX, dragging.offS);
+      if(p){ rw.side=p.side; rw.sOff=p.sOff; if(p.ok||free) rw.x=p.x; }
+    }
     else if(dragging.type==='furnresize'){
       const th=dragging.th;
       const dx=mouse.wx-dragging.cx0, dy=mouse.wy-dragging.cy0;
@@ -1631,7 +1842,7 @@ c2d.addEventListener('pointermove', e=>{
     }
     draw(); return;
   }
-  if(drawing||tool==='wall'||(tool==='room'&&roomStart)||(tool==='measure'&&measureStart)) draw();
+  if(drawing||tool==='wall'||tool==='velux'||(tool==='room'&&roomStart)||(tool==='measure'&&measureStart)) draw();
 });
 c2d.addEventListener('pointerup', ()=>{
   if(dragging?.type==='room'){
@@ -1779,6 +1990,10 @@ function deleteSel(){
       }
     }
     cv().openings=cv().openings.filter(o=>o.id!==sel.id);
+  } else if(sel.type==='velux'){
+    const v=cv();
+    v.roofWindows=(v.roofWindows||[]).filter(r=>r!==sel.rw);
+    if(!v.roofWindows.length) delete v.roofWindows;
   } else if(sel.type==='furn'){
     cv().furniture=cv().furniture.filter(f=>f!==sel.f);
   } else if(sel.type==='label'){
@@ -1874,6 +2089,21 @@ function updateProps(){
     propsEl.querySelector('#pFA').onchange=e=>{ f.angle=parseFloat(e.target.value)||0; changed(); };
     propsEl.querySelector('#pRot').onclick=()=>{ f.angle=((f.angle||0)+90)%360; changed(); updateProps(); };
     propsEl.querySelector('#pDel').onclick=deleteSel;
+  } else if(sel.type==='velux'){
+    const rw=sel.rw;
+    propsEl.innerHTML=`<h3>${T('veluxProps')}</h3>
+      <div class="row"><label>x (m)</label><input type="number" id="pVx" step="0.05" value="${rw.x}"></div>
+      <div class="row"><label>w (m)</label><input type="number" id="pVw" step="0.02" min="0.3" max="4" value="${rw.w??0.78}"></div>
+      <div class="row"><label>len (m)</label><input type="number" id="pVl" step="0.1" min="0.4" max="4" value="${rw.len??1.4}"></div>
+      <div class="row"><label>off (m)</label><input type="number" id="pVo" step="0.05" min="0" value="${rw.sOff??1.2}"></div>
+      <div class="row"><label>${T('veluxSide')}</label><select id="pVs"><option value="N"${rw.side!=='S'?' selected':''}>N</option><option value="S"${rw.side==='S'?' selected':''}>S</option></select></div>
+      <div class="row"><label style="cursor:pointer"><input type="checkbox" id="pVfree" ${document.getElementById('veluxFree').checked?'checked':''}> ${T('veluxFree')}</label></div>
+      <div class="row"><button id="pDel" class="danger" style="width:100%">${T('veluxDel')}</button></div>`;
+    const numF=(q,f)=>{ propsEl.querySelector(q).onchange=e=>{ const n=parseFloat(e.target.value); if(Number.isFinite(n)){ f(n); changed(); } }; };
+    numF('#pVx',n=>rw.x=n); numF('#pVw',n=>rw.w=n); numF('#pVl',n=>rw.len=n); numF('#pVo',n=>rw.sOff=n);
+    propsEl.querySelector('#pVs').onchange=e=>{ rw.side=e.target.value; changed(); };
+    propsEl.querySelector('#pVfree').onchange=e=>{ document.getElementById('veluxFree').checked=e.target.checked; };
+    propsEl.querySelector('#pDel').onclick=deleteSel;
   } else if(sel.type==='sketch'){
     const st=sel.st;
     propsEl.innerHTML=`<h3>Sketch · ${esc(st.id)}</h3>
@@ -1900,6 +2130,7 @@ function setTool(t){
   tool=t; drawing=null; calibPts=[]; sketchStroke=null; lenBuf=''; roomStart=null;
   if(t!=='measure'){ measures=[]; measureStart=null; }
   document.querySelectorAll('button.tool').forEach(b=>b.classList.toggle('active',b.dataset.tool===t));
+  const vfl=document.getElementById('veluxFreeLbl'); if(vfl) vfl.style.display = t==='velux' ? 'inline-flex' : 'none';
   c2d.style.cursor = t==='select'?'default':t==='underlay'?'move':'crosshair';
   draw();
 }
@@ -1921,7 +2152,8 @@ function refreshLightToggles(){
   if(hd) hd.textContent=(v.hideDemolished?'☑ ':'☐ ')+T('hideDem');
 }
 function refreshVariants(){
-  vsel.innerHTML=S.variants.map(v=>`<option value="${esc(v.id)}" ${v.id===S.meta.activeVariant?'selected':''}>${esc(v.name)}</option>`).join('');
+  // nutid is not in the picker — the "house today" ribbon tab is how you edit it
+  vsel.innerHTML=S.variants.filter(v=>v.id!=='nutid').map(v=>`<option value="${esc(v.id)}" ${v.id===S.meta.activeVariant?'selected':''}>${esc(v.name)}</option>`).join('');
   refreshLightToggles();
 }
 vsel.onchange=()=>{ saveVersion('variant-switch'); S.meta.activeVariant=vsel.value; sel=null; updateProps(); refreshLightToggles(); changed(); };
@@ -1953,11 +2185,12 @@ document.getElementById('variantNotes').onclick=()=>{
   if(n!==null){ cv().notes=n; changed(); }
 };
 document.getElementById('variantDel').onclick=()=>{
-  if(S.variants.length<=1) return alert('At least one variant is required.');
+  if(S.variants.length<=1 || cv().id==='nutid') return alert('At least one variant is required.');
   if(confirm(`Delete variant "${cv().name}"?`)){
     S.variants=S.variants.filter(v=>v.id!==cv().id);
     S.meta.activeVariant=S.variants[0].id;
     refreshVariants(); changed();
+    if(S.meta.activeVariant==='nutid') setRtab('huset');
   }
 };
 
@@ -2582,6 +2815,7 @@ window.planAPI = {
   validate: validatePlan,
   showVariant: id=>{ S.meta.activeVariant=id; refreshVariants(); changed(); return 'ok'; },
   fitView: ()=>{ fitView(); return 'ok'; },
+  w2s: (x,y)=>W2S(x,y), s2w: (px,py)=>S2W(px,py),   // agent hook: 2D view transform (CSS px)
   view3d: (px,py,pz,tx,ty,tz)=>{
     if(!three) return 'no 3d';
     three.camera.position.set(px,py,pz);
@@ -3157,7 +3391,7 @@ snapshotNow();
    The beginner guide walks through the same phases on an empty plan. ==================== */
 const PHASES={
   hus:      {tools:['select','room','wall','measure','underlay','calib'], furn:false, variants:false, exportM:false},
-  detaljer: {tools:['select','door','window','label','furn'], furn:true, variants:false, exportM:false},
+  detaljer: {tools:['select','door','window','velux','label','furn'], furn:true, variants:false, exportM:false},
   ideer:    {tools:null, furn:true, variants:true, exportM:true},
 };
 let phase='ideer';
@@ -3165,28 +3399,18 @@ function applyPhase(){
   const stepIntro = guide && guide.step===1;
   const P=PHASES[phase]||PHASES.ideer;
   const allow = stepIntro ? ['select'] : P.tools;
-  document.querySelectorAll('#toolbar button.tool').forEach(b=>{
+  document.querySelectorAll('#ribbon button.tool').forEach(b=>{
     b.style.display=(!allow||allow.includes(b.dataset.tool))?'':'none';
   });
-  // toolbar row is contextual; the menubar row NEVER changes outside the intro wizard
+  // ribbon strip is contextual; the tab row itself only changes inside the intro wizard
   document.getElementById('furnMenu').style.display = (!stepIntro && P.furn)?'':'none';
-  document.getElementById('variantGrp').style.display = guide ? (guide.step===4?'':'none') : '';
+  hideVariantGrp = guide ? guide.step!==4 : false;
   document.getElementById('exportMenu').style.display = guide ? (guide.step===4?'':'none') : '';
-  document.getElementById('planMenu').style.display = stepIntro ? 'none' : '';
-  document.getElementById('phaseTabs').style.display = guide?'none':'';
-  document.querySelectorAll('[data-ph]').forEach(el=>{
-    el.style.display = el.dataset.ph.split(' ').includes(phase) ? '' : 'none';
-  });
-  for(const b of document.querySelectorAll('#phaseTabs button'))
-    b.classList.toggle('active', b.dataset.phase===phase);
+  refreshRibbonGroups();
+  const at=document.querySelector('#ribbonTabs .rtab.active');
+  if(at && at.style.display==='none') setRtab('huset');
   if(allow && !allow.includes(tool)) setTool('select'); else draw();
 }
-function setPhase(p){
-  phase=p;
-  if(!guide){ PREFS.phase=p; savePrefs(); }
-  applyPhase();
-}
-for(const b of document.querySelectorAll('#phaseTabs button')) b.onclick=()=>setPhase(b.dataset.phase);
 
 function applyGuide(){
   const bar=document.getElementById('guideBar'); if(!bar) return;
@@ -3194,6 +3418,7 @@ function applyGuide(){
   bar.style.display='flex';
   const st=guide.step;
   phase = st===3 ? 'detaljer' : st===4 ? 'ideer' : 'hus';
+  setRtab(st===4 ? 'ideer' : 'huset');
   document.getElementById('gStep').textContent=T('gStepLbl')(st);
   document.getElementById('gText').textContent =
     st===1 ? T('gStep1Text')
@@ -3212,7 +3437,7 @@ function applyGuide(){
   applyPhase();
 }
 function finishGuide(){
-  guide=null; PREFS.guideDone=true; PREFS.phase=phase; savePrefs(); applyGuide();
+  guide=null; PREFS.guideDone=true; phase='ideer'; savePrefs(); applyGuide();
 }
 document.getElementById('gReno').onclick=()=>{ guide.kind='reno'; guide.step=2; applyGuide(); };
 document.getElementById('gNew').onclick=()=>{ guide.kind='new'; guide.step=2; applyGuide(); };
@@ -3229,9 +3454,10 @@ document.getElementById('inspectBtn').onclick=()=>{
 if(!PREFS.guideDone && !S.base.walls.length && S.variants.every(v=>!(v.walls||[]).length)){
   guide={step:1, kind:null};
 } else {
-  phase = PREFS.phase || 'ideer';
+  phase = 'ideer';
 }
 applyGuide();
+if(!guide) setRtab(S.meta.activeVariant==='nutid' ? 'huset' : 'ideer');
 
 init3d();
 </script>

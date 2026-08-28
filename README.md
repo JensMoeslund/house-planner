@@ -37,7 +37,8 @@ a "clean slate" switch that hides the demolition markings entirely.
 - Live 3D view + walk-through mode
 - Sunlight simulation for your exact location, any date and time
 - Roofs in two clicks: classic gable roof with trusses, or flat roof — plus roof windows,
-  skylight strips and glass gables per idea
+  skylight strips and glass gables per idea. Roof windows are placed with the mouse and
+  snap into the free bays between the trusses (with an opt-out if you're happy to cut one)
 - Photorealistic pictures, three ways (⚙ Settings): right **in the browser** (default,
   zero setup), via a **downloaded script for Blender** on your own computer, or on a
   self-hosted **render server**
