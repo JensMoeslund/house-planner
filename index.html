@@ -62,6 +62,23 @@
   .ddrow{display:flex; gap:5px; align-items:center;}
   .ddrow input[type=range]{flex:1;}
   .furnGrid{display:grid; grid-template-columns:1fr 1fr; gap:4px;}
+  /* Sims-style horizontal furniture browser docked at the bottom */
+  #furnBar{position:fixed; left:0; right:0; bottom:0; z-index:45; background:rgba(23,27,34,.97); border-top:2px solid var(--accent); display:flex; align-items:stretch; gap:10px; padding:7px 12px; height:168px; box-sizing:border-box; box-shadow:0 -8px 26px rgba(0,0,0,.45);}
+  #furnBarMain{flex:1; display:flex; flex-direction:column; min-width:0;}
+  #furnBarTabs{display:flex; gap:6px; margin-bottom:6px; overflow-x:auto; flex:0 0 auto;}
+  #furnBarTabs button{font-size:12px; padding:3px 11px; white-space:nowrap;}
+  #furnBarTabs button.fsel{border-color:var(--accent); color:var(--accent); font-weight:600;}
+  #furnBarRow{flex:1; display:flex; gap:8px; overflow-x:auto; overflow-y:hidden; align-items:flex-start;}
+  .furnCard{width:94px; flex:0 0 auto; cursor:pointer; text-align:center; background:#232833; border:1px solid var(--border); border-radius:8px; padding:4px 4px 3px; position:relative;}
+  .furnCard:hover{border-color:#5a6476;}
+  .furnCard.fsel{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent);}
+  .furnCard img{width:82px; height:82px; display:block; margin:0 auto;}
+  .furnCard .fcap{font-size:10.5px; line-height:1.2; height:25px; overflow:hidden;}
+  .furnCard .fdel{position:absolute; top:2px; right:2px; width:18px; height:18px; line-height:14px; padding:0; font-size:11px;}
+  #furnBarSide{display:flex; flex-direction:column; gap:5px; width:150px; flex:0 0 auto;}
+  #furnBarSide button{font-size:12px;}
+  #furnPrev{display:none; position:fixed; z-index:46; pointer-events:none; background:rgba(16,19,26,.96); border:1px solid var(--border); border-radius:10px; padding:8px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.5);}
+  #furnPrevCap{font-size:12px; margin-top:4px; color:var(--fg);}
   .furnGrid button{text-align:left; font-size:12px; padding:3px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .furnGrid button.fsel, .dropdown button.fsel{border-color:var(--accent); background:rgba(77,163,255,.15);}
   #guideBar{display:flex; align-items:center; gap:10px; padding:7px 12px; background:#1d2b42; border-bottom:2px solid var(--accent); font-size:13px;}
@@ -217,9 +234,8 @@
       <div class="rbtns">
         <button class="tool" data-tool="furn" data-i18n="toolFurn" data-i18n-title="toolFurnT">🍳 Furniture</button>
         <select id="furnKind" style="display:none"></select>
-        <div class="menu" id="furnMenu">
-          <button class="menubtn" id="furnMenuBtn">🗄 ▾</button>
-          <div class="dropdown" id="furnDrop" style="min-width:290px;max-height:62vh;overflow:auto"></div>
+        <div id="furnMenu" style="display:inline-block">
+          <button id="furnMenuBtn" data-i18n-title="furnBarT">🗄 ▾</button>
         </div>
       </div>
       <div class="rcap" data-i18n="rgFurniture">Furniture</div>
@@ -281,6 +297,21 @@
   </div>
 </div>
 </header>
+<div id="furnBar" style="display:none">
+  <div id="furnBarMain">
+    <div id="furnBarTabs"></div>
+    <div id="furnBarRow"></div>
+  </div>
+  <div id="furnBarSide">
+    <button id="furnImportBtn"></button>
+    <button id="furnImportDirBtn"></button>
+    <input type="file" id="furnImportFile" accept=".glb" multiple style="display:none">
+    <input type="file" id="furnImportDir" webkitdirectory multiple style="display:none">
+    <div style="flex:1"></div>
+    <button id="furnBarClose" class="danger">✕</button>
+  </div>
+</div>
+<div id="furnPrev"><canvas id="furnPrevC" width="260" height="220"></canvas><div id="furnPrevCap"></div></div>
 <div id="introModal" style="display:none;position:fixed;inset:0;background:rgba(10,13,18,.72);z-index:70">
   <div style="max-width:640px;margin:9vh auto;background:#1c212a;border:1px solid #3a4250;border-radius:14px;padding:28px 36px 24px;text-align:center;box-shadow:0 14px 60px rgba(0,0,0,.6)">
     <div style="font-size:46px;line-height:1">🏠</div>
@@ -539,6 +570,8 @@ en: {
   confirmDelModel:n=>`Delete the 3D model "${n}"? Placed copies stay in the plan as plain boxes.`,
   furnImportDir:'📁 Whole folder…', furnImportDirT:'Import every .glb file in a folder at once',
   catalogLbl:n=>`Catalog · ${n} free furniture models (CC0)`,
+  furnCatCatalog:'Catalog', furnBarT:'Browse furniture — bar at the bottom with 3D previews',
+  mineEmptyHint:'No imported 3D models yet — use the import buttons on the right, or pick pieces from the 📚 Catalog tab.',
   catalogFileHint:'📚 140 free furniture models ship with the tool in the <b>catalog</b> folder — click <b>📁 Whole folder…</b> above and pick that folder to import them all at once (the browser cannot read it by itself when the tool is opened as a file).',
   furnW:'Width (m)', furnD:'Depth (m)', furnH:'Height (m)', furnA:'Angle (°)', rotBtn:'↻ Rotate 90° (R)', delFurn:'Delete furniture',
   versionsT:'Version history — restore an earlier state of the plan', versionsTitle:'🕘 Version history (this browser)',
@@ -671,6 +704,8 @@ da: {
   confirmDelModel:n=>`Slet 3D-modellen "${n}"? Placerede kopier bliver i planen som simple kasser.`,
   furnImportDir:'📁 Hel mappe…', furnImportDirT:'Importér alle .glb-filer i en mappe på én gang',
   catalogLbl:n=>`Katalog · ${n} gratis møbler (CC0)`,
+  furnCatCatalog:'Katalog', furnBarT:'Gennemse møbler — bjælke i bunden med 3D-forhåndsvisning',
+  mineEmptyHint:'Ingen importerede 3D-modeller endnu — brug importknapperne til højre, eller hent fra 📚 Katalog-fanen.',
   catalogFileHint:'📚 140 gratis møbler følger med værktøjet i mappen <b>catalog</b> — klik <b>📁 Hel mappe…</b> ovenfor og vælg den mappe, så importeres de alle på én gang (browseren kan ikke selv læse mappen, når værktøjet er åbnet som fil).',
   furnW:'Bredde (m)', furnD:'Dybde (m)', furnH:'Højde (m)', furnA:'Vinkel (°)', rotBtn:'↻ Rotér 90° (R)', delFurn:'Slet møbel',
   versionsT:'Versionshistorik — gendan en tidligere tilstand af planen', versionsTitle:'🕘 Versionshistorik (denne browser)',
@@ -800,34 +835,61 @@ const FURN = {
   reol:      {name:'reol',      e:'📚', w:0.8, d:0.35,h:1.9, z:0, color:0x8a7a63, c2d:'138,122,99'},
   model:     {name:'3D model',  e:'📦', w:1.0, d:1.0, h:1.0, z:0, color:0x8a8f98, c2d:'150,155,165'},
 };
+let three=null;         // the 3D module context ({THREE, scene, …}) — set by init3d()
 /* user-imported .glb furniture models — bytes live in IndexedDB, instances reference them by id */
 const MODELS={};        // id → {id,name,w,d,h,glb:ArrayBuffer}
 let curModelId=null;    // model picked in the furniture menu (used when furnKind==='model')
-const modelCache3d=new Map();   // id → THREE.Group | 'loading' | 'error'
-async function loadModel3d(id){
-  modelCache3d.set(id,'loading');
-  try{
-    const THREE=three.THREE;
-    const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
-    const gltf=await new Promise((res,rej)=>new GLTFLoader().parse(MODELS[id].glb.slice(0),'',res,rej));
-    const root=gltf.scene;
-    const box=new THREE.Box3().setFromObject(root);
-    const bw=box.max.x-box.min.x||1, bh=box.max.y-box.min.y||1, bd=box.max.z-box.min.z||1;
-    // wrap so the origin is the footprint centre at floor level (like the built-in furniture)
-    root.position.set(-(box.min.x+box.max.x)/2, -box.min.y, -(box.min.z+box.max.z)/2);
-    root.traverse(o=>{
-      if(o.isMesh){
-        o.castShadow=true;
-        if(!o.geometry.attributes.uv)  // the path tracer requires uv attributes on every mesh
-          o.geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(o.geometry.attributes.position.count*2),2));
-      }
-    });
-    const wrap=new THREE.Group(); wrap.add(root);
-    wrap.userData.bbox={w:bw,h:bh,d:bd};
-    modelCache3d.set(id,wrap);
-    rebuild3d();
-  }catch(e){ console.warn('3D model load failed:', id, e); modelCache3d.set(id,'error'); }
+const modelCache3d=new Map();   // model id or 'cat:<file>' → THREE.Group | 'loading' | 'error'
+async function parseGlbToWrap(buf){
+  const THREE=three.THREE;
+  const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
+  const gltf=await new Promise((res,rej)=>new GLTFLoader().parse(buf,'',res,rej));
+  const root=gltf.scene;
+  const box=new THREE.Box3().setFromObject(root);
+  const bw=box.max.x-box.min.x||1, bh=box.max.y-box.min.y||1, bd=box.max.z-box.min.z||1;
+  // wrap so the origin is the footprint centre at floor level (like the built-in furniture)
+  root.position.set(-(box.min.x+box.max.x)/2, -box.min.y, -(box.min.z+box.max.z)/2);
+  root.traverse(o=>{
+    if(o.isMesh){
+      o.castShadow=true;
+      if(!o.geometry.attributes.uv)  // the path tracer requires uv attributes on every mesh
+        o.geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(o.geometry.attributes.position.count*2),2));
+    }
+  });
+  const wrap=new THREE.Group(); wrap.add(root);
+  wrap.userData.bbox={w:bw,h:bh,d:bd};
+  return wrap;
 }
+/* small load queue so browsing the catalog doesn't fire 140 parses at once */
+const modelLoadQ=[]; let modelLoadActive=0;
+function ensureModelLoaded(key){
+  if(!key || !three || modelCache3d.has(key) || modelLoadQ.includes(key)) return;
+  modelLoadQ.push(key); pumpModelQ();
+}
+function pumpModelQ(){
+  while(modelLoadActive<4 && modelLoadQ.length){
+    const key=modelLoadQ.shift();
+    if(modelCache3d.has(key)) continue;
+    modelLoadActive++;
+    loadOneModel(key).finally(()=>{ modelLoadActive--; pumpModelQ(); });
+  }
+}
+async function loadOneModel(key){
+  modelCache3d.set(key,'loading');
+  try{
+    let buf;
+    if(key.startsWith('cat:')){
+      const r=await fetch('catalog/'+key.slice(4));
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      buf=await r.arrayBuffer();
+    } else if(MODELS[key]) buf=MODELS[key].glb.slice(0);
+    else throw new Error('unknown model '+key);
+    modelCache3d.set(key, await parseGlbToWrap(buf));
+    if(!key.startsWith('cat:')) rebuild3d();
+    notifyModelReady();
+  }catch(e){ console.warn('3D model load failed:', key, e); modelCache3d.set(key,'error'); }
+}
+function loadModel3d(id){ ensureModelLoaded(id); }
 const FURN_CATS=[
   ['furnCatKitchen', ['underskab','overskab','koekkenoe','komfur','vask','koeleskab','opvasker']],
   ['furnCatLiving',  ['spisebord','stol','sofa','laenestol','sofabord','tvbord','braendeovn','potteplante']],
@@ -843,43 +905,94 @@ function updateFurnBtn(){
     ? '📦 '+(MODELS[curModelId]?.name||T('furn_model'))+' ▾'
     : (FURN[k].e||'🍳')+' '+T('furn_'+k)+' ▾';
 }
-function buildFurnPicker(){
-  const drop=document.getElementById('furnDrop'); if(!drop) return;
+/* ---------- Sims-style horizontal furniture browser (#furnBar, bottom of the window) ---------- */
+let furnBarCat='furnCatKitchen';
+const THUMBS=new Map();            // cardKey → dataURL of the rendered 3D thumbnail
+let thumbCtx=null, prevCtx=null, prevRaf=null, prevGroup=null, prevCurKey=null, prevAnchor=null;
+
+function furnBarOpen(){ return document.getElementById('furnBar').style.display!=='none'; }
+function toggleFurnBar(force){
+  const bar=document.getElementById('furnBar');
+  const show = force!==undefined ? force : bar.style.display==='none';
+  bar.style.display = show ? 'flex' : 'none';
+  hideFurnPrev();
+  if(show) buildFurnPicker();
+}
+document.getElementById('furnMenuBtn').onclick=()=>toggleFurnBar();
+document.getElementById('furnBarClose').onclick=()=>toggleFurnBar(false);
+{
+  const impF=document.getElementById('furnImportFile'), impDF=document.getElementById('furnImportDir');
+  document.getElementById('furnImportBtn').onclick=()=>impF.click();
+  impF.onchange=()=>{ importModelFiles(impF.files); impF.value=''; };
+  document.getElementById('furnImportDirBtn').onclick=()=>impDF.click();
+  impDF.onchange=()=>{ importModelFiles(impDF.files); impDF.value=''; };
+}
+function cardSpec(key){            // cardKey → {f (furniture-like, for furn3d), title, del?}
+  if(key.startsWith('kind:')){
+    const k=key.slice(5), FT=FURN[k]; if(!FT) return null;
+    return {f:{kind:k, w:FT.w, d:FT.d, h:FT.h}, title:T('furn_'+k)};
+  }
+  if(key.startsWith('mine:')){
+    const m=MODELS[key.slice(5)]; if(!m) return null;
+    return {f:{kind:'model', model:m.id, w:m.w, d:m.d, h:m.h}, title:m.name, del:m.id};
+  }
+  if(key.startsWith('cat:')){
+    const it=CATALOG?.items?.find(i=>i.file===key.slice(4)); if(!it) return null;
+    return {f:{kind:'model', model:key, w:it.w||0, d:it.d||0, h:it.h||0}, title:it.name};
+  }
+  return null;
+}
+function cardKeys(){
+  if(furnBarCat==='mine') return Object.values(MODELS).map(m=>'mine:'+m.id);
+  if(furnBarCat==='catalog') return (CATALOG?.items||[]).map(it=>'cat:'+it.file);
+  const cat=FURN_CATS.find(c=>c[0]===furnBarCat)||FURN_CATS[0];
+  return cat[1].map(k=>'kind:'+k);
+}
+function isSelectedCard(key){
   const cur=document.getElementById('furnKind').value;
-  drop.innerHTML=FURN_CATS.map(([cat,kinds])=>
-    `<div class="ddlabel">${T(cat)}</div><div class="furnGrid">`+
-    kinds.map(k=>`<button data-fk="${k}" class="${k===cur?'fsel':''}">${FURN[k].e||'▫'} ${T('furn_'+k)}</button>`).join('')+
-    `</div>`).join('')
-    +`<div class="ddlabel">${T('furnCatCustom')}</div>`
-    +Object.values(MODELS).map(m=>
-      `<div style="display:flex;gap:4px;margin:2px 0">
-        <button data-fm="${m.id}" class="${cur==='model'&&m.id===curModelId?'fsel':''}" style="flex:1;text-align:left">📦 ${esc(m.name)} <small style="opacity:.6">${m.w}×${m.d}×${m.h}</small></button>
-        <button data-fmdel="${m.id}" class="danger" style="width:auto">✕</button>
-      </div>`).join('')
-    +`<div style="display:flex;gap:4px;margin-top:4px">
-       <button id="furnImportBtn" style="flex:1" title="${T('furnImportT')}">${T('furnImport')}</button>
-       <button id="furnImportDirBtn" style="flex:1" title="${T('furnImportDirT')}">${T('furnImportDir')}</button>
-      </div>
-      <input type="file" id="furnImportFile" accept=".glb" multiple style="display:none">
-      <input type="file" id="furnImportDir" webkitdirectory multiple style="display:none">`
-    +(CATALOG?.items?.length ? `<button id="catToggle" style="width:100%;margin-top:4px">${catOpen?'▾':'▸'} 📚 ${T('catalogLbl')(CATALOG.items.length)}</button>`
-      +(catOpen ? `<div class="furnGrid">`+CATALOG.items.map(it=>
-          `<button data-cat="${esc(it.file)}" class="${Object.values(MODELS).some(m=>m.name===it.name)?'fsel':''}">📦 ${esc(it.name)}</button>`).join('')
-        +`</div><div style="opacity:.55;font-size:11px;margin:2px 4px">${esc(CATALOG.license||'')}</div>` : '')
-      : `<div style="opacity:.7;font-size:11px;line-height:1.45;margin:6px 4px 2px">${T('catalogFileHint')}</div>`);
-  for(const b of drop.querySelectorAll('button[data-fk]')) b.onclick=()=>{
-    document.getElementById('furnKind').value=b.dataset.fk;
-    setTool('furn');
-    buildFurnPicker();
-  };
-  for(const b of drop.querySelectorAll('button[data-fm]')) b.onclick=()=>{
-    document.getElementById('furnKind').value='model'; curModelId=b.dataset.fm;
-    setTool('furn');
-    buildFurnPicker();
-  };
-  for(const b of drop.querySelectorAll('button[data-fmdel]')) b.onclick=async e=>{
+  if(key.startsWith('kind:')) return cur===key.slice(5);
+  if(key.startsWith('mine:')) return cur==='model' && curModelId===key.slice(5);
+  if(key.startsWith('cat:')){
+    const it=CATALOG?.items?.find(i=>i.file===key.slice(4));
+    return cur==='model' && !!it && MODELS[curModelId]?.name===it.name;
+  }
+  return false;
+}
+function buildFurnPicker(){
+  const tabs=document.getElementById('furnBarTabs'), row=document.getElementById('furnBarRow');
+  if(!tabs) return;
+  document.getElementById('furnImportBtn').textContent=T('furnImport');
+  document.getElementById('furnImportBtn').title=T('furnImportT');
+  document.getElementById('furnImportDirBtn').textContent=T('furnImportDir');
+  document.getElementById('furnImportDirBtn').title=T('furnImportDirT');
+  const cats=[...FURN_CATS.map(c=>c[0]), 'mine', 'catalog'];
+  tabs.innerHTML=cats.map(c=>`<button data-fbtab="${c}" class="${c===furnBarCat?'fsel':''}">${
+    c==='mine' ? '📦 '+T('furnCatCustom') : c==='catalog' ? '📚 '+T('furnCatCatalog') : T(c)}</button>`).join('');
+  for(const b of tabs.querySelectorAll('[data-fbtab]')) b.onclick=()=>{ furnBarCat=b.dataset.fbtab; hideFurnPrev(); buildFurnPicker(); };
+  const keys=cardKeys();
+  if(!keys.length){
+    row.innerHTML=`<div style="opacity:.7;font-size:12px;line-height:1.5;max-width:680px;align-self:center">${
+      furnBarCat==='catalog' ? T('catalogFileHint') : T('mineEmptyHint')}</div>`;
+    updateFurnBtn(); return;
+  }
+  row.innerHTML=keys.map(key=>{
+    const c=cardSpec(key); if(!c) return '';
+    return `<div class="furnCard ${isSelectedCard(key)?'fsel':''}" data-card="${esc(key)}">
+      <img alt="">
+      <div class="fcap">${esc(c.title)}</div>
+      ${c.del?`<button class="danger fdel" data-fbdel="${esc(c.del)}">✕</button>`:''}
+    </div>`;
+  }).join('');
+  for(const el of row.querySelectorAll('.furnCard')){
+    const key=el.dataset.card, c=cardSpec(key);
+    setThumb(el.querySelector('img'), key, c.f);
+    el.onclick=e=>{ if(!e.target.dataset.fbdel) pickCard(key); };
+    el.onmouseenter=()=>showFurnPrev(key, c, el.getBoundingClientRect());
+    el.onmouseleave=()=>hideFurnPrev();
+  }
+  for(const b of row.querySelectorAll('[data-fbdel]')) b.onclick=async e=>{
     e.stopPropagation();
-    const id=b.dataset.fmdel;
+    const id=b.dataset.fbdel;
     if(!confirm(T('confirmDelModel')(MODELS[id]?.name||id))) return;
     try{ await idbKV.mdel(id); }catch(err){}
     delete MODELS[id];
@@ -887,16 +1000,114 @@ function buildFurnPicker(){
     buildFurnPicker();
     try{ rebuild3d(); }catch(err){}
   };
-  const imp=drop.querySelector('#furnImportBtn'), impF=drop.querySelector('#furnImportFile');
-  const impD=drop.querySelector('#furnImportDirBtn'), impDF=drop.querySelector('#furnImportDir');
-  if(imp) imp.onclick=e=>{ e.stopPropagation(); impF.click(); };
-  if(impF) impF.onchange=()=>{ importModelFiles(impF.files); impF.value=''; };
-  if(impD) impD.onclick=e=>{ e.stopPropagation(); impDF.click(); };
-  if(impDF) impDF.onchange=()=>{ importModelFiles(impDF.files); impDF.value=''; };
-  const ct=drop.querySelector('#catToggle');
-  if(ct) ct.onclick=e=>{ e.stopPropagation(); catOpen=!catOpen; buildFurnPicker(); };
-  for(const b of drop.querySelectorAll('button[data-cat]')) b.onclick=e=>{ e.stopPropagation(); importCatalogItem(b.dataset.cat); };
   updateFurnBtn();
+}
+async function pickCard(key){
+  if(key.startsWith('kind:')) document.getElementById('furnKind').value=key.slice(5);
+  else if(key.startsWith('mine:')){ document.getElementById('furnKind').value='model'; curModelId=key.slice(5); }
+  else if(key.startsWith('cat:')){
+    const it=CATALOG?.items?.find(i=>i.file===key.slice(4)); if(!it) return;
+    const have=Object.values(MODELS).find(m=>m.name===it.name);
+    if(have){ document.getElementById('furnKind').value='model'; curModelId=have.id; }
+    else await importCatalogItem(it.file);      // imports and selects it
+  }
+  setTool('furn');
+  buildFurnPicker();
+}
+/* thumbnails: one shared offscreen renderer, results cached as data-URLs */
+function thumbCtxGet(){
+  if(!three) return null;
+  if(!thumbCtx){
+    const THREE=three.THREE;
+    const r=new THREE.WebGLRenderer({antialias:true, alpha:true});
+    r.setSize(164,164,false);
+    const sc=new THREE.Scene();
+    const cam=new THREE.PerspectiveCamera(32,1,0.02,80);
+    sc.add(new THREE.HemisphereLight(0xffffff,0x39404c,1.15));
+    const dl=new THREE.DirectionalLight(0xfff2e0,1.25); dl.position.set(2.2,3,2.6); sc.add(dl);
+    thumbCtx={THREE,r,sc,cam};
+  }
+  return thumbCtx;
+}
+function frameCam(THREE, cam, g){       // aim a camera at a furniture group, returns its bbox
+  const box=new THREE.Box3().setFromObject(g);
+  const size=Math.max(box.max.x-box.min.x, box.max.y-box.min.y, box.max.z-box.min.z, 0.2);
+  const cy=(box.min.y+box.max.y)/2;
+  cam.position.set(size*1.5, cy+size*0.85, size*1.5);
+  cam.lookAt(0, cy, 0);
+  return box;
+}
+function renderCard(f){                 // → dataURL | null (null = glb not parsed yet)
+  const tc=thumbCtxGet(); if(!tc) return null;
+  if(f.kind==='model'){
+    const cached=modelCache3d.get(f.model);
+    if(!cached || cached==='loading') return null;
+  }
+  const g=furn3d(tc.THREE, f);
+  tc.sc.add(g);
+  frameCam(tc.THREE, tc.cam, g);
+  tc.r.render(tc.sc, tc.cam);
+  const url=tc.r.domElement.toDataURL();
+  tc.sc.remove(g);
+  return url;
+}
+function setThumb(img, key, f){
+  if(THUMBS.has(key)){ img.src=THUMBS.get(key); return; }
+  const url=renderCard(f);
+  if(url){ THUMBS.set(key,url); img.src=url; return; }
+  img.style.opacity=.25;
+  img.src='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="82" height="82"><text x="41" y="52" font-size="34" text-anchor="middle">📦</text></svg>');
+  ensureModelLoaded(f.model);
+}
+function notifyModelReady(){            // a glb finished parsing → fill in waiting thumbs + live preview
+  if(furnBarOpen()) for(const el of document.querySelectorAll('#furnBarRow .furnCard')){
+    const key=el.dataset.card;
+    if(THUMBS.has(key)) continue;
+    const c=cardSpec(key); if(!c) continue;
+    const url=renderCard(c.f);
+    if(url){ THUMBS.set(key,url); const img=el.querySelector('img'); img.src=url; img.style.opacity=1; }
+  }
+  if(prevCurKey && prevAnchor){ const c=cardSpec(prevCurKey); if(c) showFurnPrev(prevCurKey, c, prevAnchor); }
+}
+/* live rotating preview above the hovered card (Sims style) */
+function prevCtxGet(){
+  if(!three) return null;
+  if(!prevCtx){
+    const THREE=three.THREE;
+    const r=new THREE.WebGLRenderer({canvas:document.getElementById('furnPrevC'), antialias:true, alpha:true});
+    r.setSize(260,220,false);
+    const sc=new THREE.Scene();
+    const cam=new THREE.PerspectiveCamera(32,260/220,0.02,80);
+    sc.add(new THREE.HemisphereLight(0xffffff,0x39404c,1.15));
+    const dl=new THREE.DirectionalLight(0xfff2e0,1.25); dl.position.set(2.2,3,2.6); sc.add(dl);
+    prevCtx={THREE,r,sc,cam};
+  }
+  return prevCtx;
+}
+function showFurnPrev(key, c, rect){
+  const pc=prevCtxGet(); if(!pc) return;
+  prevCurKey=key; prevAnchor=rect;
+  if(c.f.kind==='model') ensureModelLoaded(c.f.model);
+  if(prevGroup) pc.sc.remove(prevGroup);
+  prevGroup=furn3d(pc.THREE, c.f);
+  pc.sc.add(prevGroup);
+  const box=frameCam(pc.THREE, pc.cam, prevGroup);
+  const dw=c.f.w||+(box.max.x-box.min.x).toFixed(2), dd=c.f.d||+(box.max.z-box.min.z).toFixed(2), dh=c.f.h||+(box.max.y-box.min.y).toFixed(2);
+  document.getElementById('furnPrevCap').textContent=`${c.title} · ${dw.toFixed(2)} × ${dd.toFixed(2)} × ${dh.toFixed(2)} m`;
+  const p=document.getElementById('furnPrev');
+  p.style.display='block';
+  const pw=p.offsetWidth||280, ph=p.offsetHeight||270;
+  p.style.left=Math.max(6, Math.min(innerWidth-pw-6, rect.left+rect.width/2-pw/2))+'px';
+  p.style.top=Math.max(6, rect.top-ph-8)+'px';
+  cancelAnimationFrame(prevRaf);
+  const spin=()=>{ if(!prevGroup) return; prevGroup.rotation.y+=0.012; pc.r.render(pc.sc,pc.cam); prevRaf=requestAnimationFrame(spin); };
+  spin();
+}
+function hideFurnPrev(){
+  cancelAnimationFrame(prevRaf); prevRaf=null; prevCurKey=null; prevAnchor=null;
+  if(prevCtx && prevGroup) prevCtx.sc.remove(prevGroup);
+  prevGroup=null;
+  const p=document.getElementById('furnPrev'); if(p) p.style.display='none';
 }
 async function importModelFile(file, opts={}){
   try{
@@ -940,7 +1151,7 @@ async function importModelFiles(files){
   try{ rebuild3d(); }catch(e){}
   flashHint(T('hintModelsImported')(n));
 }
-let CATALOG=null, catOpen=false;   // built-in CC0 catalog (catalog/index.json next to the tool; http only)
+let CATALOG=null;   // built-in CC0 catalog (catalog/index.json next to the tool; http only)
 async function loadCatalog(){
   if(!/^https?:$/.test(location.protocol)) return;
   try{
@@ -2136,7 +2347,7 @@ window.addEventListener('keydown', e=>{
       lenBuf=''; draw(); return;
     }
   }
-  if(k==='escape'){ drawing=null; sel=null; calibPts=[]; sketchStroke=null; measures=[]; measureStart=null; lenBuf=''; roomStart=null; if(dragging?.type==='room') dragging=null; updateProps(); draw(); }
+  if(k==='escape'){ drawing=null; sel=null; calibPts=[]; sketchStroke=null; measures=[]; measureStart=null; lenBuf=''; roomStart=null; if(dragging?.type==='room') dragging=null; toggleFurnBar(false); updateProps(); draw(); }
   else if(k==='v') setTool('select');
   else if(k==='m') setTool('measure');
   else if(k==='w') setTool('wall');
@@ -3047,7 +3258,7 @@ function fitView(){
 }
 
 /* ============================ 3D view ============================ */
-let three=null, rebuild3dTimer;
+let rebuild3dTimer;
 
 /* ---------- sun position (location from meta.site, timezone from this browser) ---------- */
 const site = () => S.meta.site || {lat:50, lon:10};   // no location set: central Europe — ⚙ Settings to configure
@@ -3130,6 +3341,7 @@ async function init3d(){
     const group=new THREE.Group(); scene.add(group);
     const plc=new PointerLockControls(camera, renderer.domElement);
     three={THREE,scene,camera,renderer,controls,group,hemi,amb,baseSun,sunLight,plc};
+    if(furnBarOpen()) buildFurnPicker();   // thumbs could not render before three was ready
     document.getElementById('walkBtn').onclick=()=>{ if(document.body.className!=='only2d') plc.lock(); };
     plc.addEventListener('lock',()=>{ controls.enabled=false; });
     plc.addEventListener('unlock',()=>{
@@ -3258,6 +3470,44 @@ function rebuild3d(){
   }
   for(const f of (cv().furniture||[])){
     const FT=FURN[f.kind]||FURN.underskab;
+    const fg=furn3d(THREE,f);
+    const zBase=floorZAt(f.at[0],f.at[1]) + (FT.z||0);
+    fg.position.set(f.at[0], zBase, f.at[1]);
+    fg.rotation.y=-(f.angle||0)*Math.PI/180;
+    group.add(fg);
+  }
+  buildRoof3d(THREE, group);
+  const customFloors = (S.base.floors||[]).filter(f=>f.rect);
+  if(customFloors.length){
+    for(const f of customFloors){
+      const [fx1,fy1,fx2,fy2]=f.rect;
+      const fw=Math.abs(fx2-fx1), fd=Math.abs(fy2-fy1);
+      if(fw<0.05||fd<0.05) continue;
+      const slab=new THREE.Mesh(new THREE.BoxGeometry(fw,0.12,fd),matFloor);
+      slab.position.set((fx1+fx2)/2,(f.z||0)-0.06,(fy1+fy2)/2);
+      group.add(slab);
+    }
+    if(minX<maxX) setInitialTarget((minX+maxX)/2,(minY+maxY)/2);
+  }
+  else if(minX<maxX){
+    const floor=new THREE.Mesh(new THREE.BoxGeometry(maxX-minX+0.6,0.1,maxY-minY+0.6),matFloor);
+    floor.position.set((minX+maxX)/2,-0.03,(minY+maxY)/2);
+    group.add(floor);
+    setInitialTarget((minX+maxX)/2,(minY+maxY)/2);
+  }
+  // shadow flags: everything casts & receives, except transparent (glass) which only receives
+  group.traverse(o=>{
+    if(o.isMesh){
+      const glassy = o.material && o.material.transparent;
+      o.castShadow = !glassy;
+      o.receiveShadow = true;
+    }
+  });
+}
+/* one furniture piece → THREE.Group; origin = footprint centre at floor level (shared by the 3D view and the picker preview) */
+function furn3d(THREE, f){
+  {
+    const FT=FURN[f.kind]||FURN.underskab;
     const fg=new THREE.Group();
     const M=c=>new THREE.MeshLambertMaterial({color:c});
     const B=(w,h,d,c,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c)); m.position.set(x,y,z); fg.add(m); };
@@ -3328,11 +3578,11 @@ function rebuild3d(){
       default:
         B(f.w, f.h, f.d, FT.color, 0, f.h/2, 0);
     }
-    const zBase=floorZAt(f.at[0],f.at[1]) + (FT.z||0);
-    fg.position.set(f.at[0], zBase, f.at[1]);
-    fg.rotation.y=-(f.angle||0)*Math.PI/180;
-    group.add(fg);
+    return fg;
   }
+}
+/* roof, ceilings and trusses — split out of rebuild3d */
+function buildRoof3d(THREE, group){
   const roofGhost = !showRoof && document.getElementById('sunChk')?.checked;
   if((showRoof || roofGhost) && S.base.roof){
     const R=S.base.roof;
@@ -3552,32 +3802,6 @@ function rebuild3d(){
       }
     }
   }
-  const customFloors = (S.base.floors||[]).filter(f=>f.rect);
-  if(customFloors.length){
-    for(const f of customFloors){
-      const [fx1,fy1,fx2,fy2]=f.rect;
-      const fw=Math.abs(fx2-fx1), fd=Math.abs(fy2-fy1);
-      if(fw<0.05||fd<0.05) continue;
-      const slab=new THREE.Mesh(new THREE.BoxGeometry(fw,0.12,fd),matFloor);
-      slab.position.set((fx1+fx2)/2,(f.z||0)-0.06,(fy1+fy2)/2);
-      group.add(slab);
-    }
-    if(minX<maxX) setInitialTarget((minX+maxX)/2,(minY+maxY)/2);
-  }
-  else if(minX<maxX){
-    const floor=new THREE.Mesh(new THREE.BoxGeometry(maxX-minX+0.6,0.1,maxY-minY+0.6),matFloor);
-    floor.position.set((minX+maxX)/2,-0.03,(minY+maxY)/2);
-    group.add(floor);
-    setInitialTarget((minX+maxX)/2,(minY+maxY)/2);
-  }
-  // shadow flags: everything casts & receives, except transparent (glass) which only receives
-  group.traverse(o=>{
-    if(o.isMesh){
-      const glassy = o.material && o.material.transparent;
-      o.castShadow = !glassy;
-      o.receiveShadow = true;
-    }
-  });
 }
 
 /* ============================ glue ============================ */
@@ -3615,6 +3839,7 @@ function applyPhase(){
   });
   // ribbon strip is contextual; the tab row itself only changes inside the intro wizard
   document.getElementById('furnMenu').style.display = (!stepIntro && P.furn)?'':'none';
+  if(!(!stepIntro && P.furn)) toggleFurnBar(false);   // phase without furniture → close the browse bar
   hideVariantGrp = guide ? guide.step!==4 : false;
   document.getElementById('exportMenu').style.display = guide ? (guide.step===4?'':'none') : '';
   refreshRibbonGroups();
