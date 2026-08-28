@@ -70,7 +70,7 @@ Each variant:
 | `walls`          | new walls in this idea (same shape as base walls). Optional `partial: "<baseWallId>"` marks a wall that is the *kept part* of a partially demolished base wall — it renders as existing, not new |
 | `openings`       | new doors/windows; `wall` may reference base or variant walls |
 | `labels`         | `{id, at:[x,y], text}` room names — also used for room-area flood fill |
-| `furniture`      | `{id, kind, at:[x,y], angle, w, d, h}` — `at` is the **centre**; kinds: underskab, overskab, koekkenoe, komfur, vask, koeleskab, opvasker, spisebord, sofa, seng, toilet, brus, badekar, garderobeskab, skrivebord |
+| `furniture`      | `{id, kind, at:[x,y], angle, w, d, h}` — `at` is the **centre**; kinds: underskab, overskab, koekkenoe, komfur, vask, koeleskab, opvasker, spisebord, sofa, seng, toilet, brus, badekar, garderobeskab, skrivebord. Kind `model` = user-imported .glb: extra fields `model` (library id) and `name`; the .glb bytes live in the browser's IndexedDB, **not** in this file — on a machine without that model the instance renders as a plain box of w×d×h |
 | `sketch`         | freehand intent strokes `{id, points:[[x,y]...], note}` — a human draws these for an agent to convert into geometry |
 | `roofWindows`    | velux: `[{x, side:"N"\|"S", w, len, sOff}]` — `len` up the slope, `sOff` from the eave |
 | `skylights`      | glass strips through both slopes: `[{x, w}]` (ceiling opens beneath) |

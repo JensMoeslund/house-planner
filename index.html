@@ -528,6 +528,14 @@ en: {
   furn_underskab:'base cabinet/counter', furn_overskab:'wall cabinet', furn_koekkenoe:'kitchen island', furn_komfur:'stove', furn_vask:'sink', furn_koeleskab:'fridge', furn_opvasker:'dishwasher', furn_spisebord:'dining table', furn_sofa:'sofa', furn_seng:'bed', furn_toilet:'toilet', furn_brus:'shower', furn_badekar:'bathtub', furn_garderobeskab:'wardrobe', furn_skrivebord:'desk',
   furn_stol:'chair', furn_laenestol:'armchair', furn_sofabord:'coffee table', furn_tvbord:'TV bench', furn_braendeovn:'wood stove', furn_potteplante:'plant', furn_barneseng:'crib', furn_sengebord:'bedside table', furn_kommode:'dresser', furn_vaskemaskine:'washing machine', furn_toerretumbler:'dryer', furn_reol:'bookcase',
   furnCatKitchen:'Kitchen', furnCatLiving:'Living & dining', furnCatBed:'Bedroom', furnCatBath:'Bathroom & laundry', furnCatOffice:'Office & storage',
+  furnCatCustom:'My 3D models', furn_model:'3D model',
+  furnImport:'📦 Import 3D model (.glb)…',
+  furnImportT:'Load a .glb file as furniture. Free models: IKEA product pages (via the IKEA-3D-model browser script), furnimesh.com, sketchfab.com. Real size is read from the file.',
+  modelTooBig:'The file is over 40 MB — pick a lighter model.',
+  importModelFailed:'Could not read the model:',
+  hintPickModel:'Pick one of your imported models in the furniture menu first.',
+  hintModelImported:(n,w,d,h)=>`📦 ${n} imported (${w} × ${d} × ${h} m) — click the plan to place it`,
+  confirmDelModel:n=>`Delete the 3D model "${n}"? Placed copies stay in the plan as plain boxes.`,
   furnW:'Width (m)', furnD:'Depth (m)', furnH:'Height (m)', furnA:'Angle (°)', rotBtn:'↻ Rotate 90° (R)', delFurn:'Delete furniture',
   versionsT:'Version history — restore an earlier state of the plan', versionsTitle:'🕘 Version history (this browser)',
   versionsNote:'Automatic snapshots: every 5 min while editing, on variant switch, before file reloads, resets and restores. Last 60 are kept.',
@@ -648,6 +656,14 @@ da: {
   furn_underskab:'underskab/bordplade', furn_overskab:'overskab', furn_koekkenoe:'køkkenø', furn_komfur:'komfur', furn_vask:'vask', furn_koeleskab:'køleskab', furn_opvasker:'opvaskemaskine', furn_spisebord:'spisebord', furn_sofa:'sofa', furn_seng:'seng', furn_toilet:'toilet', furn_brus:'brusekabine', furn_badekar:'badekar', furn_garderobeskab:'garderobeskab', furn_skrivebord:'skrivebord',
   furn_stol:'stol', furn_laenestol:'lænestol', furn_sofabord:'sofabord', furn_tvbord:'tv-bord', furn_braendeovn:'brændeovn', furn_potteplante:'potteplante', furn_barneseng:'barneseng', furn_sengebord:'sengebord', furn_kommode:'kommode', furn_vaskemaskine:'vaskemaskine', furn_toerretumbler:'tørretumbler', furn_reol:'reol',
   furnCatKitchen:'Køkken', furnCatLiving:'Stue & spisestue', furnCatBed:'Soveværelse', furnCatBath:'Bad & bryggers', furnCatOffice:'Kontor & opbevaring',
+  furnCatCustom:'Mine 3D-modeller', furn_model:'3D-model',
+  furnImport:'📦 Importér 3D-model (.glb)…',
+  furnImportT:'Indlæs en .glb-fil som møbel. Gratis modeller: IKEAs produktsider (via browser-scriptet IKEA-3D-model), furnimesh.com, sketchfab.com. Den rigtige størrelse læses fra filen.',
+  modelTooBig:'Filen er over 40 MB — vælg en lettere model.',
+  importModelFailed:'Kunne ikke læse modellen:',
+  hintPickModel:'Vælg først en af dine importerede modeller i møbelmenuen.',
+  hintModelImported:(n,w,d,h)=>`📦 ${n} importeret (${w} × ${d} × ${h} m) — klik på planen for at placere den`,
+  confirmDelModel:n=>`Slet 3D-modellen "${n}"? Placerede kopier bliver i planen som simple kasser.`,
   furnW:'Bredde (m)', furnD:'Dybde (m)', furnH:'Højde (m)', furnA:'Vinkel (°)', rotBtn:'↻ Rotér 90° (R)', delFurn:'Slet møbel',
   versionsT:'Versionshistorik — gendan en tidligere tilstand af planen', versionsTitle:'🕘 Versionshistorik (denne browser)',
   versionsNote:'Automatiske snapshots: hvert 5. minut under redigering, ved variantskift, før fil-genindlæsning, nulstilling og gendannelse. De sidste 60 gemmes.',
@@ -774,7 +790,36 @@ const FURN = {
   toerretumbler:{name:'tørretumbler', e:'💨', w:0.6, d:0.6, h:0.85,z:0, color:0x9aa2ad, c2d:'154,162,173'},
   skrivebord:{name:'skrivebord',e:'🖥', w:1.4, d:0.7, h:0.74,z:0, color:0xa08054, c2d:'160,128,84'},
   reol:      {name:'reol',      e:'📚', w:0.8, d:0.35,h:1.9, z:0, color:0x8a7a63, c2d:'138,122,99'},
+  model:     {name:'3D model',  e:'📦', w:1.0, d:1.0, h:1.0, z:0, color:0x8a8f98, c2d:'150,155,165'},
 };
+/* user-imported .glb furniture models — bytes live in IndexedDB, instances reference them by id */
+const MODELS={};        // id → {id,name,w,d,h,glb:ArrayBuffer}
+let curModelId=null;    // model picked in the furniture menu (used when furnKind==='model')
+const modelCache3d=new Map();   // id → THREE.Group | 'loading' | 'error'
+async function loadModel3d(id){
+  modelCache3d.set(id,'loading');
+  try{
+    const THREE=three.THREE;
+    const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
+    const gltf=await new Promise((res,rej)=>new GLTFLoader().parse(MODELS[id].glb.slice(0),'',res,rej));
+    const root=gltf.scene;
+    const box=new THREE.Box3().setFromObject(root);
+    const bw=box.max.x-box.min.x||1, bh=box.max.y-box.min.y||1, bd=box.max.z-box.min.z||1;
+    // wrap so the origin is the footprint centre at floor level (like the built-in furniture)
+    root.position.set(-(box.min.x+box.max.x)/2, -box.min.y, -(box.min.z+box.max.z)/2);
+    root.traverse(o=>{
+      if(o.isMesh){
+        o.castShadow=true;
+        if(!o.geometry.attributes.uv)  // the path tracer requires uv attributes on every mesh
+          o.geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(o.geometry.attributes.position.count*2),2));
+      }
+    });
+    const wrap=new THREE.Group(); wrap.add(root);
+    wrap.userData.bbox={w:bw,h:bh,d:bd};
+    modelCache3d.set(id,wrap);
+    rebuild3d();
+  }catch(e){ console.warn('3D model load failed:', id, e); modelCache3d.set(id,'error'); }
+}
 const FURN_CATS=[
   ['furnCatKitchen', ['underskab','overskab','koekkenoe','komfur','vask','koeleskab','opvasker']],
   ['furnCatLiving',  ['spisebord','stol','sofa','laenestol','sofabord','tvbord','braendeovn','potteplante']],
@@ -785,7 +830,10 @@ const FURN_CATS=[
 function updateFurnBtn(){
   const k=document.getElementById('furnKind').value||'underskab';
   const el=document.getElementById('furnMenuBtn');
-  if(el && FURN[k]) el.textContent=(FURN[k].e||'🍳')+' '+T('furn_'+k)+' ▾';
+  if(!el || !FURN[k]) return;
+  el.textContent = k==='model'
+    ? '📦 '+(MODELS[curModelId]?.name||T('furn_model'))+' ▾'
+    : (FURN[k].e||'🍳')+' '+T('furn_'+k)+' ▾';
 }
 function buildFurnPicker(){
   const drop=document.getElementById('furnDrop'); if(!drop) return;
@@ -793,13 +841,66 @@ function buildFurnPicker(){
   drop.innerHTML=FURN_CATS.map(([cat,kinds])=>
     `<div class="ddlabel">${T(cat)}</div><div class="furnGrid">`+
     kinds.map(k=>`<button data-fk="${k}" class="${k===cur?'fsel':''}">${FURN[k].e||'▫'} ${T('furn_'+k)}</button>`).join('')+
-    `</div>`).join('');
+    `</div>`).join('')
+    +`<div class="ddlabel">${T('furnCatCustom')}</div>`
+    +Object.values(MODELS).map(m=>
+      `<div style="display:flex;gap:4px;margin:2px 0">
+        <button data-fm="${m.id}" class="${cur==='model'&&m.id===curModelId?'fsel':''}" style="flex:1;text-align:left">📦 ${esc(m.name)} <small style="opacity:.6">${m.w}×${m.d}×${m.h}</small></button>
+        <button data-fmdel="${m.id}" class="danger" style="width:auto">✕</button>
+      </div>`).join('')
+    +`<button id="furnImportBtn" style="width:100%;margin-top:4px" title="${T('furnImportT')}">${T('furnImport')}</button>
+      <input type="file" id="furnImportFile" accept=".glb" style="display:none">`;
   for(const b of drop.querySelectorAll('button[data-fk]')) b.onclick=()=>{
     document.getElementById('furnKind').value=b.dataset.fk;
     setTool('furn');
     buildFurnPicker();
   };
+  for(const b of drop.querySelectorAll('button[data-fm]')) b.onclick=()=>{
+    document.getElementById('furnKind').value='model'; curModelId=b.dataset.fm;
+    setTool('furn');
+    buildFurnPicker();
+  };
+  for(const b of drop.querySelectorAll('button[data-fmdel]')) b.onclick=async e=>{
+    e.stopPropagation();
+    const id=b.dataset.fmdel;
+    if(!confirm(T('confirmDelModel')(MODELS[id]?.name||id))) return;
+    try{ await idbKV.mdel(id); }catch(err){}
+    delete MODELS[id];
+    if(curModelId===id) curModelId=null;
+    buildFurnPicker();
+    try{ rebuild3d(); }catch(err){}
+  };
+  const imp=drop.querySelector('#furnImportBtn'), impF=drop.querySelector('#furnImportFile');
+  if(imp) imp.onclick=e=>{ e.stopPropagation(); impF.click(); };
+  if(impF) impF.onchange=()=>{ if(impF.files[0]) importModelFile(impF.files[0]); };
   updateFurnBtn();
+}
+async function importModelFile(file){
+  try{
+    const buf=await file.arrayBuffer();
+    if(buf.byteLength>40e6){ alert(T('modelTooBig')); return; }
+    const THREE=three?.THREE||await import('three');
+    const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
+    const gltf=await new Promise((res,rej)=>new GLTFLoader().parse(buf.slice(0),'',res,rej));
+    const box=new THREE.Box3().setFromObject(gltf.scene);
+    const sx=box.max.x-box.min.x, sy=box.max.y-box.min.y, sz=box.max.z-box.min.z;
+    const maxD=Math.max(sx,sy,sz)||1;
+    const unit = maxD>50 ? 0.001 : maxD>6 ? 0.01 : 1;   // models come in mm, cm or m — guess from size
+    const name=(file.name.replace(/\.glb$/i,'').replace(/[-_]+/g,' ').trim()||'model').slice(0,48);
+    const rec={id:'m'+Date.now().toString(36), name,
+      w:+(sx*unit).toFixed(2)||0.5, d:+(sz*unit).toFixed(2)||0.5, h:+(sy*unit).toFixed(2)||0.5, glb:buf};
+    await idbKV.mput(rec);
+    MODELS[rec.id]=rec;
+    document.getElementById('furnKind').value='model'; curModelId=rec.id;
+    buildFurnPicker(); setTool('furn');
+    flashHint(T('hintModelImported')(rec.name,rec.w,rec.d,rec.h));
+  }catch(e){ alert(T('importModelFailed')+' '+(e?.message||e)); }
+}
+async function loadModels(){
+  try{
+    for(const rec of await idbKV.mall()) MODELS[rec.id]=rec;
+    if(Object.keys(MODELS).length){ buildFurnPicker(); try{ rebuild3d(); }catch(e){} }
+  }catch(e){}
 }
 applyI18n();
 function floorZAt(x,y){
@@ -884,17 +985,21 @@ function setStatus(cls, txt){
 const idbKV = {
   db:null,
   async open(){ if(this.db) return this.db;
-    this.db = await new Promise((res,rej)=>{ const r=indexedDB.open('hrp2',2);
+    this.db = await new Promise((res,rej)=>{ const r=indexedDB.open('hrp2',3);
       r.onupgradeneeded=()=>{ const db=r.result;
         if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
-        if(!db.objectStoreNames.contains('versions')) db.createObjectStore('versions', {keyPath:'t'}); };
+        if(!db.objectStoreNames.contains('versions')) db.createObjectStore('versions', {keyPath:'t'});
+        if(!db.objectStoreNames.contains('models')) db.createObjectStore('models', {keyPath:'id'}); };
       r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
     return this.db; },
   async set(k,v){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(v,k); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
   async get(k){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('kv','readonly'); const rq=tx.objectStore('kv').get(k); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); },
   async vput(rec){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('versions','readwrite'); tx.objectStore('versions').put(rec); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
   async vall(){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('versions','readonly'); const rq=tx.objectStore('versions').getAll(); rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>rej(rq.error); }); },
-  async vdel(t){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('versions','readwrite'); tx.objectStore('versions').delete(t); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+  async vdel(t){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('versions','readwrite'); tx.objectStore('versions').delete(t); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
+  async mput(rec){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('models','readwrite'); tx.objectStore('models').put(rec); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
+  async mall(){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('models','readonly'); const rq=tx.objectStore('models').getAll(); rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>rej(rq.error); }); },
+  async mdel(id){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('models','readwrite'); tx.objectStore('models').delete(id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
 };
 
 /* ---------- persistent version snapshots (survive reloads; last 60 kept) ---------- */
@@ -1394,7 +1499,7 @@ function draw(){
     ctx.lineWidth=sel?.id===f.id?2.5:1.5;
     ctx.fillRect(-wp/2,-dp/2,wp,dp); ctx.strokeRect(-wp/2,-dp/2,wp,dp);
     ctx.beginPath(); ctx.moveTo(-wp/2,dp/2-4); ctx.lineTo(wp/2,dp/2-4); ctx.stroke();
-    if(view.ppm>22){ ctx.fillStyle='rgba(240,238,232,.9)'; ctx.font='10px sans-serif'; ctx.textAlign='center'; ctx.fillText(T('furn_'+f.kind),0,3); }
+    if(view.ppm>22){ ctx.fillStyle='rgba(240,238,232,.9)'; ctx.font='10px sans-serif'; ctx.textAlign='center'; ctx.fillText(f.kind==='model'?(f.name||'📦'):T('furn_'+f.kind),0,3); }
     if(sel?.id===f.id){
       ctx.fillStyle='#4da3ff';
       for(const [hx,hy] of [[-wp/2,-dp/2],[wp/2,-dp/2],[wp/2,dp/2],[-wp/2,dp/2]]) ctx.fillRect(hx-4,hy-4,8,8);
@@ -1717,6 +1822,11 @@ c2d.addEventListener('pointerdown', e=>{
   if(tool==='furn'){
     const k=document.getElementById('furnKind').value, FT=FURN[k];
     const f={id:nextId('furn'), kind:k, at:[+wx.toFixed(2),+wy.toFixed(2)], angle:0, w:FT.w, d:FT.d, h:FT.h};
+    if(k==='model'){
+      const m=MODELS[curModelId];
+      if(!m){ flashHint(T('hintPickModel')); return; }
+      f.model=m.id; f.name=m.name; f.w=m.w; f.d=m.d; f.h=m.h;
+    }
     cv().furniture.push(f); sel={type:'furn',id:f.id,f}; changed(); updateProps();
     return;
   }
@@ -2101,7 +2211,7 @@ function updateProps(){
     propsEl.querySelector('#pDel').onclick=deleteSel;
   } else if(sel.type==='furn'){
     const f=sel.f, FT=FURN[f.kind]||FURN.underskab;
-    propsEl.innerHTML=`<h3>🍳 ${T('furn_'+f.kind)}</h3>
+    propsEl.innerHTML=`<h3>${f.kind==='model'?'📦 '+esc(f.name||T('furn_model')):'🍳 '+T('furn_'+f.kind)}</h3>
       <div class="row"><label>${T('furnW')}</label><input type="number" id="pFW" step="0.1" min="0.2" max="5" value="${f.w}"></div>
       <div class="row"><label>${T('furnD')}</label><input type="number" id="pFD" step="0.05" min="0.2" max="3" value="${f.d}"></div>
       <div class="row"><label>${T('furnH')}</label><input type="number" id="pFH2" step="0.05" min="0.1" max="2.4" value="${f.h}"></div>
@@ -2841,6 +2951,7 @@ window.planAPI = {
   showVariant: id=>{ S.meta.activeVariant=id; refreshVariants(); changed(); return 'ok'; },
   fitView: ()=>{ fitView(); return 'ok'; },
   w2s: (x,y)=>W2S(x,y), s2w: (px,py)=>S2W(px,py),   // agent hook: 2D view transform (CSS px)
+  importModel: f=>importModelFile(f),               // agent hook: File/Blob (.glb) → furniture model library
   view3d: (px,py,pz,tx,ty,tz)=>{
     if(!three) return 'no 3d';
     three.camera.position.set(px,py,pz);
@@ -3137,6 +3248,19 @@ function rebuild3d(){
         B(f.w-0.04, f.h-0.135, f.d-0.04, FT.color, 0, 0.10+(f.h-0.135)/2, 0);
         B(f.w-0.16, 0.10, f.d-0.16, 0x3a3d42, 0, 0.05, 0);
         B(f.w, 0.035, f.d, 0xd9d2c4, 0, f.h-0.018, 0);
+        break;
+      }
+      case 'model': {
+        const cached=modelCache3d.get(f.model);
+        if(cached && cached!=='loading' && cached!=='error'){
+          const b=cached.userData.bbox;
+          const inst=cached.clone(true);
+          inst.scale.set((f.w||b.w)/b.w, (f.h||b.h)/b.h, (f.d||b.d)/b.d);
+          fg.add(inst);
+        } else {
+          B(f.w, f.h, f.d, FT.color, 0, f.h/2, 0);   // placeholder until the glb is parsed
+          if(MODELS[f.model] && !cached) loadModel3d(f.model);
+        }
         break;
       }
       default:
@@ -3491,6 +3615,7 @@ applyGuide();
 if(!guide) setRtab(S.meta.activeVariant==='nutid' ? 'huset' : 'ideer');
 
 init3d();
+loadModels();
 </script>
 </body>
 </html>
