@@ -1,0 +1,923 @@
+{
+ "name": "Kenney Furniture Kit",
+ "license": "CC0 (public domain) - kenney.nl",
+ "items": [
+  {
+   "file": "bathroomCabinet.glb",
+   "name": "bathroom cabinet",
+   "w": 0.6,
+   "d": 0.35,
+   "h": 0.8
+  },
+  {
+   "file": "bathroomCabinetDrawer.glb",
+   "name": "bathroom cabinet drawer",
+   "w": 0.6,
+   "d": 0.45,
+   "h": 0.8
+  },
+  {
+   "file": "bathroomMirror.glb",
+   "name": "bathroom mirror",
+   "w": 0.6,
+   "d": 0.1,
+   "h": 0.8
+  },
+  {
+   "file": "bathroomSink.glb",
+   "name": "bathroom sink",
+   "w": 0.6,
+   "d": 0.45,
+   "h": 0.85
+  },
+  {
+   "file": "bathroomSinkSquare.glb",
+   "name": "bathroom sink square",
+   "w": 0.6,
+   "d": 0.45,
+   "h": 0.85
+  },
+  {
+   "file": "bathtub.glb",
+   "name": "bathtub",
+   "w": 1.7,
+   "d": 0.75,
+   "h": 0.55
+  },
+  {
+   "file": "bear.glb",
+   "name": "bear"
+  },
+  {
+   "file": "bedBunk.glb",
+   "name": "bed bunk",
+   "w": 0.9,
+   "d": 2.0,
+   "h": 1.6
+  },
+  {
+   "file": "bedDouble.glb",
+   "name": "bed double",
+   "w": 1.6,
+   "d": 2.0,
+   "h": 0.9
+  },
+  {
+   "file": "bedSingle.glb",
+   "name": "bed single",
+   "w": 0.9,
+   "d": 2.0,
+   "h": 0.9
+  },
+  {
+   "file": "bench.glb",
+   "name": "bench",
+   "w": 1.2,
+   "d": 0.4,
+   "h": 0.45
+  },
+  {
+   "file": "benchCushion.glb",
+   "name": "bench cushion",
+   "w": 1.2,
+   "d": 0.4,
+   "h": 0.45
+  },
+  {
+   "file": "benchCushionLow.glb",
+   "name": "bench cushion low",
+   "w": 1.2,
+   "d": 0.4,
+   "h": 0.4
+  },
+  {
+   "file": "bookcaseClosed.glb",
+   "name": "bookcase closed",
+   "w": 0.8,
+   "d": 0.35,
+   "h": 2.0
+  },
+  {
+   "file": "bookcaseClosedDoors.glb",
+   "name": "bookcase closed doors",
+   "w": 0.8,
+   "d": 0.35,
+   "h": 2.0
+  },
+  {
+   "file": "bookcaseClosedWide.glb",
+   "name": "bookcase closed wide",
+   "w": 1.2,
+   "d": 0.35,
+   "h": 2.0
+  },
+  {
+   "file": "bookcaseOpen.glb",
+   "name": "bookcase open",
+   "w": 0.8,
+   "d": 0.35,
+   "h": 2.0
+  },
+  {
+   "file": "bookcaseOpenLow.glb",
+   "name": "bookcase open low",
+   "w": 0.8,
+   "d": 0.35,
+   "h": 1.1
+  },
+  {
+   "file": "books.glb",
+   "name": "books",
+   "w": 0.3,
+   "d": 0.2,
+   "h": 0.25
+  },
+  {
+   "file": "cabinetBed.glb",
+   "name": "cabinet bed",
+   "w": 0.45,
+   "d": 0.4,
+   "h": 0.55
+  },
+  {
+   "file": "cabinetBedDrawer.glb",
+   "name": "cabinet bed drawer",
+   "w": 0.45,
+   "d": 0.4,
+   "h": 0.55
+  },
+  {
+   "file": "cabinetBedDrawerTable.glb",
+   "name": "cabinet bed drawer table",
+   "w": 0.45,
+   "d": 0.4,
+   "h": 0.55
+  },
+  {
+   "file": "cabinetTelevision.glb",
+   "name": "cabinet television",
+   "w": 1.6,
+   "d": 0.45,
+   "h": 0.5
+  },
+  {
+   "file": "cabinetTelevisionDoors.glb",
+   "name": "cabinet television doors",
+   "w": 1.6,
+   "d": 0.45,
+   "h": 0.5
+  },
+  {
+   "file": "cardboardBoxClosed.glb",
+   "name": "cardboard box closed",
+   "w": 0.4,
+   "d": 0.4,
+   "h": 0.35
+  },
+  {
+   "file": "cardboardBoxOpen.glb",
+   "name": "cardboard box open",
+   "w": 0.4,
+   "d": 0.4,
+   "h": 0.35
+  },
+  {
+   "file": "ceilingFan.glb",
+   "name": "ceiling fan",
+   "w": 1.2,
+   "d": 1.2,
+   "h": 0.4
+  },
+  {
+   "file": "chair.glb",
+   "name": "chair",
+   "w": 0.45,
+   "d": 0.45,
+   "h": 0.9
+  },
+  {
+   "file": "chairCushion.glb",
+   "name": "chair cushion",
+   "w": 0.45,
+   "d": 0.45,
+   "h": 0.9
+  },
+  {
+   "file": "chairDesk.glb",
+   "name": "chair desk",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 0.95
+  },
+  {
+   "file": "chairModernCushion.glb",
+   "name": "chair modern cushion",
+   "w": 0.45,
+   "d": 0.5,
+   "h": 0.85
+  },
+  {
+   "file": "chairModernFrameCushion.glb",
+   "name": "chair modern frame cushion",
+   "w": 0.45,
+   "d": 0.5,
+   "h": 0.85
+  },
+  {
+   "file": "chairRounded.glb",
+   "name": "chair rounded",
+   "w": 0.45,
+   "d": 0.45,
+   "h": 0.85
+  },
+  {
+   "file": "coatRack.glb",
+   "name": "coat rack",
+   "w": 0.8,
+   "d": 0.05,
+   "h": 1.7
+  },
+  {
+   "file": "coatRackStanding.glb",
+   "name": "coat rack standing",
+   "w": 0.4,
+   "d": 0.4,
+   "h": 1.8
+  },
+  {
+   "file": "computerKeyboard.glb",
+   "name": "computer keyboard",
+   "w": 0.45,
+   "d": 0.15,
+   "h": 0.03
+  },
+  {
+   "file": "computerMouse.glb",
+   "name": "computer mouse",
+   "w": 0.07,
+   "d": 0.12,
+   "h": 0.04
+  },
+  {
+   "file": "computerScreen.glb",
+   "name": "computer screen",
+   "w": 0.55,
+   "d": 0.2,
+   "h": 0.4
+  },
+  {
+   "file": "desk.glb",
+   "name": "desk",
+   "w": 1.4,
+   "d": 0.7,
+   "h": 0.75
+  },
+  {
+   "file": "deskCorner.glb",
+   "name": "desk corner",
+   "w": 1.6,
+   "d": 1.6,
+   "h": 0.75
+  },
+  {
+   "file": "doorway.glb",
+   "name": "doorway"
+  },
+  {
+   "file": "doorwayFront.glb",
+   "name": "doorway front"
+  },
+  {
+   "file": "doorwayOpen.glb",
+   "name": "doorway open"
+  },
+  {
+   "file": "dryer.glb",
+   "name": "dryer",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 0.85
+  },
+  {
+   "file": "floorCorner.glb",
+   "name": "floor corner"
+  },
+  {
+   "file": "floorCornerRound.glb",
+   "name": "floor corner round"
+  },
+  {
+   "file": "floorFull.glb",
+   "name": "floor full"
+  },
+  {
+   "file": "floorHalf.glb",
+   "name": "floor half"
+  },
+  {
+   "file": "hoodLarge.glb",
+   "name": "hood large",
+   "w": 0.9,
+   "d": 0.5,
+   "h": 0.4
+  },
+  {
+   "file": "hoodModern.glb",
+   "name": "hood modern",
+   "w": 0.9,
+   "d": 0.5,
+   "h": 0.5
+  },
+  {
+   "file": "kitchenBar.glb",
+   "name": "kitchen bar",
+   "w": 1.2,
+   "d": 0.6,
+   "h": 1.1
+  },
+  {
+   "file": "kitchenBarEnd.glb",
+   "name": "kitchen bar end",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 1.1
+  },
+  {
+   "file": "kitchenBlender.glb",
+   "name": "kitchen blender",
+   "w": 0.2,
+   "d": 0.2,
+   "h": 0.4
+  },
+  {
+   "file": "kitchenCabinet.glb",
+   "name": "kitchen cabinet",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 0.9
+  },
+  {
+   "file": "kitchenCabinetCornerInner.glb",
+   "name": "kitchen cabinet corner inner",
+   "w": 0.9,
+   "d": 0.9,
+   "h": 0.9
+  },
+  {
+   "file": "kitchenCabinetCornerRound.glb",
+   "name": "kitchen cabinet corner round",
+   "w": 0.9,
+   "d": 0.9,
+   "h": 0.9
+  },
+  {
+   "file": "kitchenCabinetDrawer.glb",
+   "name": "kitchen cabinet drawer",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 0.9
+  },
+  {
+   "file": "kitchenCabinetUpper.glb",
+   "name": "kitchen cabinet upper",
+   "w": 0.6,
+   "d": 0.35,
+   "h": 0.7
+  },
+  {
+   "file": "kitchenCabinetUpperCorner.glb",
+   "name": "kitchen cabinet upper corner",
+   "w": 0.65,
+   "d": 0.65,
+   "h": 0.7
+  },
+  {
+   "file": "kitchenCabinetUpperDouble.glb",
+   "name": "kitchen cabinet upper double",
+   "w": 0.8,
+   "d": 0.35,
+   "h": 0.7
+  },
+  {
+   "file": "kitchenCabinetUpperLow.glb",
+   "name": "kitchen cabinet upper low",
+   "w": 0.6,
+   "d": 0.35,
+   "h": 0.4
+  },
+  {
+   "file": "kitchenCoffeeMachine.glb",
+   "name": "kitchen coffee machine",
+   "w": 0.25,
+   "d": 0.35,
+   "h": 0.4
+  },
+  {
+   "file": "kitchenFridge.glb",
+   "name": "kitchen fridge",
+   "w": 0.6,
+   "d": 0.65,
+   "h": 1.5
+  },
+  {
+   "file": "kitchenFridgeBuiltIn.glb",
+   "name": "kitchen fridge built in",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 1.8
+  },
+  {
+   "file": "kitchenFridgeLarge.glb",
+   "name": "kitchen fridge large",
+   "w": 0.9,
+   "d": 0.7,
+   "h": 1.8
+  },
+  {
+   "file": "kitchenFridgeSmall.glb",
+   "name": "kitchen fridge small",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 0.85
+  },
+  {
+   "file": "kitchenMicrowave.glb",
+   "name": "kitchen microwave",
+   "w": 0.5,
+   "d": 0.35,
+   "h": 0.3
+  },
+  {
+   "file": "kitchenSink.glb",
+   "name": "kitchen sink",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 0.9
+  },
+  {
+   "file": "kitchenStove.glb",
+   "name": "kitchen stove",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 0.9
+  },
+  {
+   "file": "kitchenStoveElectric.glb",
+   "name": "kitchen stove electric",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 0.9
+  },
+  {
+   "file": "lampRoundFloor.glb",
+   "name": "lamp round floor",
+   "w": 0.35,
+   "d": 0.35,
+   "h": 1.6
+  },
+  {
+   "file": "lampRoundTable.glb",
+   "name": "lamp round table",
+   "w": 0.25,
+   "d": 0.25,
+   "h": 0.5
+  },
+  {
+   "file": "lampSquareCeiling.glb",
+   "name": "lamp square ceiling",
+   "w": 0.4,
+   "d": 0.4,
+   "h": 0.3
+  },
+  {
+   "file": "lampSquareFloor.glb",
+   "name": "lamp square floor",
+   "w": 0.35,
+   "d": 0.35,
+   "h": 1.6
+  },
+  {
+   "file": "lampSquareTable.glb",
+   "name": "lamp square table",
+   "w": 0.25,
+   "d": 0.25,
+   "h": 0.5
+  },
+  {
+   "file": "lampWall.glb",
+   "name": "lamp wall",
+   "w": 0.2,
+   "d": 0.15,
+   "h": 0.3
+  },
+  {
+   "file": "laptop.glb",
+   "name": "laptop",
+   "w": 0.35,
+   "d": 0.25,
+   "h": 0.03
+  },
+  {
+   "file": "loungeChair.glb",
+   "name": "lounge chair",
+   "w": 0.8,
+   "d": 0.85,
+   "h": 0.8
+  },
+  {
+   "file": "loungeChairRelax.glb",
+   "name": "lounge chair relax",
+   "w": 0.8,
+   "d": 0.9,
+   "h": 1.0
+  },
+  {
+   "file": "loungeDesignChair.glb",
+   "name": "lounge design chair",
+   "w": 0.8,
+   "d": 0.85,
+   "h": 0.75
+  },
+  {
+   "file": "loungeDesignSofa.glb",
+   "name": "lounge design sofa",
+   "w": 2.2,
+   "d": 0.95,
+   "h": 0.8
+  },
+  {
+   "file": "loungeDesignSofaCorner.glb",
+   "name": "lounge design sofa corner",
+   "w": 2.6,
+   "d": 2.6,
+   "h": 0.8
+  },
+  {
+   "file": "loungeSofa.glb",
+   "name": "lounge sofa",
+   "w": 2.2,
+   "d": 0.95,
+   "h": 0.85
+  },
+  {
+   "file": "loungeSofaCorner.glb",
+   "name": "lounge sofa corner",
+   "w": 2.6,
+   "d": 2.6,
+   "h": 0.85
+  },
+  {
+   "file": "loungeSofaLong.glb",
+   "name": "lounge sofa long",
+   "w": 2.8,
+   "d": 0.95,
+   "h": 0.85
+  },
+  {
+   "file": "loungeSofaOttoman.glb",
+   "name": "lounge sofa ottoman",
+   "w": 0.8,
+   "d": 0.8,
+   "h": 0.45
+  },
+  {
+   "file": "paneling.glb",
+   "name": "paneling"
+  },
+  {
+   "file": "pillow.glb",
+   "name": "pillow",
+   "w": 0.5,
+   "d": 0.5,
+   "h": 0.15
+  },
+  {
+   "file": "pillowBlue.glb",
+   "name": "pillow blue",
+   "w": 0.5,
+   "d": 0.5,
+   "h": 0.15
+  },
+  {
+   "file": "pillowBlueLong.glb",
+   "name": "pillow blue long",
+   "w": 0.9,
+   "d": 0.4,
+   "h": 0.15
+  },
+  {
+   "file": "pillowLong.glb",
+   "name": "pillow long",
+   "w": 0.9,
+   "d": 0.4,
+   "h": 0.15
+  },
+  {
+   "file": "plantSmall1.glb",
+   "name": "plant small1",
+   "w": 0.25,
+   "d": 0.25,
+   "h": 0.5
+  },
+  {
+   "file": "plantSmall2.glb",
+   "name": "plant small2",
+   "w": 0.25,
+   "d": 0.25,
+   "h": 0.5
+  },
+  {
+   "file": "plantSmall3.glb",
+   "name": "plant small3",
+   "w": 0.25,
+   "d": 0.25,
+   "h": 0.5
+  },
+  {
+   "file": "pottedPlant.glb",
+   "name": "potted plant",
+   "w": 0.4,
+   "d": 0.4,
+   "h": 1.1
+  },
+  {
+   "file": "radio.glb",
+   "name": "radio",
+   "w": 0.35,
+   "d": 0.15,
+   "h": 0.2
+  },
+  {
+   "file": "rugDoormat.glb",
+   "name": "rug doormat",
+   "w": 0.8,
+   "d": 0.5,
+   "h": 0.02
+  },
+  {
+   "file": "rugRectangle.glb",
+   "name": "rug rectangle",
+   "w": 2.4,
+   "d": 1.7,
+   "h": 0.02
+  },
+  {
+   "file": "rugRound.glb",
+   "name": "rug round",
+   "w": 1.6,
+   "d": 1.6,
+   "h": 0.02
+  },
+  {
+   "file": "rugRounded.glb",
+   "name": "rug rounded",
+   "w": 2.0,
+   "d": 1.4,
+   "h": 0.02
+  },
+  {
+   "file": "rugSquare.glb",
+   "name": "rug square",
+   "w": 1.7,
+   "d": 1.7,
+   "h": 0.02
+  },
+  {
+   "file": "shower.glb",
+   "name": "shower",
+   "w": 0.9,
+   "d": 0.9,
+   "h": 2.1
+  },
+  {
+   "file": "showerRound.glb",
+   "name": "shower round",
+   "w": 0.9,
+   "d": 0.9,
+   "h": 2.1
+  },
+  {
+   "file": "sideTable.glb",
+   "name": "side table",
+   "w": 0.5,
+   "d": 0.4,
+   "h": 0.6
+  },
+  {
+   "file": "sideTableDrawers.glb",
+   "name": "side table drawers",
+   "w": 0.5,
+   "d": 0.4,
+   "h": 0.6
+  },
+  {
+   "file": "speaker.glb",
+   "name": "speaker",
+   "w": 0.3,
+   "d": 0.3,
+   "h": 1.0
+  },
+  {
+   "file": "speakerSmall.glb",
+   "name": "speaker small",
+   "w": 0.2,
+   "d": 0.2,
+   "h": 0.35
+  },
+  {
+   "file": "stairs.glb",
+   "name": "stairs"
+  },
+  {
+   "file": "stairsCorner.glb",
+   "name": "stairs corner"
+  },
+  {
+   "file": "stairsOpen.glb",
+   "name": "stairs open"
+  },
+  {
+   "file": "stairsOpenSingle.glb",
+   "name": "stairs open single"
+  },
+  {
+   "file": "stoolBar.glb",
+   "name": "stool bar",
+   "w": 0.4,
+   "d": 0.4,
+   "h": 0.75
+  },
+  {
+   "file": "stoolBarSquare.glb",
+   "name": "stool bar square",
+   "w": 0.4,
+   "d": 0.4,
+   "h": 0.75
+  },
+  {
+   "file": "table.glb",
+   "name": "table",
+   "w": 1.6,
+   "d": 0.9,
+   "h": 0.75
+  },
+  {
+   "file": "tableCloth.glb",
+   "name": "table cloth",
+   "w": 1.6,
+   "d": 0.9,
+   "h": 0.75
+  },
+  {
+   "file": "tableCoffee.glb",
+   "name": "table coffee",
+   "w": 1.1,
+   "d": 0.6,
+   "h": 0.45
+  },
+  {
+   "file": "tableCoffeeGlass.glb",
+   "name": "table coffee glass",
+   "w": 1.1,
+   "d": 0.6,
+   "h": 0.45
+  },
+  {
+   "file": "tableCoffeeGlassSquare.glb",
+   "name": "table coffee glass square",
+   "w": 0.9,
+   "d": 0.9,
+   "h": 0.45
+  },
+  {
+   "file": "tableCoffeeSquare.glb",
+   "name": "table coffee square",
+   "w": 0.9,
+   "d": 0.9,
+   "h": 0.45
+  },
+  {
+   "file": "tableCross.glb",
+   "name": "table cross",
+   "w": 1.6,
+   "d": 0.9,
+   "h": 0.75
+  },
+  {
+   "file": "tableCrossCloth.glb",
+   "name": "table cross cloth",
+   "w": 1.6,
+   "d": 0.9,
+   "h": 0.75
+  },
+  {
+   "file": "tableGlass.glb",
+   "name": "table glass",
+   "w": 1.6,
+   "d": 0.9,
+   "h": 0.75
+  },
+  {
+   "file": "tableRound.glb",
+   "name": "table round",
+   "w": 1.2,
+   "d": 1.2,
+   "h": 0.75
+  },
+  {
+   "file": "televisionAntenna.glb",
+   "name": "television antenna",
+   "w": 0.9,
+   "d": 0.25,
+   "h": 0.6
+  },
+  {
+   "file": "televisionModern.glb",
+   "name": "television modern",
+   "w": 1.3,
+   "d": 0.25,
+   "h": 0.8
+  },
+  {
+   "file": "televisionVintage.glb",
+   "name": "television vintage",
+   "w": 0.6,
+   "d": 0.45,
+   "h": 0.6
+  },
+  {
+   "file": "toaster.glb",
+   "name": "toaster",
+   "w": 0.3,
+   "d": 0.18,
+   "h": 0.2
+  },
+  {
+   "file": "toilet.glb",
+   "name": "toilet",
+   "w": 0.4,
+   "d": 0.65,
+   "h": 0.8
+  },
+  {
+   "file": "toiletSquare.glb",
+   "name": "toilet square",
+   "w": 0.4,
+   "d": 0.65,
+   "h": 0.8
+  },
+  {
+   "file": "trashcan.glb",
+   "name": "trashcan",
+   "w": 0.3,
+   "d": 0.3,
+   "h": 0.4
+  },
+  {
+   "file": "wall.glb",
+   "name": "wall"
+  },
+  {
+   "file": "wallCorner.glb",
+   "name": "wall corner"
+  },
+  {
+   "file": "wallCornerRond.glb",
+   "name": "wall corner rond"
+  },
+  {
+   "file": "wallDoorway.glb",
+   "name": "wall doorway"
+  },
+  {
+   "file": "wallDoorwayWide.glb",
+   "name": "wall doorway wide"
+  },
+  {
+   "file": "wallHalf.glb",
+   "name": "wall half"
+  },
+  {
+   "file": "wallWindow.glb",
+   "name": "wall window"
+  },
+  {
+   "file": "wallWindowSlide.glb",
+   "name": "wall window slide"
+  },
+  {
+   "file": "washer.glb",
+   "name": "washer",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 0.85
+  },
+  {
+   "file": "washerDryerStacked.glb",
+   "name": "washer dryer stacked",
+   "w": 0.6,
+   "d": 0.6,
+   "h": 1.7
+  }
+ ]
+}

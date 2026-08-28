@@ -535,7 +535,10 @@ en: {
   importModelFailed:'Could not read the model:',
   hintPickModel:'Pick one of your imported models in the furniture menu first.',
   hintModelImported:(n,w,d,h)=>`📦 ${n} imported (${w} × ${d} × ${h} m) — click the plan to place it`,
+  hintModelsImported:n=>`📦 ${n} models imported — find them under "My 3D models"`,
   confirmDelModel:n=>`Delete the 3D model "${n}"? Placed copies stay in the plan as plain boxes.`,
+  furnImportDir:'📁 Whole folder…', furnImportDirT:'Import every .glb file in a folder at once',
+  catalogLbl:n=>`Catalog · ${n} free furniture models (CC0)`,
   furnW:'Width (m)', furnD:'Depth (m)', furnH:'Height (m)', furnA:'Angle (°)', rotBtn:'↻ Rotate 90° (R)', delFurn:'Delete furniture',
   versionsT:'Version history — restore an earlier state of the plan', versionsTitle:'🕘 Version history (this browser)',
   versionsNote:'Automatic snapshots: every 5 min while editing, on variant switch, before file reloads, resets and restores. Last 60 are kept.',
@@ -663,7 +666,10 @@ da: {
   importModelFailed:'Kunne ikke læse modellen:',
   hintPickModel:'Vælg først en af dine importerede modeller i møbelmenuen.',
   hintModelImported:(n,w,d,h)=>`📦 ${n} importeret (${w} × ${d} × ${h} m) — klik på planen for at placere den`,
+  hintModelsImported:n=>`📦 ${n} modeller importeret — find dem under "Mine 3D-modeller"`,
   confirmDelModel:n=>`Slet 3D-modellen "${n}"? Placerede kopier bliver i planen som simple kasser.`,
+  furnImportDir:'📁 Hel mappe…', furnImportDirT:'Importér alle .glb-filer i en mappe på én gang',
+  catalogLbl:n=>`Katalog · ${n} gratis møbler (CC0)`,
   furnW:'Bredde (m)', furnD:'Dybde (m)', furnH:'Højde (m)', furnA:'Vinkel (°)', rotBtn:'↻ Rotér 90° (R)', delFurn:'Slet møbel',
   versionsT:'Versionshistorik — gendan en tidligere tilstand af planen', versionsTitle:'🕘 Versionshistorik (denne browser)',
   versionsNote:'Automatiske snapshots: hvert 5. minut under redigering, ved variantskift, før fil-genindlæsning, nulstilling og gendannelse. De sidste 60 gemmes.',
@@ -848,8 +854,16 @@ function buildFurnPicker(){
         <button data-fm="${m.id}" class="${cur==='model'&&m.id===curModelId?'fsel':''}" style="flex:1;text-align:left">📦 ${esc(m.name)} <small style="opacity:.6">${m.w}×${m.d}×${m.h}</small></button>
         <button data-fmdel="${m.id}" class="danger" style="width:auto">✕</button>
       </div>`).join('')
-    +`<button id="furnImportBtn" style="width:100%;margin-top:4px" title="${T('furnImportT')}">${T('furnImport')}</button>
-      <input type="file" id="furnImportFile" accept=".glb" style="display:none">`;
+    +`<div style="display:flex;gap:4px;margin-top:4px">
+       <button id="furnImportBtn" style="flex:1" title="${T('furnImportT')}">${T('furnImport')}</button>
+       <button id="furnImportDirBtn" style="flex:1" title="${T('furnImportDirT')}">${T('furnImportDir')}</button>
+      </div>
+      <input type="file" id="furnImportFile" accept=".glb" multiple style="display:none">
+      <input type="file" id="furnImportDir" webkitdirectory multiple style="display:none">`
+    +(CATALOG?.items?.length ? `<button id="catToggle" style="width:100%;margin-top:4px">${catOpen?'▾':'▸'} 📚 ${T('catalogLbl')(CATALOG.items.length)}</button>`
+      +(catOpen ? `<div class="furnGrid">`+CATALOG.items.map(it=>
+          `<button data-cat="${esc(it.file)}" class="${Object.values(MODELS).some(m=>m.name===it.name)?'fsel':''}">📦 ${esc(it.name)}</button>`).join('')
+        +`</div><div style="opacity:.55;font-size:11px;margin:2px 4px">${esc(CATALOG.license||'')}</div>` : '') : '');
   for(const b of drop.querySelectorAll('button[data-fk]')) b.onclick=()=>{
     document.getElementById('furnKind').value=b.dataset.fk;
     setTool('furn');
@@ -871,14 +885,20 @@ function buildFurnPicker(){
     try{ rebuild3d(); }catch(err){}
   };
   const imp=drop.querySelector('#furnImportBtn'), impF=drop.querySelector('#furnImportFile');
+  const impD=drop.querySelector('#furnImportDirBtn'), impDF=drop.querySelector('#furnImportDir');
   if(imp) imp.onclick=e=>{ e.stopPropagation(); impF.click(); };
-  if(impF) impF.onchange=()=>{ if(impF.files[0]) importModelFile(impF.files[0]); };
+  if(impF) impF.onchange=()=>{ importModelFiles(impF.files); impF.value=''; };
+  if(impD) impD.onclick=e=>{ e.stopPropagation(); impDF.click(); };
+  if(impDF) impDF.onchange=()=>{ importModelFiles(impDF.files); impDF.value=''; };
+  const ct=drop.querySelector('#catToggle');
+  if(ct) ct.onclick=e=>{ e.stopPropagation(); catOpen=!catOpen; buildFurnPicker(); };
+  for(const b of drop.querySelectorAll('button[data-cat]')) b.onclick=e=>{ e.stopPropagation(); importCatalogItem(b.dataset.cat); };
   updateFurnBtn();
 }
-async function importModelFile(file){
+async function importModelFile(file, opts={}){
   try{
     const buf=await file.arrayBuffer();
-    if(buf.byteLength>40e6){ alert(T('modelTooBig')); return; }
+    if(buf.byteLength>40e6){ throw new Error(T('modelTooBig')); }
     const THREE=three?.THREE||await import('three');
     const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
     const gltf=await new Promise((res,rej)=>new GLTFLoader().parse(buf.slice(0),'',res,rej));
@@ -886,14 +906,52 @@ async function importModelFile(file){
     const sx=box.max.x-box.min.x, sy=box.max.y-box.min.y, sz=box.max.z-box.min.z;
     const maxD=Math.max(sx,sy,sz)||1;
     const unit = maxD>50 ? 0.001 : maxD>6 ? 0.01 : 1;   // models come in mm, cm or m — guess from size
-    const name=(file.name.replace(/\.glb$/i,'').replace(/[-_]+/g,' ').trim()||'model').slice(0,48);
-    const rec={id:'m'+Date.now().toString(36), name,
-      w:+(sx*unit).toFixed(2)||0.5, d:+(sz*unit).toFixed(2)||0.5, h:+(sy*unit).toFixed(2)||0.5, glb:buf};
+    const name=(opts.name || file.name.replace(/\.glb$/i,'').replace(/[-_]+/g,' ').trim() || 'model').slice(0,48);
+    const old=Object.values(MODELS).find(m=>m.name===name);   // same name = replace, don't duplicate
+    const D=opts.dims;                                        // curated real-world size wins over the file's own
+    const rec={id: old?old.id : 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2,5), name,
+      w:D?.w ?? (+(sx*unit).toFixed(2)||0.5), d:D?.d ?? (+(sz*unit).toFixed(2)||0.5), h:D?.h ?? (+(sy*unit).toFixed(2)||0.5), glb:buf};
     await idbKV.mput(rec);
     MODELS[rec.id]=rec;
-    document.getElementById('furnKind').value='model'; curModelId=rec.id;
-    buildFurnPicker(); setTool('furn');
-    flashHint(T('hintModelImported')(rec.name,rec.w,rec.d,rec.h));
+    modelCache3d.delete(rec.id);
+    if(!opts.quiet){
+      document.getElementById('furnKind').value='model'; curModelId=rec.id;
+      buildFurnPicker(); setTool('furn');
+      try{ rebuild3d(); }catch(e){}
+      flashHint(T('hintModelImported')(rec.name,rec.w,rec.d,rec.h));
+    }
+    return rec;
+  }catch(e){
+    if(opts.quiet){ console.warn('model import failed:', file.name, e); return null; }
+    alert(T('importModelFailed')+' '+(e?.message||e));
+    return null;
+  }
+}
+async function importModelFiles(files){
+  const list=[...files].filter(f=>/\.glb$/i.test(f.name));
+  if(!list.length) return;
+  if(list.length===1) return importModelFile(list[0]);
+  let n=0;
+  for(const f of list) if(await importModelFile(f,{quiet:true})) n++;
+  buildFurnPicker();
+  try{ rebuild3d(); }catch(e){}
+  flashHint(T('hintModelsImported')(n));
+}
+let CATALOG=null, catOpen=false;   // built-in CC0 catalog (catalog/index.json next to the tool; http only)
+async function loadCatalog(){
+  if(!/^https?:$/.test(location.protocol)) return;
+  try{
+    const r=await fetch('catalog/index.json');
+    if(r.ok){ CATALOG=await r.json(); buildFurnPicker(); }
+  }catch(e){}
+}
+async function importCatalogItem(file){
+  const it=CATALOG?.items?.find(i=>i.file===file); if(!it) return;
+  try{
+    const r=await fetch('catalog/'+file);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    await importModelFile(new File([await r.blob()], file, {type:'model/gltf-binary'}),
+      {name:it.name, dims: it.w!=null ? {w:it.w, d:it.d, h:it.h} : undefined});
   }catch(e){ alert(T('importModelFailed')+' '+(e?.message||e)); }
 }
 async function loadModels(){
@@ -2952,6 +3010,7 @@ window.planAPI = {
   fitView: ()=>{ fitView(); return 'ok'; },
   w2s: (x,y)=>W2S(x,y), s2w: (px,py)=>S2W(px,py),   // agent hook: 2D view transform (CSS px)
   importModel: f=>importModelFile(f),               // agent hook: File/Blob (.glb) → furniture model library
+  importModels: fs=>importModelFiles(fs),           // agent hook: batch variant (FileList/array)
   view3d: (px,py,pz,tx,ty,tz)=>{
     if(!three) return 'no 3d';
     three.camera.position.set(px,py,pz);
@@ -3616,6 +3675,7 @@ if(!guide) setRtab(S.meta.activeVariant==='nutid' ? 'huset' : 'ideer');
 
 init3d();
 loadModels();
+loadCatalog();
 </script>
 </body>
 </html>
