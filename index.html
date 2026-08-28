@@ -574,7 +574,7 @@ en: {
   furnCatOther:'Misc', modelCatT:'Which room tab this model appears under',
   mineEmptyHint:'No imported 3D models yet — use the import buttons on the right, or pick pieces from the 📚 Catalog tab.',
   catalogFileHint:'📚 140 free furniture models ship with the tool in the <b>catalog</b> folder — click <b>📁 Whole folder…</b> above and pick that folder to import them all at once (the browser cannot read it by itself when the tool is opened as a file).',
-  furnW:'Width (m)', furnD:'Depth (m)', furnH:'Height (m)', furnA:'Angle (°)', rotBtn:'↻ Rotate 90° (R)', delFurn:'Delete furniture',
+  furnW:'Width (m)', furnD:'Depth (m)', furnH:'Height (m)', furnA:'Angle (°)', furnZ:'Height above floor (m)', rotBtn:'↻ Rotate 90° (R)', delFurn:'Delete furniture',
   versionsT:'Version history — restore an earlier state of the plan', versionsTitle:'🕘 Version history (this browser)',
   versionsNote:'Automatic snapshots: every 5 min while editing, on variant switch, before file reloads, resets and restores. Last 60 are kept.',
   verSnapNow:'📌 Snapshot now', restore:'Restore', verEmpty:'No snapshots yet.',
@@ -709,7 +709,7 @@ da: {
   furnCatOther:'Diverse', modelCatT:'Hvilken rum-fane modellen vises under',
   mineEmptyHint:'Ingen importerede 3D-modeller endnu — brug importknapperne til højre, eller hent fra 📚 Katalog-fanen.',
   catalogFileHint:'📚 140 gratis møbler følger med værktøjet i mappen <b>catalog</b> — klik <b>📁 Hel mappe…</b> ovenfor og vælg den mappe, så importeres de alle på én gang (browseren kan ikke selv læse mappen, når værktøjet er åbnet som fil).',
-  furnW:'Bredde (m)', furnD:'Dybde (m)', furnH:'Højde (m)', furnA:'Vinkel (°)', rotBtn:'↻ Rotér 90° (R)', delFurn:'Slet møbel',
+  furnW:'Bredde (m)', furnD:'Dybde (m)', furnH:'Højde (m)', furnA:'Vinkel (°)', furnZ:'Højde over gulv (m)', rotBtn:'↻ Rotér 90° (R)', delFurn:'Slet møbel',
   versionsT:'Versionshistorik — gendan en tidligere tilstand af planen', versionsTitle:'🕘 Versionshistorik (denne browser)',
   versionsNote:'Automatiske snapshots: hvert 5. minut under redigering, ved variantskift, før fil-genindlæsning, nulstilling og gendannelse. De sidste 60 gemmes.',
   verSnapNow:'📌 Tag snapshot nu', restore:'Gendan', verEmpty:'Ingen snapshots endnu.',
@@ -2542,12 +2542,14 @@ function updateProps(){
       <div class="row"><label>${T('furnD')}</label><input type="number" id="pFD" step="0.05" min="0.2" max="3" value="${f.d}"></div>
       <div class="row"><label>${T('furnH')}</label><input type="number" id="pFH2" step="0.05" min="0.1" max="2.4" value="${f.h}"></div>
       <div class="row"><label>${T('furnA')}</label><input type="number" id="pFA" step="15" value="${f.angle||0}"></div>
+      <div class="row"><label>${T('furnZ')}</label><input type="number" id="pFZ" step="0.1" min="0" max="3" value="${f.z ?? FT.z ?? 0}"></div>
       <div class="row"><button id="pRot" style="width:100%">${T('rotBtn')}</button></div>
       <div class="row"><button id="pDel" class="danger" style="width:100%">${T('delFurn')}</button></div>`;
     propsEl.querySelector('#pFW').onchange=e=>{ f.w=parseFloat(e.target.value)||FT.w; changed(); };
     propsEl.querySelector('#pFD').onchange=e=>{ f.d=parseFloat(e.target.value)||FT.d; changed(); };
     propsEl.querySelector('#pFH2').onchange=e=>{ f.h=parseFloat(e.target.value)||FT.h; changed(); };
     propsEl.querySelector('#pFA').onchange=e=>{ f.angle=parseFloat(e.target.value)||0; changed(); };
+    propsEl.querySelector('#pFZ').onchange=e=>{ const v=parseFloat(e.target.value); if(Number.isFinite(v)&&v>0) f.z=+v.toFixed(2); else delete f.z; changed(); };
     propsEl.querySelector('#pRot').onclick=()=>{ f.angle=((f.angle||0)+90)%360; changed(); updateProps(); };
     propsEl.querySelector('#pDel').onclick=deleteSel;
   } else if(sel.type==='velux'){
@@ -3525,7 +3527,7 @@ function rebuild3d(){
   for(const f of (cv().furniture||[])){
     const FT=FURN[f.kind]||FURN.underskab;
     const fg=furn3d(THREE,f);
-    const zBase=floorZAt(f.at[0],f.at[1]) + (FT.z||0);
+    const zBase=floorZAt(f.at[0],f.at[1]) + (f.z ?? FT.z ?? 0);
     fg.position.set(f.at[0], zBase, f.at[1]);
     fg.rotation.y=-(f.angle||0)*Math.PI/180;
     group.add(fg);
