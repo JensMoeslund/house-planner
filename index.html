@@ -573,7 +573,9 @@ en: {
   catalogLbl:n=>`Catalog · ${n} free furniture models (CC0)`,
   furnCatCatalog:'Catalog', furnBarT:'Browse furniture — bar at the bottom with 3D previews',
   furnCatOther:'Misc', modelCatT:'Which room tab this model appears under',
-  traceWalls:'✨ Find walls', traceWallsT:'Detect the walls in the floor-plan photo automatically (set the scale first) — then tidy up by hand',
+  traceWalls:'✨ Find walls', traceWallsT:'Detect the walls in the floor-plan photo automatically (set the scale first) — then tidy up by hand. Shift-click = debug overlay: shows every candidate colour-coded, changes nothing.',
+  traceDbg_kept:'kept as walls', traceDbg_flank:'rejected: no open side', traceDbg_axis:'rejected: axis line', traceDbg_prune:'rejected: not connected',
+  hintTraceDebug:d=>`🔎 debug: scale ${d.pxm} px/m · ink ${Math.round(d.inkFrac*100)}% · candidates ${d.merged} → kept ${d.final} (${d.ms} ms) — nothing added; click without Shift to apply. Esc clears.`,
   hintTraceNoUnderlay:'Load a floor-plan photo first (Load…).',
   hintTraceNutid:'Auto-trace draws the house as it is today — switch to tab 1 · The house today.',
   hintTraceScale:'Set the scale first (Scale: click two points with a known distance).',
@@ -714,7 +716,9 @@ da: {
   catalogLbl:n=>`Katalog · ${n} gratis møbler (CC0)`,
   furnCatCatalog:'Katalog', furnBarT:'Gennemse møbler — bjælke i bunden med 3D-forhåndsvisning',
   furnCatOther:'Diverse', modelCatT:'Hvilken rum-fane modellen vises under',
-  traceWalls:'✨ Find vægge', traceWallsT:'Find væggene i plantegnings-fotoet automatisk (sæt målestokken først) — ryd op i hånden bagefter',
+  traceWalls:'✨ Find vægge', traceWallsT:'Find væggene i plantegnings-fotoet automatisk (sæt målestokken først) — ryd op i hånden bagefter. Shift-klik = fejlsøgnings-overlay: viser alle kandidater farvekodet, ændrer intet.',
+  traceDbg_kept:'beholdt som vægge', traceDbg_flank:'afvist: ingen åben side', traceDbg_axis:'afvist: akselinje', traceDbg_prune:'afvist: ikke forbundet',
+  hintTraceDebug:d=>`🔎 fejlsøgning: målestok ${d.pxm} px/m · blæk ${Math.round(d.inkFrac*100)}% · kandidater ${d.merged} → beholdt ${d.final} (${d.ms} ms) — intet tilføjet; klik uden Shift for at tegne. Esc rydder.`,
   hintTraceNoUnderlay:'Indlæs først et foto af plantegningen (Indlæs…).',
   hintTraceNutid:'Auto-optegning tegner huset som det er i dag — skift til fane 1 · Huset i dag.',
   hintTraceScale:'Sæt målestokken først (Målestok: klik på to punkter med kendt afstand).',
@@ -1932,7 +1936,9 @@ function trBigWhite(ink,w,h,minArea){
   for(let i=0;i<w*h;i++) if(!ink[i] && areas[lab[i]]>=minArea) big[i]=1;
   return big;
 }
-function traceWallsFromUnderlay(){
+let traceDbg=null;   // debug overlay buckets from the last Shift-click trace
+function traceWallsFromUnderlay(debugMode){
+  const t0=performance.now();
   if(!underlay || !underlayImg){ flashHint(T('hintTraceNoUnderlay')); return 0; }
   if(!editingNutid()){ flashHint(T('hintTraceNutid')); return 0; }
   const pxm=1/underlay.mppx;
@@ -1981,13 +1987,15 @@ function traceWallsFromUnderlay(){
       ? {a:[toWx(r.y+r.thk/2), toWy(r.x)], b:[toWx(r.y+r.thk/2), toWy(r.x+r.len)], t, vert:true}
       : {a:[toWx(r.x), toWy(r.y+r.thk/2)], b:[toWx(r.x+r.len), toWy(r.y+r.thk/2)], t, vert:false};
   };
-  let segs=[
-    ...trMaskRects(mask,w,h,o1,false).map(r=>toSeg(r)),
-    ...trMaskRects(mask,w,h,o1,true).map(r=>toSeg(r)),
-    ...trMaskRects(mask,w,h,o2,false).map(r=>toSeg(r,0.4)),
-    ...trMaskRects(mask,w,h,o2,true).map(r=>toSeg(r,0.4)),
-    ...trThinRects(ink,w,h,ppm).map(r=>toSeg(r)),
-  ];
+  const r1=[...trMaskRects(mask,w,h,o1,false), ...trMaskRects(mask,w,h,o1,true)];
+  const r2=[...trMaskRects(mask,w,h,o2,false), ...trMaskRects(mask,w,h,o2,true)];
+  const r3=trThinRects(ink,w,h,ppm);
+  let segs=[...r1.map(r=>toSeg(r)), ...r2.map(r=>toSeg(r,0.4)), ...r3.map(r=>toSeg(r))];
+  const dbg={imgW:underlayImg.naturalWidth, imgH:underlayImg.naturalHeight,
+             pxm:+pxm.toFixed(1), sc:+sc.toFixed(2), ppm:+ppm.toFixed(1),
+             otsu:thr, inkFrac:+(ink.reduce((a,b)=>a+b,0)/(w*h)).toFixed(3),
+             rectsThick:r1.length, rectsFused:r2.length, rectsThin:r3.length,
+             killed:{flank:[], axis:[], prune:[]}};
   const sample=(arr,x0,y0,x1,y1)=>{
     x0=Math.max(0,x0); y0=Math.max(0,y0); x1=Math.min(w,x1); y1=Math.min(h,y1);
     if(x1<=x0||y1<=y0) return -1;
@@ -2022,7 +2030,8 @@ function traceWallsFromUnderlay(){
     }
     return false;
   };
-  segs=segs.filter(flankOK);
+  dbg.merged=segs.length;
+  { const keep=[]; for(const s of segs) (flankOK(s)?keep:dbg.killed.flank).push(s); segs=keep; }
   // axis/section grid lines run past everything: drop segs whose BOTH ends stick out
   // beyond the bounding box of all the other segments
   for(let pass=0; pass<6; pass++){
@@ -2043,7 +2052,7 @@ function traceWallsFromUnderlay(){
       return out>=2;
     };
     const before=segs.length;
-    segs=segs.filter(s=>!isAxis(s));
+    { const keep=[]; for(const s of segs) (isAxis(s)?dbg.killed.axis:keep).push(s); segs=keep; }
     if(segs.length===before) break;
   }
   // connectivity pruning: real walls join a network, text underlines float alone
@@ -2070,7 +2079,7 @@ function traceWallsFromUnderlay(){
       const len=Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1]);
       const cn=connEnds(s);
       if(cn>=2 || (cn>=1 && len>=1.2) || (s.t>0.2 && len>=3.0)) keep.push(s);
-      else changed=true;
+      else { dbg.killed.prune.push(s); changed=true; }
     }
     segs=keep;
   }
@@ -2085,6 +2094,18 @@ function traceWallsFromUnderlay(){
       }
     }
   }
+  dbg.final=segs.length;
+  dbg.ms=Math.round(performance.now()-t0);
+  window.__traceDebug=dbg;
+  if(debugMode){
+    traceDbg={kept:segs, flank:dbg.killed.flank, axis:dbg.killed.axis, prune:dbg.killed.prune};
+    console.table([dbg]);
+    console.log('trace debug:', dbg);
+    flashHint(T('hintTraceDebug')(dbg));
+    draw();
+    return segs.length;
+  }
+  traceDbg=null;
   const round=v=>+v.toFixed(2);
   let n=0;
   for(const s of segs){
@@ -2179,6 +2200,24 @@ function draw(){
   if(selWall) drawWall(selWall,selWallKind,true);
   for(const {o} of visibleOpenings()) drawOpening(o, sel?.id===o.id);
 
+  // ✨ Shift-trace debug overlay: candidates colour-coded by which filter rejected them
+  if(traceDbg){
+    ctx.save();
+    for(const [k,col] of [['prune','#ff5c5c'],['axis','#c47bff'],['flank','#ffb454'],['kept','#4ee08a']]){
+      ctx.strokeStyle=col; ctx.globalAlpha=0.7;
+      for(const s of traceDbg[k]){
+        ctx.lineWidth=Math.max(3, Math.min(s.t,0.45)*view.ppm);
+        ctx.beginPath(); ctx.moveTo(...W2S(...s.a)); ctx.lineTo(...W2S(...s.b)); ctx.stroke();
+      }
+    }
+    ctx.globalAlpha=1; ctx.font='12px sans-serif'; ctx.textAlign='left';
+    let ly=c2d.clientHeight-86;
+    for(const [k,col] of [['kept','#4ee08a'],['flank','#ffb454'],['axis','#c47bff'],['prune','#ff5c5c']]){
+      ctx.fillStyle=col;
+      ctx.fillText('■ '+T('traceDbg_'+k)+' ('+traceDbg[k].length+')', 12, ly); ly+=16;
+    }
+    ctx.restore();
+  }
   // "you are here" marker while walking in 3D
   if(walkPos){
     const [wx2,wy2]=W2S(walkPos.x,walkPos.y);
@@ -2859,7 +2898,7 @@ window.addEventListener('keydown', e=>{
       lenBuf=''; draw(); return;
     }
   }
-  if(k==='escape'){ drawing=null; sel=null; calibPts=[]; sketchStroke=null; measures=[]; measureStart=null; lenBuf=''; roomStart=null; if(dragging?.type==='room') dragging=null; toggleFurnBar(false); updateProps(); draw(); }
+  if(k==='escape'){ drawing=null; sel=null; calibPts=[]; sketchStroke=null; measures=[]; measureStart=null; lenBuf=''; roomStart=null; traceDbg=null; if(dragging?.type==='room') dragging=null; toggleFurnBar(false); updateProps(); draw(); }
   else if(k==='v') setTool('select');
   else if(k==='m') setTool('measure');
   else if(k==='w') setTool('wall');
@@ -3128,9 +3167,11 @@ document.getElementById('underlayFile').onchange=e=>{
   rd.readAsDataURL(f);
 };
 document.getElementById('underlayOpacity').oninput=e=>{ if(underlay){ underlay.opacity=+e.target.value; saveUnderlay(); draw(); } };
-document.getElementById('traceBtn').onclick=()=>{
-  try{ saveVersion('before-auto-trace'); }catch(e){}
-  traceWallsFromUnderlay();
+document.getElementById('traceBtn').onclick=e=>{
+  if(e.shiftKey){ traceWallsFromUnderlay(true); return; }   // debug overlay, plan untouched
+  traceDbg=null;
+  try{ saveVersion('before-auto-trace'); }catch(err){}
+  traceWallsFromUnderlay(false);
 };
 document.getElementById('underlayClear').onclick=()=>{ underlay=null; underlayImg=null; saveUnderlay(); draw(); };
 
@@ -3749,7 +3790,8 @@ window.planAPI = {
     saveUnderlay(); draw();
     return underlay ? {...underlay, dataUrl: underlay.dataUrl?'<set>':null} : null;
   },
-  traceWalls: ()=>traceWallsFromUnderlay(),         // agent hook: auto-trace walls from the underlay
+  traceWalls: opts=>traceWallsFromUnderlay(!!(opts&&opts.debug)),  // agent hook: auto-trace ({debug:true} = overlay only)
+  traceReport: ()=>window.__traceDebug||null,       // agent hook: numbers from the last trace run
   view3d: (px,py,pz,tx,ty,tz)=>{
     if(!three) return 'no 3d';
     three.camera.position.set(px,py,pz);
