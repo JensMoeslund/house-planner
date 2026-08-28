@@ -12,14 +12,18 @@ your plan with you (more below).
 
 ## How it works
 
-1. **Draw your house as it is today.** Draw walls directly (they snap to straight
-   angles — hold Shift for odd ones), or load a photo of your floor plan and trace over
-   it. Add doors, windows, room names.
-2. **Copy it into an idea.** Press **+** and give the idea a name.
-3. **Change things — safely.** In an idea, the real house is protected: deleting a door
-   only closes it *in that idea*, and dragging a wall's end inward demolishes just that
-   part (shown dashed red). You can never accidentally mess up the "today" plan, and a
-   badge always shows which one you're editing.
+The Office-style ribbon walks you through it — the two numbered tabs *are* the workflow:
+
+1. **Draw your house as it is today** on the **1 · The house today** tab. Draw walls
+   directly (they snap to straight angles — hold Shift for odd ones), or load a photo of
+   your floor plan and trace over it. Add doors, windows, room names. Everything you draw
+   here is the real house — the ground truth every idea builds on.
+2. **Switch to the 2 · Ideas tab.** Press **+** to copy the house into a named idea.
+3. **Change things — safely.** On the Ideas tab, everything you draw belongs to the
+   selected idea and the real house is protected: deleting a door only closes it *in that
+   idea*, and dragging a wall's end inward demolishes just that part (shown dashed red).
+   Switching tabs switches what you're editing — no mode to forget — and a badge always
+   shows which one is active.
 4. **Compare and decide.** Flip between ideas, look at them in 3D, walk around inside
    (WASD + mouse), turn on the sun for any date and time, and render pretty pictures.
 
@@ -28,6 +32,8 @@ a "clean slate" switch that hides the demolition markings entirely.
 
 ## Nice things it does
 
+- Word/Excel-style ribbon: **File · 1 The house today · 2 Ideas · View · Export** —
+  grouped, captioned tools instead of nested menus
 - Live 3D view + walk-through mode
 - Sunlight simulation for your exact location, any date and time
 - Roofs in two clicks: classic gable roof with trusses, or flat roof — plus roof windows,
@@ -41,8 +47,8 @@ a "clean slate" switch that hides the demolition markings entirely.
 
 ## Saving
 
-Your plan lives in the browser automatically. Click **🔗** to also save it as a
-`house-plan.json` file on disk — a small, human-readable file you can back up, share, or
+Your plan lives in the browser automatically. Use **File → 📂 Open house plan…** to also
+link it to a `house-plan.json` file on disk — a small, human-readable file you can back up, share, or
 let an AI assistant edit.
 
 ## Agent-native
@@ -57,19 +63,15 @@ version history as your own edits.
 
 ## Try it
 
-Open `index.html`, click **🔗 Link plan file**, and pick
+Open `index.html`, click **File → 📂 Open house plan…**, and pick
 [demo/demo-plan.json](demo/demo-plan.json) — a small example house with a "today" plan
 and an open-kitchen idea.
 
 ## Roadmap
 
 **Beginner-friendliness (next up)**
-- Room tool: drag a rectangle → four walls + a room name (no wall-chain drawing needed)
-- Visible Undo/Redo buttons
-- Live wall length at the cursor while drawing; type a number to make it exact
 - "Try the example house" button on the empty-plan screen
 - Touch support: pinch zoom, two-finger pan, bigger grab handles
-- "Saved automatically in this browser" reassurance in the File menu
 
 **Deciding between ideas**
 - Compare two ideas: overlay with color-coded differences, side-by-side view, and a

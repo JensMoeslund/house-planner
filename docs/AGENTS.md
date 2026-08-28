@@ -1,8 +1,12 @@
 # Driving the planner as an AI agent
 
 The plan file **is** the API. The human links the tool to a `house-plan.json`
-(🔗 Link plan file); you edit that file; the tool hot-reloads within ~1.2 s and the human
-sees your change live. No SDK, no endpoints.
+(**File → 📂 Open house plan…**); you edit that file; the tool hot-reloads within ~1.2 s
+and the human sees your change live. No SDK, no endpoints.
+
+In the UI, the ribbon tab decides what the human is editing: **1 · The house today** is
+the `nutid` variant (base geometry, ground truth), **2 · Ideas** is the selected idea
+variant. `meta.activeVariant` tracks this — expect it to flip as the human switches tabs.
 
 ## Workflow
 
