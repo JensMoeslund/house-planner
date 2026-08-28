@@ -2253,9 +2253,18 @@ c2d.addEventListener('pointerdown', e=>{
       }
     }
   }
+  // the selected wall's endpoint balls win over anything underneath (no cycling surprise)
+  let hit=null, endpointGrab=false;
+  if(sel?.type==='wall'){
+    const w=findWall(sel.id);
+    if(w && (dist(wx,wy,...w.from)<10/view.ppm || dist(wx,wy,...w.to)<10/view.ppm)){
+      hit={type:'wall', id:w.id, w, isBase:S.base.walls.includes(w)};
+      endpointGrab=true;
+    }
+  }
   // select — re-clicking a spot where several walls overlap cycles through them
-  let hit=pick(wx,wy);
-  if(hit?.type==='wall'){
+  if(!hit) hit=pick(wx,wy);
+  if(hit?.type==='wall' && !endpointGrab){
     const cands=wallCandidates(wx,wy);
     if(cands.length>1 && sel?.type==='wall'){
       const i=cands.findIndex(w=>w.id===sel.id);
