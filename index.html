@@ -1782,6 +1782,13 @@ function draw(){
   const rem = new Set(cv().demolish);
   if(!cv().hideDemolished) for(const w of S.base.walls) if(rem.has(w.id)) drawWall(w,'removed',sel?.id===w.id);
   for(const {w,kind} of visibleWalls()) drawWall(w,(kind==='new'&&w.partial)?'base':kind,sel?.id===w.id);
+  for(const cf of cornerFills()){                 // fill the outer-corner notches
+    ctx.fillStyle = cf.kind==='new' ? '#5dd39e' : '#c9c4ba';
+    ctx.beginPath();
+    ctx.moveTo(...W2S(...cf.pts[0]));
+    for(let k=1;k<4;k++) ctx.lineTo(...W2S(...cf.pts[k]));
+    ctx.closePath(); ctx.fill();
+  }
   for(const {o} of visibleOpenings()) drawOpening(o, sel?.id===o.id);
 
   // "you are here" marker while walking in 3D
@@ -1959,6 +1966,42 @@ function draw(){
     (S.base.walls.length || cv().walls.length || underlay || guide) ? 'none' : '';
 }
 
+/* corner patches: where two wall ends meet, the stroked rectangles leave a t/2 notch on the
+   OUTER side of the corner — compute the exact quad that fills it (shared by 2D and 3D) */
+function cornerFills(){
+  const walls=visibleWalls();
+  const out=[], EPS=0.015;
+  const kindOf=e=>(e.kind==='new'&&!e.w.partial)?'new':'base';
+  for(let i=0;i<walls.length;i++) for(let j=i+1;j<walls.length;j++){
+    const A=walls[i], B=walls[j];
+    for(const ea of [A.w.from, A.w.to]) for(const eb of [B.w.from, B.w.to]){
+      if(Math.hypot(ea[0]-eb[0], ea[1]-eb[1])>EPS) continue;
+      const ao = ea===A.w.from ? A.w.to : A.w.from;
+      const bo = eb===B.w.from ? B.w.to : B.w.from;
+      const la=Math.hypot(ea[0]-ao[0],ea[1]-ao[1]), lb=Math.hypot(bo[0]-eb[0],bo[1]-eb[1]);
+      if(la<0.02||lb<0.02) continue;
+      const u=[(ea[0]-ao[0])/la,(ea[1]-ao[1])/la];      // along A, into the corner
+      const b=[(bo[0]-eb[0])/lb,(bo[1]-eb[1])/lb];      // along B, away from the corner
+      if(Math.abs(u[0]*b[1]-u[1]*b[0])<0.15) continue;  // (near-)collinear — no notch
+      const ta=A.w.t||0.35, tb=B.w.t||0.35;
+      const v=[-b[0],-b[1]];
+      const P=ea;
+      const pts=[P.slice(),
+        [P[0]+u[0]*tb/2,             P[1]+u[1]*tb/2],
+        [P[0]+u[0]*tb/2+v[0]*ta/2,   P[1]+u[1]*tb/2+v[1]*ta/2],
+        [P[0]+v[0]*ta/2,             P[1]+v[1]*ta/2]];
+      const cx=(pts[0][0]+pts[2][0])/2, cy=(pts[0][1]+pts[2][1])/2;
+      let buried=false;                                  // patch already inside a third wall (T-joints)
+      for(const o of walls){
+        if(o===A||o===B) continue;
+        if(nearestOnWall(o.w,cx,cy).d<(o.w.t||0.35)/2-0.01){ buried=true; break; }
+      }
+      if(buried) continue;
+      out.push({pts, kind:(kindOf(A)==='new'&&kindOf(B)==='new')?'new':'base', wA:A.w, wB:B.w});
+    }
+  }
+  return out;
+}
 function drawWall(w, kind, isSel){
   const [x1,y1]=W2S(...w.from), [x2,y2]=W2S(...w.to);
   ctx.lineCap='butt';
@@ -3541,6 +3584,17 @@ function rebuild3d(){
       cur=b;
     }
     addBox(cur,L,0,HH,mat);
+  }
+  for(const cf of cornerFills()){                 // solid boxes in the outer-corner notches
+    const P=cf.pts[0], du=[cf.pts[1][0]-P[0], cf.pts[1][1]-P[1]], dv=[cf.pts[3][0]-P[0], cf.pts[3][1]-P[1]];
+    const lu=Math.hypot(du[0],du[1]), lv=Math.hypot(dv[0],dv[1]);
+    if(lu<0.005||lv<0.005) continue;
+    const HH=Math.min(cf.wA.h||H, cf.wB.h||H);
+    const zoff=cf.wA.floor||cf.wB.floor||0;
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(lu,HH,lv), cf.kind==='new'?matNew:matBase);
+    mesh.position.set((P[0]+cf.pts[2][0])/2, zoff+HH/2, (P[1]+cf.pts[2][1])/2);
+    mesh.rotation.y=-Math.atan2(du[1],du[0]);
+    group.add(mesh);
   }
   for(const f of (cv().furniture||[])){
     const FT=FURN[f.kind]||FURN.underskab;
