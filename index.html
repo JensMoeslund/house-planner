@@ -1781,7 +1781,12 @@ function draw(){
 
   const rem = new Set(cv().demolish);
   if(!cv().hideDemolished) for(const w of S.base.walls) if(rem.has(w.id)) drawWall(w,'removed',sel?.id===w.id);
-  for(const {w,kind} of visibleWalls()) drawWall(w,(kind==='new'&&w.partial)?'base':kind,sel?.id===w.id);
+  let selWall=null, selWallKind=null;              // the selected wall paints LAST, above everything
+  for(const {w,kind} of visibleWalls()){
+    const k=(kind==='new'&&w.partial)?'base':kind;
+    if(sel?.id===w.id){ selWall=w; selWallKind=k; continue; }
+    drawWall(w,k,false);
+  }
   for(const cf of cornerFills()){                 // fill the outer-corner notches
     ctx.fillStyle = cf.kind==='new' ? '#5dd39e' : '#c9c4ba';
     ctx.beginPath();
@@ -1789,6 +1794,7 @@ function draw(){
     for(let k=1;k<4;k++) ctx.lineTo(...W2S(...cf.pts[k]));
     ctx.closePath(); ctx.fill();
   }
+  if(selWall) drawWall(selWall,selWallKind,true);
   for(const {o} of visibleOpenings()) drawOpening(o, sel?.id===o.id);
 
   // "you are here" marker while walking in 3D
