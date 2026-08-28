@@ -179,7 +179,7 @@
     <div class="rgsep"></div>
     <div class="rgroup">
       <div class="rbtns">
-        <button class="tool active" data-tool="select" data-i18n="toolSelect" data-i18n-title="toolSelectT">🖱</button>
+        <button class="tool active" data-tool="select" data-i18n="toolSelect" data-i18n-title="toolSelectT">↖</button>
         <button class="tool" data-tool="wall" data-i18n="toolWall" data-i18n-title="toolWallT">Wall</button>
         <button class="tool" data-tool="room" data-i18n="toolRoom" data-i18n-title="toolRoomT">⬛ Room</button>
         <select id="wallTypeSel" data-i18n-title="wallTypeT">
@@ -433,7 +433,7 @@ en: {
   newPlan:'🆕 New house plan', newPlanT:'Start a fresh, empty plan — the current one is kept in 🕘 Version history, and any open file is left untouched',
   confirmNew:'Start a new, empty house plan?\n\nThe current plan is saved to 🕘 Version history first, and the open plan file (if any) is left untouched.',
   'ver_before-new':'before new plan',
-  toolSelect:'🖱', toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
+  toolSelect:'↖', toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
   toolRoom:'⬛ Room', toolRoomT:'Drag a rectangle to make a room — four walls plus a room name in one go. Snaps onto nearby walls and reuses them; hold Shift for no snapping.',
   wallTypeOuter:'Outer wall (35 cm)', wallTypeInner:'Inner wall (10 cm)',
   wallTypeT:'Wall thickness for new walls — outer walls for the shell, inner walls for room dividers. Fine-tune any wall in its properties.',
@@ -547,7 +547,7 @@ da: {
   newPlan:'🆕 Ny husplan', newPlanT:'Start en frisk, tom plan — den nuværende gemmes i 🕘 Versionshistorik, og en evt. åben fil røres ikke',
   confirmNew:'Start en ny, tom husplan?\n\nDen nuværende plan gemmes først i 🕘 Versionshistorik, og en evt. åben plan-fil røres ikke.',
   'ver_before-new':'før ny plan',
-  toolSelect:'🖱', toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
+  toolSelect:'↖', toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
   toolRoom:'⬛ Rum', toolRoomT:'Træk et rektangel for at lave et rum — fire vægge og et rumnavn på én gang. Snapper til nærliggende vægge og genbruger dem; hold Shift for ingen snap.',
   wallTypeOuter:'Ydervæg (35 cm)', wallTypeInner:'Indervæg (10 cm)',
   wallTypeT:'Vægtykkelse for nye vægge — ydervægge til skallen, indervægge til rumdelere. Finjustér enhver væg i dens egenskaber.',
@@ -1575,8 +1575,7 @@ function veluxSnapX(mx,w){
   for(let i=0;i+1<bounds.length;i+=2){
     const a=bounds[i], b=bounds[i+1];
     if(b-a < w+0.01) continue;                       // bay too narrow for this window
-    const cx=Math.max(a+w/2+0.005, Math.min(b-w/2-0.005, mx));
-    const d=Math.abs(cx-mx);
+    const cx=(a+b)/2, d=Math.abs(cx-mx);             // always dead centre of the bay
     if(!best || d<best.d) best={x:+cx.toFixed(2), d};
   }
   return best ? {x:best.x, ok:true} : {x:Math.round(mx*20)/20, ok:false};
