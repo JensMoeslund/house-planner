@@ -1831,6 +1831,17 @@ function draw(){
       for(const [hx,hy] of [[-wp/2,-dp/2],[wp/2,-dp/2],[wp/2,dp/2],[-wp/2,dp/2]]) ctx.fillRect(hx-4,hy-4,8,8);
       ctx.fillStyle='#cfe4ff'; ctx.font='10px sans-serif'; ctx.textAlign='center';
       ctx.fillText(f.w.toFixed(2)+' × '+f.d.toFixed(2), 0, -dp/2-6);
+      // rotate handle: drag = 15° steps, hold Shift = free angle (R still does 90°)
+      const rhy=-dp/2-24;
+      ctx.strokeStyle='#4da3ff'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(0,-dp/2-10); ctx.lineTo(0,rhy+6); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,rhy,7,0,Math.PI*2); ctx.fillStyle='#4da3ff'; ctx.fill();
+      ctx.fillStyle='#10131a'; ctx.font='10px sans-serif'; ctx.fillText('↻',0,rhy+3.5);
+      if(dragging?.type==='furnrot' && dragging.f===f){
+        ctx.fillStyle='#cfe4ff'; ctx.font='bold 11px sans-serif'; ctx.textAlign='left';
+        ctx.fillText((f.angle||0)+'°', 13, rhy+4);
+        ctx.textAlign='center';
+      }
     }
     ctx.restore();
   }
@@ -2185,12 +2196,13 @@ c2d.addEventListener('pointerdown', e=>{
     }
     draw(); return;
   }
-  // corner-resize handles on selected furniture
+  // rotate + corner-resize handles on selected furniture
   if(sel?.type==='furn'){
     const f=sel.f, th=(f.angle||0)*Math.PI/180;
     const dx=wx-f.at[0], dy=wy-f.at[1];
     const lx=dx*Math.cos(th)+dy*Math.sin(th), ly=-dx*Math.sin(th)+dy*Math.cos(th);
     const tol=Math.max(0.12, 10/view.ppm);
+    if(Math.hypot(lx, ly-(-f.d/2-24/view.ppm))<tol){ dragging={type:'furnrot', f}; draw(); return; }
     for(const sxn of [-1,1]) for(const syn of [-1,1]){
       if(Math.hypot(lx-sxn*f.w/2, ly-syn*f.d/2)<tol){
         dragging={type:'furnresize', f, th, cx0:f.at[0], cy0:f.at[1], ox:-sxn*f.w/2, oy:-syn*f.d/2};
@@ -2275,6 +2287,12 @@ c2d.addEventListener('pointermove', e=>{
       const p=veluxPlace(mouse.wx, mouse.wy, rw.w??0.78, rw.len??1.4, free, dragging.offX, dragging.offS);
       if(p){ rw.side=p.side; rw.sOff=p.sOff; if(p.ok||free) rw.x=p.x; }
     }
+    else if(dragging.type==='furnrot'){
+      const f=dragging.f;
+      let a=Math.atan2(mouse.wy-f.at[1], mouse.wx-f.at[0])*180/Math.PI + 90;
+      a = mouse.shift ? Math.round(a) : Math.round(a/15)*15;   // Shift = free angle
+      f.angle=((a%360)+360)%360;
+    }
     else if(dragging.type==='furnresize'){
       const th=dragging.th;
       const dx=mouse.wx-dragging.cx0, dy=mouse.wy-dragging.cy0;
@@ -2318,7 +2336,7 @@ c2d.addEventListener('pointerup', ()=>{
     }
     draw(); return;
   }
-  if(dragging?.type==='furnresize') updateProps();
+  if(dragging?.type==='furnresize'||dragging?.type==='furnrot') updateProps();
   if(sketchStroke){
     if(sketchStroke.points.length>1){
       const note=prompt(T('promptSketch'),'');

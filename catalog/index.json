@@ -1,7 +1,77 @@
 {
- "name": "Kenney Furniture Kit",
- "license": "CC0 (public domain) - kenney.nl",
+ "name": "House Planner catalog",
+ "license": "Kenney Furniture Kit: CC0 (kenney.nl) · Danish classics: CC-BY, see ATTRIBUTION.txt",
  "items": [
+  {
+   "file": "Eames lounge chair.glb",
+   "name": "Eames lounge chair",
+   "cat": "furnCatLiving",
+   "w": 0.84,
+   "d": 0.88,
+   "h": 0.84
+  },
+  {
+   "file": "Monstera.glb",
+   "name": "Monstera",
+   "cat": "furnCatLiving",
+   "w": 0.8,
+   "d": 0.8,
+   "h": 0.9
+  },
+  {
+   "file": "Monstera i stativ.glb",
+   "name": "Monstera i stativ",
+   "cat": "furnCatLiving",
+   "w": 0.45,
+   "d": 0.45,
+   "h": 1.0
+  },
+  {
+   "file": "Myren.glb",
+   "name": "Myren",
+   "cat": "furnCatLiving",
+   "w": 0.51,
+   "d": 0.48,
+   "h": 0.77
+  },
+  {
+   "file": "PH Koglen pendel.glb",
+   "name": "PH Koglen pendel",
+   "cat": "furnCatLiving",
+   "w": 0.6,
+   "d": 0.6
+  },
+  {
+   "file": "PH5 pendel.glb",
+   "name": "PH5 pendel",
+   "cat": "furnCatLiving",
+   "w": 0.5,
+   "d": 0.5
+  },
+  {
+   "file": "Svanen.glb",
+   "name": "Svanen",
+   "cat": "furnCatLiving",
+   "w": 0.74,
+   "d": 0.68,
+   "h": 0.77
+  },
+  {
+   "file": "Y-stolen CH24 eg.glb",
+   "name": "Y-stolen CH24 eg",
+   "cat": "furnCatLiving",
+   "w": 0.55,
+   "d": 0.51,
+   "h": 0.76
+  },
+  {
+   "file": "Y-stolen CH24 sort.glb",
+   "name": "Y-stolen CH24 sort",
+   "cat": "furnCatLiving",
+   "w": 0.55,
+   "d": 0.51,
+   "h": 0.76
+  },
   {
    "file": "bathroomCabinet.glb",
    "name": "bathroom cabinet",

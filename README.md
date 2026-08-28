@@ -39,9 +39,11 @@ a "clean slate" switch that hides the demolition markings entirely.
   folder. IKEA's product pages serve real .glb models (community browser scripts add a
   download button), and libraries like furnimesh.com or sketchfab.com have thousands of
   free ones. Real-world size is read from the file
-- **Built-in catalog of 140 free furniture models** (Kenney Furniture Kit, CC0 public
-  domain, ships in `catalog/`) with curated real-world sizes — one click in the furniture
-  menu imports a piece
+- **Built-in catalog of 149 free furniture models** shipping in `catalog/`: the Kenney
+  Furniture Kit (140 pieces, CC0) plus Danish design classics — Wegner's Wishbone chair,
+  Jacobsen's Swan and Ant, PH5 and Artichoke pendants, an Eames lounge and monstera
+  plants (CC-BY, credits in `catalog/ATTRIBUTION.txt`) — all with curated real-world
+  sizes; one click in the furniture bar imports a piece
 - Sunlight simulation for your exact location, any date and time
 - Roofs in two clicks: classic gable roof with trusses, or flat roof — plus roof windows,
   skylight strips and glass gables per idea. Roof windows are placed with the mouse and

@@ -1,0 +1,16 @@
+House Planner built-in catalog — licenses & credits
+
+Kenney Furniture Kit (140 models): CC0 / public domain — kenney.nl (see LICENSE-kenney.txt)
+
+Danish design classics & plants, from Sketchfab under CC Attribution (CC-BY 4.0).
+Files were converted/optimized (Draco compression, resized textures). Credits:
+
+Y-stolen CH24 eg.glb — "Wishbone Chair" by abrucki (CC Attribution) — https://sketchfab.com/3d-models/wishbone-chair-bc4aabcd1f0e432fb93b04fcc8464b71
+Y-stolen CH24 sort.glb — "Wishbone Chair" by Average3DmodelEnjoyer (CC Attribution) — https://sketchfab.com/3d-models/wishbone-chair-1a12618f38834503a3363ea05cb04a8e
+Svanen.glb — "Chair_Swan" by Annie_3D (CC Attribution) — https://sketchfab.com/3d-models/chair-swan-439909d876744fdc988def47cbc148f1
+Myren.glb — "ant chair" by Yukazuki (CC Attribution) — https://sketchfab.com/3d-models/ant-chair-1a074dae208f4b84b16fffc4d8ecda05
+PH5 pendel.glb — "PH 5 Lamp" by Saldoy Diana (CC Attribution) — https://sketchfab.com/3d-models/ph-5-lamp-c9e36f029c2e461ea2422e9c01f41f77
+PH Koglen pendel.glb — "ARTICHOKE LAMP" by Marco_Romero (CC Attribution) — https://sketchfab.com/3d-models/artichoke-lamp-26754c2dfccb4144a88411acabf1a993
+Eames lounge chair.glb — "Eames Lounge Chair" by ottobim (CC Attribution) — https://sketchfab.com/3d-models/eames-lounge-chair-0167b0d095a74d6fbadb8720faf4d83a
+Monstera i stativ.glb — "Monstera Deliciosa Potted Mid-Century plant" by Giora (CC Attribution) — https://sketchfab.com/3d-models/monstera-deliciosa-potted-mid-century-plant-1ab9bf841df04c07b1819be596327629
+Monstera.glb — "Monstera Plant" by Asia Matusik (CC Attribution) — https://sketchfab.com/3d-models/monstera-plant-1bb9b5a233054c7b8bf57407ac92618d
