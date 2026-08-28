@@ -16,8 +16,9 @@ The Office-style ribbon walks you through it — the two numbered tabs *are* the
 
 1. **Draw your house as it is today** on the **1 · The house today** tab. Draw walls
    directly (they snap to straight angles — hold Shift for odd ones), or load a photo of
-   your floor plan and trace over it. Add doors, windows, room names. Everything you draw
-   here is the real house — the ground truth every idea builds on.
+   your floor plan, set the scale and press **✨ Find walls** — the walls are detected and
+   drawn automatically, ready for touch-ups. Add doors, windows, room names. Everything
+   you draw here is the real house — the ground truth every idea builds on.
 2. **Switch to the 2 · Ideas tab.** Press **+** to copy the house into a named idea.
 3. **Change things — safely.** On the Ideas tab, everything you draw belongs to the
    selected idea and the real house is protected: deleting a door only closes it *in that

@@ -189,6 +189,7 @@
         <input type="file" id="underlayFile" accept="image/*">
         <button class="tool" data-tool="underlay" data-i18n="underlayMove" data-i18n-title="underlayMoveT">Move</button>
         <button class="tool" data-tool="calib" data-i18n="calib" data-i18n-title="calibT">Calib</button>
+        <button id="traceBtn" data-i18n="traceWalls" data-i18n-title="traceWallsT">✨ Find walls</button>
         <input type="range" id="underlayOpacity" min="0" max="100" value="45">
         <button id="underlayClear" class="danger">✕</button>
       </div>
@@ -572,6 +573,12 @@ en: {
   catalogLbl:n=>`Catalog · ${n} free furniture models (CC0)`,
   furnCatCatalog:'Catalog', furnBarT:'Browse furniture — bar at the bottom with 3D previews',
   furnCatOther:'Misc', modelCatT:'Which room tab this model appears under',
+  traceWalls:'✨ Find walls', traceWallsT:'Detect the walls in the floor-plan photo automatically (set the scale first) — then tidy up by hand',
+  hintTraceNoUnderlay:'Load a floor-plan photo first (Load…).',
+  hintTraceNutid:'Auto-trace draws the house as it is today — switch to tab 1 · The house today.',
+  hintTraceScale:'Set the scale first (Scale: click two points with a known distance).',
+  hintTraced:n=>`✨ ${n} walls drawn from the photo — tidy up by hand; Ctrl+Z undoes`,
+  hintTraceNone:'No walls found — is the scale right, and are the walls dark and solid in the photo?',
   mineEmptyHint:'No imported 3D models yet — use the import buttons on the right, or pick pieces from the 📚 Catalog tab.',
   catalogFileHint:'📚 140 free furniture models ship with the tool in the <b>catalog</b> folder — click <b>📁 Whole folder…</b> above and pick that folder to import them all at once (the browser cannot read it by itself when the tool is opened as a file).',
   furnW:'Width (m)', furnD:'Depth (m)', furnH:'Height (m)', furnA:'Angle (°)', furnZ:'Height above floor (m)', rotBtn:'↻ Rotate 90° (R)', delFurn:'Delete furniture',
@@ -707,6 +714,12 @@ da: {
   catalogLbl:n=>`Katalog · ${n} gratis møbler (CC0)`,
   furnCatCatalog:'Katalog', furnBarT:'Gennemse møbler — bjælke i bunden med 3D-forhåndsvisning',
   furnCatOther:'Diverse', modelCatT:'Hvilken rum-fane modellen vises under',
+  traceWalls:'✨ Find vægge', traceWallsT:'Find væggene i plantegnings-fotoet automatisk (sæt målestokken først) — ryd op i hånden bagefter',
+  hintTraceNoUnderlay:'Indlæs først et foto af plantegningen (Indlæs…).',
+  hintTraceNutid:'Auto-optegning tegner huset som det er i dag — skift til fane 1 · Huset i dag.',
+  hintTraceScale:'Sæt målestokken først (Målestok: klik på to punkter med kendt afstand).',
+  hintTraced:n=>`✨ ${n} vægge tegnet ud fra fotoet — ryd op i hånden; Ctrl+Z fortryder`,
+  hintTraceNone:'Ingen vægge fundet — passer målestokken, og er væggene mørke og massive i fotoet?',
   mineEmptyHint:'Ingen importerede 3D-modeller endnu — brug importknapperne til højre, eller hent fra 📚 Katalog-fanen.',
   catalogFileHint:'📚 140 gratis møbler følger med værktøjet i mappen <b>catalog</b> — klik <b>📁 Hel mappe…</b> ovenfor og vælg den mappe, så importeres de alle på én gang (browseren kan ikke selv læse mappen, når værktøjet er åbnet som fil).',
   furnW:'Bredde (m)', furnD:'Dybde (m)', furnH:'Højde (m)', furnA:'Vinkel (°)', furnZ:'Højde over gulv (m)', rotBtn:'↻ Rotér 90° (R)', delFurn:'Slet møbel',
@@ -1715,6 +1728,185 @@ function loadUnderlayImg(){
 }
 loadUnderlayImg();
 function saveUnderlay(){ try{ underlay ? localStorage.setItem(LS_UNDERLAY, JSON.stringify(underlay)) : localStorage.removeItem(LS_UNDERLAY); }catch(e){ console.warn('underlay too big for localStorage — kept for this session only'); } }
+
+/* ===== auto-trace: detect walls in the underlay photo (walls = the thickest dark strokes;
+   the calibrated scale tells us how many pixels thick a wall should be) ===== */
+function trBoxBlur(src,w,h,r){
+  const tmp=new Float32Array(w*h), out=new Float32Array(w*h), k=2*r+1;
+  for(let y=0;y<h;y++){
+    let acc=0;
+    for(let x=-r;x<=r;x++) acc+=src[y*w+Math.min(w-1,Math.max(0,x))];
+    for(let x=0;x<w;x++){
+      tmp[y*w+x]=acc/k;
+      acc+=src[y*w+Math.min(w-1,x+r+1)]-src[y*w+Math.max(0,x-r)];
+    }
+  }
+  for(let x=0;x<w;x++){
+    let acc=0;
+    for(let y=-r;y<=r;y++) acc+=tmp[Math.min(h-1,Math.max(0,y))*w+x];
+    for(let y=0;y<h;y++){
+      out[y*w+x]=acc/k;
+      acc+=tmp[Math.min(h-1,y+r+1)*w+x]-tmp[Math.max(0,y-r)*w+x];
+    }
+  }
+  return out;
+}
+function trMorph(mask,w,h,r,erode){   // separable square erosion/dilation
+  const pass=(src,horiz)=>{
+    const out=new Uint8Array(w*h);
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+      let v=erode?1:0;
+      for(let k=-r;k<=r;k++){
+        const xx=horiz?x+k:x, yy=horiz?y:y+k;
+        const s=(xx<0||xx>=w||yy<0||yy>=h)?0:src[yy*w+xx];
+        if(erode){ if(!s){ v=0; break; } } else if(s){ v=1; break; }
+      }
+      out[y*w+x]=v;
+    }
+    return out;
+  };
+  return pass(pass(mask,true),false);
+}
+function trMaskRects(mask,w,h,minThk,maxThk,minLen,vert){
+  // greedy row-sweep: stacks of near-identical runs become rectangles (vert scans the transpose)
+  const W=vert?h:w, H=vert?w:h;
+  const get=(x,y)=> vert ? mask[x*w+y] : mask[y*w+x];
+  const rects=[], active=[];
+  const emit=a=>{
+    const len=a.x2-a.x1+1, thk=a.rows;
+    if(thk>=minThk && thk<=maxThk && len>=minLen && len>thk*3)
+      rects.push({x:a.x1, y:a.y0, len, thk, vert});
+  };
+  for(let y=0;y<H;y++){
+    const runs=[];
+    for(let x=0;x<W;){
+      if(get(x,y)){ const x0=x; while(x<W && get(x,y)) x++; runs.push([x0,x-1]); }
+      else x++;
+    }
+    for(const a of active) a.hit=false;
+    for(const run of runs){
+      let best=null;
+      for(const a of active){
+        if(a.hit) continue;
+        if(Math.abs(a.x1-run[0])<=3 && Math.abs(a.x2-run[1])<=3){ best=a; break; }
+      }
+      if(best){ best.hit=true; best.rows++; }
+      else active.push({x1:run[0], x2:run[1], y0:y, rows:1, hit:true});
+    }
+    for(let i=active.length-1;i>=0;i--) if(!active[i].hit){ emit(active[i]); active.splice(i,1); }
+  }
+  for(const a of active) emit(a);
+  return rects;
+}
+function trMergeCollinear(segs,maxGap,latTol){
+  let again=true;
+  while(again){
+    again=false;
+    outer:
+    for(let i=0;i<segs.length;i++) for(let j=i+1;j<segs.length;j++){
+      const a=segs[i], b=segs[j];
+      if(a.vert!==b.vert) continue;
+      const fx=a.vert?0:1, d=a.vert?1:0;             // fixed axis / along axis
+      if(Math.abs(a.a[fx]-b.a[fx])>latTol) continue;
+      const a1=Math.min(a.a[d],a.b[d]), a2=Math.max(a.a[d],a.b[d]);
+      const b1=Math.min(b.a[d],b.b[d]), b2=Math.max(b.a[d],b.b[d]);
+      if(b1-a2>maxGap || a1-b2>maxGap) continue;
+      const n1=Math.min(a1,b1), n2=Math.max(a2,b2), c=(a.a[fx]+b.a[fx])/2, t=Math.max(a.t,b.t);
+      segs[i]= a.vert ? {a:[c,n1], b:[c,n2], t, vert:true} : {a:[n1,c], b:[n2,c], t, vert:false};
+      segs.splice(j,1); again=true; break outer;
+    }
+  }
+  return segs;
+}
+function trMergeParallel(segs,maxSep,minOv){
+  // a thick wall with window lines inside is detected as its two edge strips — fuse them
+  let again=true;
+  while(again){
+    again=false;
+    outer:
+    for(let i=0;i<segs.length;i++) for(let j=i+1;j<segs.length;j++){
+      const a=segs[i], b=segs[j];
+      if(a.vert!==b.vert) continue;
+      const fx=a.vert?0:1, d=a.vert?1:0;
+      const sep=Math.abs(a.a[fx]-b.a[fx]);
+      if(sep<0.001 || sep>maxSep) continue;
+      const a1=Math.min(a.a[d],a.b[d]), a2=Math.max(a.a[d],a.b[d]);
+      const b1=Math.min(b.a[d],b.b[d]), b2=Math.max(b.a[d],b.b[d]);
+      const ov=Math.min(a2,b2)-Math.max(a1,b1);
+      if(ov < minOv*Math.min(a2-a1,b2-b1)) continue;
+      const c=(a.a[fx]+b.a[fx])/2, n1=Math.min(a1,b1), n2=Math.max(a2,b2);
+      const t=Math.min(0.6, sep+(a.t+b.t)/2);
+      segs[i]= a.vert ? {a:[c,n1], b:[c,n2], t, vert:true} : {a:[n1,c], b:[n2,c], t, vert:false};
+      segs.splice(j,1); again=true; break outer;
+    }
+  }
+  return segs;
+}
+function traceWallsFromUnderlay(){
+  if(!underlay || !underlayImg){ flashHint(T('hintTraceNoUnderlay')); return 0; }
+  if(!editingNutid()){ flashHint(T('hintTraceNutid')); return 0; }
+  const pxm=1/underlay.mppx;
+  const sc=Math.min(1, 2200/Math.max(underlayImg.naturalWidth, underlayImg.naturalHeight));
+  const w=Math.max(8,Math.round(underlayImg.naturalWidth*sc)), h=Math.max(8,Math.round(underlayImg.naturalHeight*sc));
+  const tw=0.35*pxm*sc;                            // expected outer-wall thickness in working px
+  if(!(tw>=2.5 && tw<=120)){ flashHint(T('hintTraceScale')); return 0; }
+  const cnv=document.createElement('canvas'); cnv.width=w; cnv.height=h;
+  const g=cnv.getContext('2d',{willReadFrequently:true});
+  g.drawImage(underlayImg,0,0,w,h);
+  const px=g.getImageData(0,0,w,h).data;
+  let gray=new Float32Array(w*h);
+  for(let i=0;i<w*h;i++) gray[i]=px[i*4]*0.3+px[i*4+1]*0.59+px[i*4+2]*0.11;
+  gray=trBoxBlur(gray,w,h,Math.max(1,Math.round(0.02*pxm*sc)));
+  // Otsu threshold
+  const hist=new Array(256).fill(0);
+  for(let i=0;i<w*h;i++) hist[Math.min(255,gray[i]|0)]++;
+  let sum=0; for(let t=0;t<256;t++) sum+=t*hist[t];
+  let sumB=0,wB=0,maxVar=0,thr=127;
+  for(let t=0;t<256;t++){
+    wB+=hist[t]; if(!wB) continue;
+    const wF=w*h-wB; if(!wF) break;
+    sumB+=t*hist[t];
+    const mB=sumB/wB, mF=(sum-sumB)/wF, v=wB*wF*(mB-mF)*(mB-mF);
+    if(v>maxVar){ maxVar=v; thr=t; }
+  }
+  let mask=new Uint8Array(w*h);
+  for(let i=0;i<w*h;i++) mask[i]=gray[i]<thr?1:0;
+  const rc=Math.max(1,Math.round(0.035*pxm*sc));
+  mask=trMorph(mask,w,h,rc,false);                 // closing: seals hatching and window lines...
+  mask=trMorph(mask,w,h,rc,true);                  // ...without changing wall thickness
+  // thickness-bounded rectangles reject text (too short/jittery) and dimension lines (too thin)
+  const minThk=Math.max(2.5,0.055*pxm*sc), maxThk=0.65*pxm*sc, minLen=Math.max(8,0.8*pxm*sc);
+  const rects=[...trMaskRects(mask,w,h,minThk,maxThk,minLen,false),
+               ...trMaskRects(mask,w,h,minThk,maxThk,minLen,true)];
+  const toWx=x=>underlay.x + x/sc*underlay.mppx, toWy=y=>underlay.y + y/sc*underlay.mppx;
+  let segs=rects.map(rc=> rc.vert
+    ? {a:[toWx(rc.y+rc.thk/2), toWy(rc.x)], b:[toWx(rc.y+rc.thk/2), toWy(rc.x+rc.len)], t:rc.thk/sc*underlay.mppx, vert:true}
+    : {a:[toWx(rc.x), toWy(rc.y+rc.thk/2)], b:[toWx(rc.x+rc.len), toWy(rc.y+rc.thk/2)], t:rc.thk/sc*underlay.mppx, vert:false});
+  segs=trMergeCollinear(segs, 1.9, 0.14);          // walls continue under windows/doors
+  segs=trMergeParallel(segs, 0.5, 0.5);
+  segs=trMergeCollinear(segs, 1.9, 0.14);
+  for(const s of segs) for(const o of segs){       // close corners onto perpendicular centrelines
+    if(s===o || s.vert===o.vert) continue;
+    for(const e of [s.a,s.b]){
+      if(s.vert){
+        if(Math.abs(e[1]-o.a[1])<0.45 && e[0]>Math.min(o.a[0],o.b[0])-0.4 && e[0]<Math.max(o.a[0],o.b[0])+0.4) e[1]=o.a[1];
+      } else {
+        if(Math.abs(e[0]-o.a[0])<0.45 && e[1]>Math.min(o.a[1],o.b[1])-0.4 && e[1]<Math.max(o.a[1],o.b[1])+0.4) e[0]=o.a[0];
+      }
+    }
+  }
+  const round=v=>+v.toFixed(2);
+  let n=0;
+  for(const s of segs){
+    if(Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1])<0.45) continue;
+    S.base.walls.push({id:nextId('wall'), from:[round(s.a[0]),round(s.a[1])], to:[round(s.b[0]),round(s.b[1])],
+      t:Math.min(0.6,Math.max(0.08,round(s.t))), notes:'auto-traced from the floor-plan photo'});
+    n++;
+  }
+  if(n){ changed(); flashHint(T('hintTraced')(n)); }
+  else flashHint(T('hintTraceNone'));
+  return n;
+}
 
 function resize(){
   const r = c2d.parentElement.getBoundingClientRect();
@@ -2746,6 +2938,10 @@ document.getElementById('underlayFile').onchange=e=>{
   rd.readAsDataURL(f);
 };
 document.getElementById('underlayOpacity').oninput=e=>{ if(underlay){ underlay.opacity=+e.target.value; saveUnderlay(); draw(); } };
+document.getElementById('traceBtn').onclick=()=>{
+  try{ saveVersion('before-auto-trace'); }catch(e){}
+  traceWallsFromUnderlay();
+};
 document.getElementById('underlayClear').onclick=()=>{ underlay=null; underlayImg=null; saveUnderlay(); draw(); };
 
 let showRoof=false;
@@ -3357,6 +3553,13 @@ window.planAPI = {
   w2s: (x,y)=>W2S(x,y), s2w: (px,py)=>S2W(px,py),   // agent hook: 2D view transform (CSS px)
   importModel: f=>importModelFile(f),               // agent hook: File/Blob (.glb) → furniture model library
   importModels: fs=>importModelFiles(fs),           // agent hook: batch variant (FileList/array)
+  underlayPatch: p=>{                               // agent hook: set/inspect the underlay ({dataUrl,x,y,mppx,opacity} or null)
+    if(p===null){ underlay=null; underlayImg=null; }
+    else if(p){ underlay=Object.assign(underlay||{x:0,y:0,mppx:0.02,opacity:45}, p); loadUnderlayImg(); }
+    saveUnderlay(); draw();
+    return underlay ? {...underlay, dataUrl: underlay.dataUrl?'<set>':null} : null;
+  },
+  traceWalls: ()=>traceWallsFromUnderlay(),         // agent hook: auto-trace walls from the underlay
   view3d: (px,py,pz,tx,ty,tz)=>{
     if(!three) return 'no 3d';
     three.camera.position.set(px,py,pz);
