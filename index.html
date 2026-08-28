@@ -571,6 +571,7 @@ en: {
   furnImportDir:'📁 Whole folder…', furnImportDirT:'Import every .glb file in a folder at once',
   catalogLbl:n=>`Catalog · ${n} free furniture models (CC0)`,
   furnCatCatalog:'Catalog', furnBarT:'Browse furniture — bar at the bottom with 3D previews',
+  furnCatOther:'Misc', modelCatT:'Which room tab this model appears under',
   mineEmptyHint:'No imported 3D models yet — use the import buttons on the right, or pick pieces from the 📚 Catalog tab.',
   catalogFileHint:'📚 140 free furniture models ship with the tool in the <b>catalog</b> folder — click <b>📁 Whole folder…</b> above and pick that folder to import them all at once (the browser cannot read it by itself when the tool is opened as a file).',
   furnW:'Width (m)', furnD:'Depth (m)', furnH:'Height (m)', furnA:'Angle (°)', rotBtn:'↻ Rotate 90° (R)', delFurn:'Delete furniture',
@@ -705,6 +706,7 @@ da: {
   furnImportDir:'📁 Hel mappe…', furnImportDirT:'Importér alle .glb-filer i en mappe på én gang',
   catalogLbl:n=>`Katalog · ${n} gratis møbler (CC0)`,
   furnCatCatalog:'Katalog', furnBarT:'Gennemse møbler — bjælke i bunden med 3D-forhåndsvisning',
+  furnCatOther:'Diverse', modelCatT:'Hvilken rum-fane modellen vises under',
   mineEmptyHint:'Ingen importerede 3D-modeller endnu — brug importknapperne til højre, eller hent fra 📚 Katalog-fanen.',
   catalogFileHint:'📚 140 gratis møbler følger med værktøjet i mappen <b>catalog</b> — klik <b>📁 Hel mappe…</b> ovenfor og vælg den mappe, så importeres de alle på én gang (browseren kan ikke selv læse mappen, når værktøjet er åbnet som fil).',
   furnW:'Bredde (m)', furnD:'Dybde (m)', furnH:'Højde (m)', furnA:'Vinkel (°)', rotBtn:'↻ Rotér 90° (R)', delFurn:'Slet møbel',
@@ -942,11 +944,26 @@ function cardSpec(key){            // cardKey → {f (furniture-like, for furn3d
   }
   return null;
 }
+function catFor(name){   // guess a room category from a model name (imports without explicit category)
+  const s=(name||'').toLowerCase();
+  const has=(...ws)=>ws.some(w=>s.includes(w));
+  if(has('bath','toilet','shower','brus','badekar','vaske','washer','dryer','toerretumbler','tørretumbler')) return 'furnCatBath';
+  if(has('kitchen','køkken','koekken','fridge','køleskab','stove','komfur','oven','hood','emhætte','sink','opvask','dish','freezer','fryser')) return 'furnCatKitchen';
+  if(has('bed','seng','pillow','pude','wardrobe','garderobe','klædeskab','dresser','kommode','crib')) return 'furnCatBed';
+  if(has('desk','skrivebord','bookcase','reol','shelf','hylde','computer','laptop','office','kontor')) return 'furnCatOffice';
+  if(has('sofa','couch','chair','stol','table','bord','lamp','rug','tæppe','plant','tv','television','bench','bænk','fauteuil','armchair')) return 'furnCatLiving';
+  return 'other';
+}
 function cardKeys(){
   if(furnBarCat==='mine') return Object.values(MODELS).map(m=>'mine:'+m.id);
   if(furnBarCat==='catalog') return (CATALOG?.items||[]).map(it=>'cat:'+it.file);
-  const cat=FURN_CATS.find(c=>c[0]===furnBarCat)||FURN_CATS[0];
-  return cat[1].map(k=>'kind:'+k);
+  // a room tab = built-in generics + your imported models in that room + catalog pieces in that room
+  const cat=FURN_CATS.find(c=>c[0]===furnBarCat);
+  const kindK=cat ? cat[1].map(k=>'kind:'+k) : [];
+  const mineK=Object.values(MODELS).filter(m=>(m.cat||'other')===furnBarCat).map(m=>'mine:'+m.id);
+  const names=new Set(Object.values(MODELS).map(m=>m.name));
+  const catK=(CATALOG?.items||[]).filter(it=>(it.cat||'other')===furnBarCat && !names.has(it.name)).map(it=>'cat:'+it.file);
+  return [...kindK, ...mineK, ...catK];
 }
 function isSelectedCard(key){
   const cur=document.getElementById('furnKind').value;
@@ -965,9 +982,11 @@ function buildFurnPicker(){
   document.getElementById('furnImportBtn').title=T('furnImportT');
   document.getElementById('furnImportDirBtn').textContent=T('furnImportDir');
   document.getElementById('furnImportDirBtn').title=T('furnImportDirT');
-  const cats=[...FURN_CATS.map(c=>c[0]), 'mine', 'catalog'];
+  const cats=[...FURN_CATS.map(c=>c[0])];
+  if(Object.values(MODELS).some(m=>(m.cat||'other')==='other') || (CATALOG?.items||[]).some(it=>(it.cat||'other')==='other')) cats.push('other');
+  cats.push('mine','catalog');
   tabs.innerHTML=cats.map(c=>`<button data-fbtab="${c}" class="${c===furnBarCat?'fsel':''}">${
-    c==='mine' ? '📦 '+T('furnCatCustom') : c==='catalog' ? '📚 '+T('furnCatCatalog') : T(c)}</button>`).join('');
+    c==='mine' ? '📦 '+T('furnCatCustom') : c==='catalog' ? '📚 '+T('furnCatCatalog') : c==='other' ? '🧰 '+T('furnCatOther') : T(c)}</button>`).join('');
   for(const b of tabs.querySelectorAll('[data-fbtab]')) b.onclick=()=>{ furnBarCat=b.dataset.fbtab; hideFurnPrev(); buildFurnPicker(); };
   const keys=cardKeys();
   if(!keys.length){
@@ -975,14 +994,26 @@ function buildFurnPicker(){
       furnBarCat==='catalog' ? T('catalogFileHint') : T('mineEmptyHint')}</div>`;
     updateFurnBtn(); return;
   }
+  const catOpts=cur=>[...FURN_CATS.map(c=>c[0]),'other'].map(c=>
+    `<option value="${c}"${c===(cur||'other')?' selected':''}>${c==='other'?T('furnCatOther'):T(c)}</option>`).join('');
   row.innerHTML=keys.map(key=>{
     const c=cardSpec(key); if(!c) return '';
     return `<div class="furnCard ${isSelectedCard(key)?'fsel':''}" data-card="${esc(key)}">
       <img alt="">
       <div class="fcap">${esc(c.title)}</div>
       ${c.del?`<button class="danger fdel" data-fbdel="${esc(c.del)}">✕</button>`:''}
+      ${c.del&&furnBarCat==='mine'?`<select class="fcat" data-fbcat="${esc(c.del)}" title="${T('modelCatT')}" style="width:100%;font-size:10px;margin-top:2px">${catOpts(MODELS[c.del]?.cat)}</select>`:''}
     </div>`;
   }).join('');
+  for(const s of row.querySelectorAll('select[data-fbcat]')){
+    s.onclick=e=>e.stopPropagation();
+    s.onchange=async e=>{
+      e.stopPropagation();
+      const m=MODELS[s.dataset.fbcat]; if(!m) return;
+      m.cat=s.value;
+      try{ await idbKV.mput(m); }catch(err){}
+    };
+  }
   for(const el of row.querySelectorAll('.furnCard')){
     const key=el.dataset.card, c=cardSpec(key);
     setThumb(el.querySelector('img'), key, c.f);
@@ -1124,6 +1155,7 @@ async function importModelFile(file, opts={}){
     const old=Object.values(MODELS).find(m=>m.name===name);   // same name = replace, don't duplicate
     const D=opts.dims;                                        // curated real-world size wins over the file's own
     const rec={id: old?old.id : 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2,5), name,
+      cat: opts.cat || old?.cat || catFor(name),
       w:D?.w ?? (+(sx*unit).toFixed(2)||0.5), d:D?.d ?? (+(sz*unit).toFixed(2)||0.5), h:D?.h ?? (+(sy*unit).toFixed(2)||0.5), glb:buf};
     await idbKV.mput(rec);
     MODELS[rec.id]=rec;
@@ -1142,11 +1174,20 @@ async function importModelFile(file, opts={}){
   }
 }
 async function importModelFiles(files){
-  const list=[...files].filter(f=>/\.glb$/i.test(f.name));
+  const all=[...files];
+  // an index.json alongside the models (e.g. the shipped catalog folder) supplies names, room categories and curated sizes
+  let meta=null;
+  const idx=all.find(f=>f.name.toLowerCase()==='index.json');
+  if(idx){ try{ meta=JSON.parse(await idx.text()); }catch(e){} }
+  const optsFor=f=>{
+    const it=meta?.items?.find(i=>i.file===f.name);
+    return it ? {name:it.name, cat:it.cat, dims: it.w!=null?{w:it.w,d:it.d,h:it.h}:undefined} : {};
+  };
+  const list=all.filter(f=>/\.glb$/i.test(f.name));
   if(!list.length) return;
-  if(list.length===1) return importModelFile(list[0]);
+  if(list.length===1) return importModelFile(list[0], optsFor(list[0]));
   let n=0;
-  for(const f of list) if(await importModelFile(f,{quiet:true})) n++;
+  for(const f of list) if(await importModelFile(f,{quiet:true, ...optsFor(f)})) n++;
   buildFurnPicker();
   try{ rebuild3d(); }catch(e){}
   flashHint(T('hintModelsImported')(n));
@@ -1165,12 +1206,12 @@ async function importCatalogItem(file){
     const r=await fetch('catalog/'+file);
     if(!r.ok) throw new Error('HTTP '+r.status);
     await importModelFile(new File([await r.blob()], file, {type:'model/gltf-binary'}),
-      {name:it.name, dims: it.w!=null ? {w:it.w, d:it.d, h:it.h} : undefined});
+      {name:it.name, cat:it.cat, dims: it.w!=null ? {w:it.w, d:it.d, h:it.h} : undefined});
   }catch(e){ alert(T('importModelFailed')+' '+(e?.message||e)); }
 }
 async function loadModels(){
   try{
-    for(const rec of await idbKV.mall()) MODELS[rec.id]=rec;
+    for(const rec of await idbKV.mall()){ if(!rec.cat) rec.cat=catFor(rec.name); MODELS[rec.id]=rec; }
     if(Object.keys(MODELS).length){ buildFurnPicker(); try{ rebuild3d(); }catch(e){} }
   }catch(e){}
 }

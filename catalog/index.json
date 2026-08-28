@@ -7,917 +7,1057 @@
    "name": "bathroom cabinet",
    "w": 0.6,
    "d": 0.35,
-   "h": 0.8
+   "h": 0.8,
+   "cat": "furnCatBath"
   },
   {
    "file": "bathroomCabinetDrawer.glb",
    "name": "bathroom cabinet drawer",
    "w": 0.6,
    "d": 0.45,
-   "h": 0.8
+   "h": 0.8,
+   "cat": "furnCatBath"
   },
   {
    "file": "bathroomMirror.glb",
    "name": "bathroom mirror",
    "w": 0.6,
    "d": 0.1,
-   "h": 0.8
+   "h": 0.8,
+   "cat": "furnCatBath"
   },
   {
    "file": "bathroomSink.glb",
    "name": "bathroom sink",
    "w": 0.6,
    "d": 0.45,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatBath"
   },
   {
    "file": "bathroomSinkSquare.glb",
    "name": "bathroom sink square",
    "w": 0.6,
    "d": 0.45,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatBath"
   },
   {
    "file": "bathtub.glb",
    "name": "bathtub",
    "w": 1.7,
    "d": 0.75,
-   "h": 0.55
+   "h": 0.55,
+   "cat": "furnCatBath"
   },
   {
    "file": "bear.glb",
-   "name": "bear"
+   "name": "bear",
+   "cat": "other"
   },
   {
    "file": "bedBunk.glb",
    "name": "bed bunk",
    "w": 0.9,
    "d": 2.0,
-   "h": 1.6
+   "h": 1.6,
+   "cat": "furnCatBed"
   },
   {
    "file": "bedDouble.glb",
    "name": "bed double",
    "w": 1.6,
    "d": 2.0,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatBed"
   },
   {
    "file": "bedSingle.glb",
    "name": "bed single",
    "w": 0.9,
    "d": 2.0,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatBed"
   },
   {
    "file": "bench.glb",
    "name": "bench",
    "w": 1.2,
    "d": 0.4,
-   "h": 0.45
+   "h": 0.45,
+   "cat": "furnCatLiving"
   },
   {
    "file": "benchCushion.glb",
    "name": "bench cushion",
    "w": 1.2,
    "d": 0.4,
-   "h": 0.45
+   "h": 0.45,
+   "cat": "furnCatLiving"
   },
   {
    "file": "benchCushionLow.glb",
    "name": "bench cushion low",
    "w": 1.2,
    "d": 0.4,
-   "h": 0.4
+   "h": 0.4,
+   "cat": "furnCatLiving"
   },
   {
    "file": "bookcaseClosed.glb",
    "name": "bookcase closed",
    "w": 0.8,
    "d": 0.35,
-   "h": 2.0
+   "h": 2.0,
+   "cat": "furnCatOffice"
   },
   {
    "file": "bookcaseClosedDoors.glb",
    "name": "bookcase closed doors",
    "w": 0.8,
    "d": 0.35,
-   "h": 2.0
+   "h": 2.0,
+   "cat": "furnCatOffice"
   },
   {
    "file": "bookcaseClosedWide.glb",
    "name": "bookcase closed wide",
    "w": 1.2,
    "d": 0.35,
-   "h": 2.0
+   "h": 2.0,
+   "cat": "furnCatOffice"
   },
   {
    "file": "bookcaseOpen.glb",
    "name": "bookcase open",
    "w": 0.8,
    "d": 0.35,
-   "h": 2.0
+   "h": 2.0,
+   "cat": "furnCatOffice"
   },
   {
    "file": "bookcaseOpenLow.glb",
    "name": "bookcase open low",
    "w": 0.8,
    "d": 0.35,
-   "h": 1.1
+   "h": 1.1,
+   "cat": "furnCatOffice"
   },
   {
    "file": "books.glb",
    "name": "books",
    "w": 0.3,
    "d": 0.2,
-   "h": 0.25
+   "h": 0.25,
+   "cat": "furnCatOffice"
   },
   {
    "file": "cabinetBed.glb",
    "name": "cabinet bed",
    "w": 0.45,
    "d": 0.4,
-   "h": 0.55
+   "h": 0.55,
+   "cat": "furnCatBed"
   },
   {
    "file": "cabinetBedDrawer.glb",
    "name": "cabinet bed drawer",
    "w": 0.45,
    "d": 0.4,
-   "h": 0.55
+   "h": 0.55,
+   "cat": "furnCatBed"
   },
   {
    "file": "cabinetBedDrawerTable.glb",
    "name": "cabinet bed drawer table",
    "w": 0.45,
    "d": 0.4,
-   "h": 0.55
+   "h": 0.55,
+   "cat": "furnCatBed"
   },
   {
    "file": "cabinetTelevision.glb",
    "name": "cabinet television",
    "w": 1.6,
    "d": 0.45,
-   "h": 0.5
+   "h": 0.5,
+   "cat": "furnCatLiving"
   },
   {
    "file": "cabinetTelevisionDoors.glb",
    "name": "cabinet television doors",
    "w": 1.6,
    "d": 0.45,
-   "h": 0.5
+   "h": 0.5,
+   "cat": "furnCatLiving"
   },
   {
    "file": "cardboardBoxClosed.glb",
    "name": "cardboard box closed",
    "w": 0.4,
    "d": 0.4,
-   "h": 0.35
+   "h": 0.35,
+   "cat": "other"
   },
   {
    "file": "cardboardBoxOpen.glb",
    "name": "cardboard box open",
    "w": 0.4,
    "d": 0.4,
-   "h": 0.35
+   "h": 0.35,
+   "cat": "other"
   },
   {
    "file": "ceilingFan.glb",
    "name": "ceiling fan",
    "w": 1.2,
    "d": 1.2,
-   "h": 0.4
+   "h": 0.4,
+   "cat": "furnCatLiving"
   },
   {
    "file": "chair.glb",
    "name": "chair",
    "w": 0.45,
    "d": 0.45,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatLiving"
   },
   {
    "file": "chairCushion.glb",
    "name": "chair cushion",
    "w": 0.45,
    "d": 0.45,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatLiving"
   },
   {
    "file": "chairDesk.glb",
    "name": "chair desk",
    "w": 0.6,
    "d": 0.6,
-   "h": 0.95
+   "h": 0.95,
+   "cat": "furnCatOffice"
   },
   {
    "file": "chairModernCushion.glb",
    "name": "chair modern cushion",
    "w": 0.45,
    "d": 0.5,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatLiving"
   },
   {
    "file": "chairModernFrameCushion.glb",
    "name": "chair modern frame cushion",
    "w": 0.45,
    "d": 0.5,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatLiving"
   },
   {
    "file": "chairRounded.glb",
    "name": "chair rounded",
    "w": 0.45,
    "d": 0.45,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatLiving"
   },
   {
    "file": "coatRack.glb",
    "name": "coat rack",
    "w": 0.8,
    "d": 0.05,
-   "h": 1.7
+   "h": 1.7,
+   "cat": "furnCatLiving"
   },
   {
    "file": "coatRackStanding.glb",
    "name": "coat rack standing",
    "w": 0.4,
    "d": 0.4,
-   "h": 1.8
+   "h": 1.8,
+   "cat": "furnCatLiving"
   },
   {
    "file": "computerKeyboard.glb",
    "name": "computer keyboard",
    "w": 0.45,
    "d": 0.15,
-   "h": 0.03
+   "h": 0.03,
+   "cat": "furnCatOffice"
   },
   {
    "file": "computerMouse.glb",
    "name": "computer mouse",
    "w": 0.07,
    "d": 0.12,
-   "h": 0.04
+   "h": 0.04,
+   "cat": "furnCatOffice"
   },
   {
    "file": "computerScreen.glb",
    "name": "computer screen",
    "w": 0.55,
    "d": 0.2,
-   "h": 0.4
+   "h": 0.4,
+   "cat": "furnCatOffice"
   },
   {
    "file": "desk.glb",
    "name": "desk",
    "w": 1.4,
    "d": 0.7,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatOffice"
   },
   {
    "file": "deskCorner.glb",
    "name": "desk corner",
    "w": 1.6,
    "d": 1.6,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatOffice"
   },
   {
    "file": "doorway.glb",
-   "name": "doorway"
+   "name": "doorway",
+   "cat": "other"
   },
   {
    "file": "doorwayFront.glb",
-   "name": "doorway front"
+   "name": "doorway front",
+   "cat": "other"
   },
   {
    "file": "doorwayOpen.glb",
-   "name": "doorway open"
+   "name": "doorway open",
+   "cat": "other"
   },
   {
    "file": "dryer.glb",
    "name": "dryer",
    "w": 0.6,
    "d": 0.6,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatBath"
   },
   {
    "file": "floorCorner.glb",
-   "name": "floor corner"
+   "name": "floor corner",
+   "cat": "other"
   },
   {
    "file": "floorCornerRound.glb",
-   "name": "floor corner round"
+   "name": "floor corner round",
+   "cat": "other"
   },
   {
    "file": "floorFull.glb",
-   "name": "floor full"
+   "name": "floor full",
+   "cat": "other"
   },
   {
    "file": "floorHalf.glb",
-   "name": "floor half"
+   "name": "floor half",
+   "cat": "other"
   },
   {
    "file": "hoodLarge.glb",
    "name": "hood large",
    "w": 0.9,
    "d": 0.5,
-   "h": 0.4
+   "h": 0.4,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "hoodModern.glb",
    "name": "hood modern",
    "w": 0.9,
    "d": 0.5,
-   "h": 0.5
+   "h": 0.5,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenBar.glb",
    "name": "kitchen bar",
    "w": 1.2,
    "d": 0.6,
-   "h": 1.1
+   "h": 1.1,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenBarEnd.glb",
    "name": "kitchen bar end",
    "w": 0.6,
    "d": 0.6,
-   "h": 1.1
+   "h": 1.1,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenBlender.glb",
    "name": "kitchen blender",
    "w": 0.2,
    "d": 0.2,
-   "h": 0.4
+   "h": 0.4,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenCabinet.glb",
    "name": "kitchen cabinet",
    "w": 0.6,
    "d": 0.6,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenCabinetCornerInner.glb",
    "name": "kitchen cabinet corner inner",
    "w": 0.9,
    "d": 0.9,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenCabinetCornerRound.glb",
    "name": "kitchen cabinet corner round",
    "w": 0.9,
    "d": 0.9,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenCabinetDrawer.glb",
    "name": "kitchen cabinet drawer",
    "w": 0.6,
    "d": 0.6,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenCabinetUpper.glb",
    "name": "kitchen cabinet upper",
    "w": 0.6,
    "d": 0.35,
-   "h": 0.7
+   "h": 0.7,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenCabinetUpperCorner.glb",
    "name": "kitchen cabinet upper corner",
    "w": 0.65,
    "d": 0.65,
-   "h": 0.7
+   "h": 0.7,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenCabinetUpperDouble.glb",
    "name": "kitchen cabinet upper double",
    "w": 0.8,
    "d": 0.35,
-   "h": 0.7
+   "h": 0.7,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenCabinetUpperLow.glb",
    "name": "kitchen cabinet upper low",
    "w": 0.6,
    "d": 0.35,
-   "h": 0.4
+   "h": 0.4,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenCoffeeMachine.glb",
    "name": "kitchen coffee machine",
    "w": 0.25,
    "d": 0.35,
-   "h": 0.4
+   "h": 0.4,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenFridge.glb",
    "name": "kitchen fridge",
    "w": 0.6,
    "d": 0.65,
-   "h": 1.5
+   "h": 1.5,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenFridgeBuiltIn.glb",
    "name": "kitchen fridge built in",
    "w": 0.6,
    "d": 0.6,
-   "h": 1.8
+   "h": 1.8,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenFridgeLarge.glb",
    "name": "kitchen fridge large",
    "w": 0.9,
    "d": 0.7,
-   "h": 1.8
+   "h": 1.8,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenFridgeSmall.glb",
    "name": "kitchen fridge small",
    "w": 0.6,
    "d": 0.6,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenMicrowave.glb",
    "name": "kitchen microwave",
    "w": 0.5,
    "d": 0.35,
-   "h": 0.3
+   "h": 0.3,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenSink.glb",
    "name": "kitchen sink",
    "w": 0.6,
    "d": 0.6,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenStove.glb",
    "name": "kitchen stove",
    "w": 0.6,
    "d": 0.6,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "kitchenStoveElectric.glb",
    "name": "kitchen stove electric",
    "w": 0.6,
    "d": 0.6,
-   "h": 0.9
+   "h": 0.9,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "lampRoundFloor.glb",
    "name": "lamp round floor",
    "w": 0.35,
    "d": 0.35,
-   "h": 1.6
+   "h": 1.6,
+   "cat": "furnCatLiving"
   },
   {
    "file": "lampRoundTable.glb",
    "name": "lamp round table",
    "w": 0.25,
    "d": 0.25,
-   "h": 0.5
+   "h": 0.5,
+   "cat": "furnCatLiving"
   },
   {
    "file": "lampSquareCeiling.glb",
    "name": "lamp square ceiling",
    "w": 0.4,
    "d": 0.4,
-   "h": 0.3
+   "h": 0.3,
+   "cat": "furnCatLiving"
   },
   {
    "file": "lampSquareFloor.glb",
    "name": "lamp square floor",
    "w": 0.35,
    "d": 0.35,
-   "h": 1.6
+   "h": 1.6,
+   "cat": "furnCatLiving"
   },
   {
    "file": "lampSquareTable.glb",
    "name": "lamp square table",
    "w": 0.25,
    "d": 0.25,
-   "h": 0.5
+   "h": 0.5,
+   "cat": "furnCatLiving"
   },
   {
    "file": "lampWall.glb",
    "name": "lamp wall",
    "w": 0.2,
    "d": 0.15,
-   "h": 0.3
+   "h": 0.3,
+   "cat": "furnCatLiving"
   },
   {
    "file": "laptop.glb",
    "name": "laptop",
    "w": 0.35,
    "d": 0.25,
-   "h": 0.03
+   "h": 0.03,
+   "cat": "furnCatOffice"
   },
   {
    "file": "loungeChair.glb",
    "name": "lounge chair",
    "w": 0.8,
    "d": 0.85,
-   "h": 0.8
+   "h": 0.8,
+   "cat": "furnCatLiving"
   },
   {
    "file": "loungeChairRelax.glb",
    "name": "lounge chair relax",
    "w": 0.8,
    "d": 0.9,
-   "h": 1.0
+   "h": 1.0,
+   "cat": "furnCatLiving"
   },
   {
    "file": "loungeDesignChair.glb",
    "name": "lounge design chair",
    "w": 0.8,
    "d": 0.85,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatLiving"
   },
   {
    "file": "loungeDesignSofa.glb",
    "name": "lounge design sofa",
    "w": 2.2,
    "d": 0.95,
-   "h": 0.8
+   "h": 0.8,
+   "cat": "furnCatLiving"
   },
   {
    "file": "loungeDesignSofaCorner.glb",
    "name": "lounge design sofa corner",
    "w": 2.6,
    "d": 2.6,
-   "h": 0.8
+   "h": 0.8,
+   "cat": "furnCatLiving"
   },
   {
    "file": "loungeSofa.glb",
    "name": "lounge sofa",
    "w": 2.2,
    "d": 0.95,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatLiving"
   },
   {
    "file": "loungeSofaCorner.glb",
    "name": "lounge sofa corner",
    "w": 2.6,
    "d": 2.6,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatLiving"
   },
   {
    "file": "loungeSofaLong.glb",
    "name": "lounge sofa long",
    "w": 2.8,
    "d": 0.95,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatLiving"
   },
   {
    "file": "loungeSofaOttoman.glb",
    "name": "lounge sofa ottoman",
    "w": 0.8,
    "d": 0.8,
-   "h": 0.45
+   "h": 0.45,
+   "cat": "furnCatLiving"
   },
   {
    "file": "paneling.glb",
-   "name": "paneling"
+   "name": "paneling",
+   "cat": "other"
   },
   {
    "file": "pillow.glb",
    "name": "pillow",
    "w": 0.5,
    "d": 0.5,
-   "h": 0.15
+   "h": 0.15,
+   "cat": "furnCatBed"
   },
   {
    "file": "pillowBlue.glb",
    "name": "pillow blue",
    "w": 0.5,
    "d": 0.5,
-   "h": 0.15
+   "h": 0.15,
+   "cat": "furnCatBed"
   },
   {
    "file": "pillowBlueLong.glb",
    "name": "pillow blue long",
    "w": 0.9,
    "d": 0.4,
-   "h": 0.15
+   "h": 0.15,
+   "cat": "furnCatBed"
   },
   {
    "file": "pillowLong.glb",
    "name": "pillow long",
    "w": 0.9,
    "d": 0.4,
-   "h": 0.15
+   "h": 0.15,
+   "cat": "furnCatBed"
   },
   {
    "file": "plantSmall1.glb",
    "name": "plant small1",
    "w": 0.25,
    "d": 0.25,
-   "h": 0.5
+   "h": 0.5,
+   "cat": "furnCatLiving"
   },
   {
    "file": "plantSmall2.glb",
    "name": "plant small2",
    "w": 0.25,
    "d": 0.25,
-   "h": 0.5
+   "h": 0.5,
+   "cat": "furnCatLiving"
   },
   {
    "file": "plantSmall3.glb",
    "name": "plant small3",
    "w": 0.25,
    "d": 0.25,
-   "h": 0.5
+   "h": 0.5,
+   "cat": "furnCatLiving"
   },
   {
    "file": "pottedPlant.glb",
    "name": "potted plant",
    "w": 0.4,
    "d": 0.4,
-   "h": 1.1
+   "h": 1.1,
+   "cat": "furnCatLiving"
   },
   {
    "file": "radio.glb",
    "name": "radio",
    "w": 0.35,
    "d": 0.15,
-   "h": 0.2
+   "h": 0.2,
+   "cat": "furnCatLiving"
   },
   {
    "file": "rugDoormat.glb",
    "name": "rug doormat",
    "w": 0.8,
    "d": 0.5,
-   "h": 0.02
+   "h": 0.02,
+   "cat": "furnCatLiving"
   },
   {
    "file": "rugRectangle.glb",
    "name": "rug rectangle",
    "w": 2.4,
    "d": 1.7,
-   "h": 0.02
+   "h": 0.02,
+   "cat": "furnCatLiving"
   },
   {
    "file": "rugRound.glb",
    "name": "rug round",
    "w": 1.6,
    "d": 1.6,
-   "h": 0.02
+   "h": 0.02,
+   "cat": "furnCatLiving"
   },
   {
    "file": "rugRounded.glb",
    "name": "rug rounded",
    "w": 2.0,
    "d": 1.4,
-   "h": 0.02
+   "h": 0.02,
+   "cat": "furnCatLiving"
   },
   {
    "file": "rugSquare.glb",
    "name": "rug square",
    "w": 1.7,
    "d": 1.7,
-   "h": 0.02
+   "h": 0.02,
+   "cat": "furnCatLiving"
   },
   {
    "file": "shower.glb",
    "name": "shower",
    "w": 0.9,
    "d": 0.9,
-   "h": 2.1
+   "h": 2.1,
+   "cat": "furnCatBath"
   },
   {
    "file": "showerRound.glb",
    "name": "shower round",
    "w": 0.9,
    "d": 0.9,
-   "h": 2.1
+   "h": 2.1,
+   "cat": "furnCatBath"
   },
   {
    "file": "sideTable.glb",
    "name": "side table",
    "w": 0.5,
    "d": 0.4,
-   "h": 0.6
+   "h": 0.6,
+   "cat": "furnCatLiving"
   },
   {
    "file": "sideTableDrawers.glb",
    "name": "side table drawers",
    "w": 0.5,
    "d": 0.4,
-   "h": 0.6
+   "h": 0.6,
+   "cat": "furnCatLiving"
   },
   {
    "file": "speaker.glb",
    "name": "speaker",
    "w": 0.3,
    "d": 0.3,
-   "h": 1.0
+   "h": 1.0,
+   "cat": "furnCatLiving"
   },
   {
    "file": "speakerSmall.glb",
    "name": "speaker small",
    "w": 0.2,
    "d": 0.2,
-   "h": 0.35
+   "h": 0.35,
+   "cat": "furnCatLiving"
   },
   {
    "file": "stairs.glb",
-   "name": "stairs"
+   "name": "stairs",
+   "cat": "other"
   },
   {
    "file": "stairsCorner.glb",
-   "name": "stairs corner"
+   "name": "stairs corner",
+   "cat": "other"
   },
   {
    "file": "stairsOpen.glb",
-   "name": "stairs open"
+   "name": "stairs open",
+   "cat": "other"
   },
   {
    "file": "stairsOpenSingle.glb",
-   "name": "stairs open single"
+   "name": "stairs open single",
+   "cat": "other"
   },
   {
    "file": "stoolBar.glb",
    "name": "stool bar",
    "w": 0.4,
    "d": 0.4,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "stoolBarSquare.glb",
    "name": "stool bar square",
    "w": 0.4,
    "d": 0.4,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "table.glb",
    "name": "table",
    "w": 1.6,
    "d": 0.9,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatLiving"
   },
   {
    "file": "tableCloth.glb",
    "name": "table cloth",
    "w": 1.6,
    "d": 0.9,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatLiving"
   },
   {
    "file": "tableCoffee.glb",
    "name": "table coffee",
    "w": 1.1,
    "d": 0.6,
-   "h": 0.45
+   "h": 0.45,
+   "cat": "furnCatLiving"
   },
   {
    "file": "tableCoffeeGlass.glb",
    "name": "table coffee glass",
    "w": 1.1,
    "d": 0.6,
-   "h": 0.45
+   "h": 0.45,
+   "cat": "furnCatLiving"
   },
   {
    "file": "tableCoffeeGlassSquare.glb",
    "name": "table coffee glass square",
    "w": 0.9,
    "d": 0.9,
-   "h": 0.45
+   "h": 0.45,
+   "cat": "furnCatLiving"
   },
   {
    "file": "tableCoffeeSquare.glb",
    "name": "table coffee square",
    "w": 0.9,
    "d": 0.9,
-   "h": 0.45
+   "h": 0.45,
+   "cat": "furnCatLiving"
   },
   {
    "file": "tableCross.glb",
    "name": "table cross",
    "w": 1.6,
    "d": 0.9,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatLiving"
   },
   {
    "file": "tableCrossCloth.glb",
    "name": "table cross cloth",
    "w": 1.6,
    "d": 0.9,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatLiving"
   },
   {
    "file": "tableGlass.glb",
    "name": "table glass",
    "w": 1.6,
    "d": 0.9,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatLiving"
   },
   {
    "file": "tableRound.glb",
    "name": "table round",
    "w": 1.2,
    "d": 1.2,
-   "h": 0.75
+   "h": 0.75,
+   "cat": "furnCatLiving"
   },
   {
    "file": "televisionAntenna.glb",
    "name": "television antenna",
    "w": 0.9,
    "d": 0.25,
-   "h": 0.6
+   "h": 0.6,
+   "cat": "furnCatLiving"
   },
   {
    "file": "televisionModern.glb",
    "name": "television modern",
    "w": 1.3,
    "d": 0.25,
-   "h": 0.8
+   "h": 0.8,
+   "cat": "furnCatLiving"
   },
   {
    "file": "televisionVintage.glb",
    "name": "television vintage",
    "w": 0.6,
    "d": 0.45,
-   "h": 0.6
+   "h": 0.6,
+   "cat": "furnCatLiving"
   },
   {
    "file": "toaster.glb",
    "name": "toaster",
    "w": 0.3,
    "d": 0.18,
-   "h": 0.2
+   "h": 0.2,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "toilet.glb",
    "name": "toilet",
    "w": 0.4,
    "d": 0.65,
-   "h": 0.8
+   "h": 0.8,
+   "cat": "furnCatBath"
   },
   {
    "file": "toiletSquare.glb",
    "name": "toilet square",
    "w": 0.4,
    "d": 0.65,
-   "h": 0.8
+   "h": 0.8,
+   "cat": "furnCatBath"
   },
   {
    "file": "trashcan.glb",
    "name": "trashcan",
    "w": 0.3,
    "d": 0.3,
-   "h": 0.4
+   "h": 0.4,
+   "cat": "furnCatKitchen"
   },
   {
    "file": "wall.glb",
-   "name": "wall"
+   "name": "wall",
+   "cat": "other"
   },
   {
    "file": "wallCorner.glb",
-   "name": "wall corner"
+   "name": "wall corner",
+   "cat": "other"
   },
   {
    "file": "wallCornerRond.glb",
-   "name": "wall corner rond"
+   "name": "wall corner rond",
+   "cat": "other"
   },
   {
    "file": "wallDoorway.glb",
-   "name": "wall doorway"
+   "name": "wall doorway",
+   "cat": "other"
   },
   {
    "file": "wallDoorwayWide.glb",
-   "name": "wall doorway wide"
+   "name": "wall doorway wide",
+   "cat": "other"
   },
   {
    "file": "wallHalf.glb",
-   "name": "wall half"
+   "name": "wall half",
+   "cat": "other"
   },
   {
    "file": "wallWindow.glb",
-   "name": "wall window"
+   "name": "wall window",
+   "cat": "other"
   },
   {
    "file": "wallWindowSlide.glb",
-   "name": "wall window slide"
+   "name": "wall window slide",
+   "cat": "other"
   },
   {
    "file": "washer.glb",
    "name": "washer",
    "w": 0.6,
    "d": 0.6,
-   "h": 0.85
+   "h": 0.85,
+   "cat": "furnCatBath"
   },
   {
    "file": "washerDryerStacked.glb",
    "name": "washer dryer stacked",
    "w": 0.6,
    "d": 0.6,
-   "h": 1.7
+   "h": 1.7,
+   "cat": "furnCatBath"
   }
  ]
 }
