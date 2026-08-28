@@ -539,6 +539,7 @@ en: {
   confirmDelModel:n=>`Delete the 3D model "${n}"? Placed copies stay in the plan as plain boxes.`,
   furnImportDir:'📁 Whole folder…', furnImportDirT:'Import every .glb file in a folder at once',
   catalogLbl:n=>`Catalog · ${n} free furniture models (CC0)`,
+  catalogFileHint:'📚 140 free furniture models ship with the tool in the <b>catalog</b> folder — click <b>📁 Whole folder…</b> above and pick that folder to import them all at once (the browser cannot read it by itself when the tool is opened as a file).',
   furnW:'Width (m)', furnD:'Depth (m)', furnH:'Height (m)', furnA:'Angle (°)', rotBtn:'↻ Rotate 90° (R)', delFurn:'Delete furniture',
   versionsT:'Version history — restore an earlier state of the plan', versionsTitle:'🕘 Version history (this browser)',
   versionsNote:'Automatic snapshots: every 5 min while editing, on variant switch, before file reloads, resets and restores. Last 60 are kept.',
@@ -670,6 +671,7 @@ da: {
   confirmDelModel:n=>`Slet 3D-modellen "${n}"? Placerede kopier bliver i planen som simple kasser.`,
   furnImportDir:'📁 Hel mappe…', furnImportDirT:'Importér alle .glb-filer i en mappe på én gang',
   catalogLbl:n=>`Katalog · ${n} gratis møbler (CC0)`,
+  catalogFileHint:'📚 140 gratis møbler følger med værktøjet i mappen <b>catalog</b> — klik <b>📁 Hel mappe…</b> ovenfor og vælg den mappe, så importeres de alle på én gang (browseren kan ikke selv læse mappen, når værktøjet er åbnet som fil).',
   furnW:'Bredde (m)', furnD:'Dybde (m)', furnH:'Højde (m)', furnA:'Vinkel (°)', rotBtn:'↻ Rotér 90° (R)', delFurn:'Slet møbel',
   versionsT:'Versionshistorik — gendan en tidligere tilstand af planen', versionsTitle:'🕘 Versionshistorik (denne browser)',
   versionsNote:'Automatiske snapshots: hvert 5. minut under redigering, ved variantskift, før fil-genindlæsning, nulstilling og gendannelse. De sidste 60 gemmes.',
@@ -863,7 +865,8 @@ function buildFurnPicker(){
     +(CATALOG?.items?.length ? `<button id="catToggle" style="width:100%;margin-top:4px">${catOpen?'▾':'▸'} 📚 ${T('catalogLbl')(CATALOG.items.length)}</button>`
       +(catOpen ? `<div class="furnGrid">`+CATALOG.items.map(it=>
           `<button data-cat="${esc(it.file)}" class="${Object.values(MODELS).some(m=>m.name===it.name)?'fsel':''}">📦 ${esc(it.name)}</button>`).join('')
-        +`</div><div style="opacity:.55;font-size:11px;margin:2px 4px">${esc(CATALOG.license||'')}</div>` : '') : '');
+        +`</div><div style="opacity:.55;font-size:11px;margin:2px 4px">${esc(CATALOG.license||'')}</div>` : '')
+      : `<div style="opacity:.7;font-size:11px;line-height:1.45;margin:6px 4px 2px">${T('catalogFileHint')}</div>`);
   for(const b of drop.querySelectorAll('button[data-fk]')) b.onclick=()=>{
     document.getElementById('furnKind').value=b.dataset.fk;
     setTool('furn');
