@@ -2310,11 +2310,17 @@ function traceWallsFromUnderlay(debugMode){
   }
   traceDbg=null;
   const round=v=>+v.toFixed(2);
-  let n=0;
+  const newWalls=[];
   for(const s of segs){
     if(Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1])<0.45) continue;
-    S.base.walls.push({id:nextId('wall'), from:[round(s.a[0]),round(s.a[1])], to:[round(s.b[0]),round(s.b[1])],
-      t:Math.min(0.6,Math.max(0.08,round(s.t))), notes:'auto-traced from the floor-plan photo'});
+    newWalls.push({from:[round(s.a[0]),round(s.a[1])], to:[round(s.b[0]),round(s.b[1])],
+      t:Math.min(0.6,Math.max(0.08,round(s.t)))});
+  }
+  refineWallsOnInk(newWalls);        // iterative polish against the ink itself
+  let n=0;
+  for(const w2 of newWalls){
+    S.base.walls.push({id:nextId('wall'), from:w2.from, to:w2.to, t:w2.t,
+      notes:'auto-traced from the floor-plan photo'});
     n++;
   }
   if(n){ changed(); flashHint(T('hintTraced')(n)); }
@@ -3466,10 +3472,12 @@ Coordinates in world metres rounded to 2 decimals; t = estimated thickness in me
   const j=await r.json();
   return (j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('');
 }
-/* AI proposes, ink refines: the vision model gets the semantics right but its
-   coordinates drift 10-35 cm. Snap each axis-aligned wall sideways onto the ink
-   centreline of the photo, then close corners between the snapped walls. */
-function aiSnapToInk(walls){
+/* Iterative ink refinement — needs NO ground truth: the photo itself is the reference.
+   Each round: (1) slide each axis-aligned wall sideways onto the ink centreline,
+   (2) extend/trim its ends to where the ink actually starts and stops,
+   (3) close corners, (4) finally drop walls with almost no ink under them.
+   Runs after every trace (built-in detector and AI alike) and via planAPI. */
+function refineWallsOnInk(walls, rounds=2){
   if(!underlay || !underlayImg || !walls.length) return walls;
   const pxm=1/underlay.mppx;
   const sc=Math.min(2200/Math.max(underlayImg.naturalWidth, underlayImg.naturalHeight),
@@ -3501,37 +3509,91 @@ function aiSnapToInk(walls){
     for(let yy=y0;yy<y1;yy++) for(let xx=x0;xx<x1;xx++){ s+=gray[yy*w+xx]<thr?1:0; n++; }
     return s/n;
   };
-  for(const wl of walls){
+  const bandW=(vert,c,hw,a1,a2)=> vert ? band(wxp(c-hw),wyp(a1),wxp(c+hw),wyp(a2))
+                                       : band(wxp(a1),wyp(c-hw),wxp(a2),wyp(c+hw));
+  const axisInfo=wl=>{
     const dx=Math.abs(wl.to[0]-wl.from[0]), dy=Math.abs(wl.to[1]-wl.from[1]);
-    if(Math.min(dx,dy)>0.35) continue;               // diagonal wall — leave untouched
-    const vert=dy>dx, di=vert?1:0, fi=vert?0:1;
-    const c0=(wl.from[fi]+wl.to[fi])/2;
-    const a1=Math.min(wl.from[di],wl.to[di])+0.15, a2=Math.max(wl.from[di],wl.to[di])-0.15;
-    if(a2-a1<0.3) continue;
-    const hw=Math.max(0.05,(wl.t||0.35)/2);
-    let best=null;
-    for(let off=-0.45; off<=0.451; off+=0.025){
-      const c=c0+off;
-      const v=vert ? band(wxp(c-hw),wyp(a1),wxp(c+hw),wyp(a2))
-                   : band(wxp(a1),wyp(c-hw),wxp(a2),wyp(c+hw));
-      if(v<0) continue;
-      const score=v-0.25*Math.abs(off);              // prefer staying put on ties
-      if(!best || score>best.score) best={score, off, v};
+    if(Math.min(dx,dy)>0.35) return null;             // diagonal wall — leave untouched
+    const vert=dy>dx;
+    return {vert, di:vert?1:0, fi:vert?0:1};
+  };
+  for(let round=0; round<rounds; round++){
+    // 1. lateral snap onto the ink centreline (coarse first round, fine after)
+    const R=round===0 ? 0.45 : 0.2;
+    for(const wl of walls){
+      const ax=axisInfo(wl); if(!ax) continue;
+      const {vert,di,fi}=ax;
+      const c0=(wl.from[fi]+wl.to[fi])/2;
+      const a1=Math.min(wl.from[di],wl.to[di])+0.15, a2=Math.max(wl.from[di],wl.to[di])-0.15;
+      if(a2-a1<0.3){ wl.from[fi]=wl.to[fi]=+c0.toFixed(2); continue; }
+      const hw=Math.max(0.05,(wl.t||0.35)/2);
+      let best=null;
+      for(let off=-R; off<=R+1e-6; off+=0.025){
+        const v=bandW(vert,c0+off,hw,a1,a2);
+        if(v<0) continue;
+        const score=v-0.25*Math.abs(off);             // prefer staying put on ties
+        if(!best || score>best.score) best={score, off, v};
+      }
+      if(best && best.v>0.12){
+        const c=+(c0+best.off).toFixed(2);
+        wl.from[fi]=c; wl.to[fi]=c;                   // also squares up near-axis walls
+      } else { wl.from[fi]=wl.to[fi]=+c0.toFixed(2); }
     }
-    if(best && best.v>0.12){                          // only snap onto real ink
-      const c=+(c0+best.off).toFixed(2);
-      wl.from[fi]=c; wl.to[fi]=c;                     // also squares up near-axis walls
+    // 2. extend/trim the ends to where the ink actually is.
+    // "Support" = ink in the band OR along the two edge strips — a double-line wall
+    // is white in the middle but solid on its edges.
+    for(const wl of walls){
+      const ax=axisInfo(wl); if(!ax) continue;
+      const {vert,di,fi}=ax;
+      const c=wl.from[fi], ht=(wl.t||0.35)/2;
+      const lo = wl.from[di]<=wl.to[di] ? wl.from : wl.to;
+      const hi = lo===wl.from ? wl.to : wl.from;
+      const probe=(pos,dir)=>{
+        const p1=Math.min(pos+dir*0.05,pos+dir*0.3), p2=Math.max(pos+dir*0.05,pos+dir*0.3);
+        const v=bandW(vert,c,Math.max(0.05,ht),p1,p2);
+        const e=Math.max(bandW(vert,c-ht,0.045,p1,p2), bandW(vert,c+ht,0.045,p1,p2));
+        return Math.max(v,e);
+      };
+      for(const [end,dir] of [[lo,-1],[hi,1]]){
+        for(let g2=0; g2<8; g2++){                    // grow while there is solid ink ahead
+          const v=probe(end[di],dir);
+          if(v<0.3) break;
+          end[di]=+(end[di]+dir*0.15).toFixed(2);
+        }
+        for(let g2=0; g2<12 && hi[di]-lo[di]>0.5; g2++){  // shrink while the end sits on white
+          const v=probe(end[di],-dir);
+          if(v<0 || v>=0.12) break;
+          end[di]=+(end[di]-dir*0.15).toFixed(2);
+        }
+      }
     }
-  }
-  // close corners between the snapped walls (same rule as the built-in tracer)
-  const segs=walls.map(wl=>({a:wl.from, b:wl.to, vert:Math.abs(wl.to[1]-wl.from[1])>Math.abs(wl.to[0]-wl.from[0])}));
-  for(const s of segs) for(const o of segs){
-    if(s===o || s.vert===o.vert) continue;
-    for(const e of [s.a,s.b]){
-      if(s.vert){
-        if(Math.abs(e[1]-o.a[1])<0.45 && e[0]>Math.min(o.a[0],o.b[0])-0.4 && e[0]<Math.max(o.a[0],o.b[0])+0.4) e[1]=o.a[1];
-      } else {
-        if(Math.abs(e[0]-o.a[0])<0.45 && e[1]>Math.min(o.a[1],o.b[1])-0.4 && e[1]<Math.max(o.a[1],o.b[1])+0.4) e[0]=o.a[0];
+    // 3. close corners (same rule as the built-in tracer)
+    const segs=walls.map(wl=>({a:wl.from, b:wl.to, vert:Math.abs(wl.to[1]-wl.from[1])>Math.abs(wl.to[0]-wl.from[0])}));
+    for(const s of segs) for(const o of segs){
+      if(s===o || s.vert===o.vert) continue;
+      for(const e of [s.a,s.b]){
+        if(s.vert){
+          if(Math.abs(e[1]-o.a[1])<0.45 && e[0]>Math.min(o.a[0],o.b[0])-0.4 && e[0]<Math.max(o.a[0],o.b[0])+0.4) e[1]=o.a[1];
+        } else {
+          if(Math.abs(e[0]-o.a[0])<0.45 && e[1]>Math.min(o.a[1],o.b[1])-0.4 && e[1]<Math.max(o.a[1],o.b[1])+0.4) e[0]=o.a[0];
+        }
+      }
+    }
+    // 4. last round: drop walls with almost no ink under them, or that shrank away.
+    // Double-line walls are white BETWEEN their edges — check the edge strips too.
+    if(round===rounds-1){
+      for(let i=walls.length-1;i>=0;i--){
+        const wl=walls[i];
+        const L=Math.hypot(wl.to[0]-wl.from[0], wl.to[1]-wl.from[1]);
+        if(L<0.4){ walls.splice(i,1); continue; }
+        const ax=axisInfo(wl); if(!ax) continue;
+        const {vert,di,fi}=ax;
+        const a1=Math.min(wl.from[di],wl.to[di])+0.08, a2=Math.max(wl.from[di],wl.to[di])-0.08;
+        const c=wl.from[fi], ht=(wl.t||0.35)/2;
+        const v=bandW(vert,c,Math.max(0.05,ht),a1,a2);
+        const edge=Math.max(bandW(vert,c-ht,0.045,a1,a2), bandW(vert,c+ht,0.045,a1,a2));
+        // a thin pen line only fills ~10-30% of its band — drop only near-blank paper
+        if(v>=0 && v<0.07 && edge<0.22) walls.splice(i,1);
       }
     }
   }
@@ -3553,7 +3615,7 @@ async function aiTraceWalls(getText){
       Math.hypot(w.to[0]-w.from[0], w.to[1]-w.from[1])>=0.3);
     if(!walls.length) throw new Error('AI found no walls');
     for(const w of walls){ w.from=w.from.map(Number); w.to=w.to.map(Number); }
-    aiSnapToInk(walls);
+    refineWallsOnInk(walls);
     for(const w of walls)
       S.base.walls.push({id:nextId('wall'), from:w.from.map(v=>+(+v).toFixed(2)), to:w.to.map(v=>+(+v).toFixed(2)),
         t:Math.min(0.6,Math.max(0.08,+(+w.t||0.35).toFixed(2))), notes:'auto-traced from the floor-plan photo (AI)'});
@@ -4240,7 +4302,7 @@ window.planAPI = {
     return underlay ? {...underlay, dataUrl: underlay.dataUrl?'<set>':null} : null;
   },
   traceWalls: opts=>traceWallsFromUnderlay(!!(opts&&opts.debug)),  // agent hook: auto-trace ({debug:true} = overlay only)
-  snapWallsToInk: ()=>{ aiSnapToInk(S.base.walls); changed(); return 'ok'; },  // agent hook: snap walls onto the underlay ink
+  snapWallsToInk: ()=>{ refineWallsOnInk(S.base.walls); changed(); return 'ok'; },  // agent hook: iteratively refine walls against the underlay ink
   traceReport: ()=>window.__traceDebug||null,       // agent hook: numbers from the last trace run
   view3d: (px,py,pz,tx,ty,tz)=>{
     if(!three) return 'no 3d';
