@@ -351,7 +351,8 @@
       <button id="introReno" style="flex:1;max-width:250px;padding:14px 12px;font-size:14px;line-height:1.45;border-radius:10px" data-i18n-html="introReno"></button>
       <button id="introNew" style="flex:1;max-width:250px;padding:14px 12px;font-size:14px;line-height:1.45;border-radius:10px" data-i18n-html="introNew"></button>
     </div>
-    <button id="introSkip" style="margin-top:16px;background:none;border:none;opacity:.6;text-decoration:underline;cursor:pointer;font-size:12px" data-i18n="gSkip">Skip the guide</button>
+    <button id="introDemo" style="margin-top:14px;padding:8px 18px;border-radius:8px" data-i18n="introDemo">🏡 Just show me an example house</button><br>
+    <button id="introSkip" style="margin-top:10px;background:none;border:none;opacity:.6;text-decoration:underline;cursor:pointer;font-size:12px" data-i18n="gSkip">Skip the guide</button>
   </div>
 </div>
 <div id="guideBar" style="display:none">
@@ -582,6 +583,8 @@ en: {
   introQ:'What are you planning?',
   introReno:'🏚<br><b>Renovation</b><br><small style="opacity:.75">I have a house and want to change it</small>',
   introNew:'🏗<br><b>New build</b><br><small style="opacity:.75">I\'m designing a new house</small>',
+  introDemo:'🏡 Just show me an example house',
+  demoFailed:'Could not load the example house (needs the app to run from a server or the website).',
   menuIntro:'Intro & guide', menuIntroT:'Show the welcome intro and the 4-step guide again',
   installApp:'Install app', installT:'Install House Planner as an app: own icon and window, works offline',
   gReno:'🏚 Renovating a house', gNew:'🏗 Building new',
@@ -749,6 +752,8 @@ da: {
   introQ:'Hvad skal du i gang med?',
   introReno:'🏚<br><b>Ombygning</b><br><small style="opacity:.75">Jeg har et hus og vil ændre det</small>',
   introNew:'🏗<br><b>Nybyg</b><br><small style="opacity:.75">Jeg tegner et nyt hus</small>',
+  introDemo:'🏡 Vis mig bare et eksempel-hus',
+  demoFailed:'Kunne ikke indlæse eksempel-huset (kræver at appen kører fra en server eller hjemmesiden).',
   menuIntro:'Intro & guide', menuIntroT:'Vis velkomst-introen og 4-trins-guiden igen',
   installApp:'Installér som app', installT:'Installér House Planner som app: eget ikon og vindue, virker offline',
   gReno:'🏚 Renovere et hus', gNew:'🏗 Bygge nyt',
@@ -5521,6 +5526,21 @@ document.getElementById('gSkip').onclick=()=>finishGuide(false);
 document.getElementById('introReno').onclick=()=>{ guide={step:2, kind:'reno'}; applyGuide(); };
 document.getElementById('introNew').onclick=()=>{ guide={step:2, kind:'new'}; applyGuide(); };
 document.getElementById('introSkip').onclick=()=>finishGuide(false);
+document.getElementById('introDemo').onclick=async()=>{
+  try{
+    const r=await fetch('demo/demo-plan.json');
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const pf=await r.json();
+    await saveVersion('before-demo');
+    finishGuide(false);
+    adoptPlan(pf);
+    persist();
+    setRtab('ideer');
+    fitView();
+    document.body.className='';
+    window.dispatchEvent(new Event('resize'));
+  }catch(e){ alert(T('demoFailed')+' '+(e?.message||'')); }
+};
 document.getElementById('introBtn').onclick=()=>{ guide={step:1, kind:null}; applyGuide(); };
 document.getElementById('inspectBtn').onclick=()=>{
   const b=document.getElementById('inspectBody');
