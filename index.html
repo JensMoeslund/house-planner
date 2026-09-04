@@ -182,6 +182,7 @@
           <div class="dropdown" style="min-width:210px">
             <button id="variantRen" data-i18n="rename">Rename</button>
             <button id="variantNotes" data-i18n="variantNotesM" data-i18n-title="variantNotesT">📝 Notes</button>
+            <button id="describeBtn" data-i18n-title="describeT">🧾 <span data-i18n="describe">Describe</span></button>
             <button id="variantHideDem" data-i18n-title="hideDemT"></button>
             <hr>
             <button id="variantDel" class="danger" data-i18n="variantDelM">✕ Delete variant</button>
@@ -242,10 +243,9 @@
     <div class="rgsep"></div>
     <div class="rgroup">
       <div class="rbtns">
-        <button class="tool" data-tool="furn" data-i18n="toolFurn" data-i18n-title="toolFurnT">🍳 Furniture</button>
         <select id="furnKind" style="display:none"></select>
         <div id="furnMenu" style="display:inline-block">
-          <button id="furnMenuBtn" data-i18n-title="furnBarT">🗄 ▾</button>
+          <button id="furnMenuBtn" data-i18n-title="furnBarT">🛋 ▾</button>
         </div>
       </div>
       <div class="rcap" data-i18n="rgFurniture">Furniture</div>
@@ -267,9 +267,8 @@
     <div class="rgroup" data-wmode="ideer">
       <div class="rbtns">
         <button class="tool" data-tool="sketch" data-i18n="toolSketch" data-i18n-title="toolSketchT">✏ Sketch</button>
-        <button id="describeBtn" data-i18n="describe" data-i18n-title="describeT">Describe</button>
       </div>
-      <div class="rcap" data-i18n="rgSketchAI">Sketch & describe</div>
+      <div class="rcap" data-i18n="rgSketchAI">Sketch</div>
     </div>
   </div>
   <div class="rpanel" data-rpanel="view">
@@ -397,7 +396,6 @@
           <option value="partly" data-i18n="wPartly">⛅ Partly cloudy</option>
           <option value="overcast" data-i18n="wOvercast">☁ Overcast</option>
         </select>
-        <button id="lightsBtn" data-i18n="lightsMenu" data-i18n-title="lightsT" style="padding:2px 8px">☀ Roof light…</button>
         <input type="range" id="sunDay" min="1" max="365" value="229" data-i18n-title="sunDayT">
         <input type="range" id="sunMin" min="240" max="1380" step="10" value="870" data-i18n-title="sunMinT">
         <span id="sunLabel"></span>
@@ -475,6 +473,20 @@
     <button id="roofClose" data-i18n="close">Close</button></span>
   </div>
 </div></div>
+<div id="customWallModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:63"><div class="box" style="max-width:400px;margin:12vh auto;background:#1c212a;border:1px solid #3a4250;border-radius:10px;padding:18px 20px">
+  <h3 style="color:var(--accent);margin-top:0" data-i18n="cwTitle">➕ Your own wall type</h3>
+  <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center">
+    <label data-i18n="cwName">Name</label><input type="text" id="cwName" maxlength="30">
+    <label data-i18n="cwT">Thickness (m)</label><input type="number" id="cwT" step="0.01" min="0.03" max="1" value="0.2">
+    <label data-i18n="cwH">Height (m)</label><input type="number" id="cwH" step="0.1" min="0.2" max="6">
+  </div>
+  <div style="opacity:.6;font-size:12px;margin-top:6px" data-i18n="cwHNote">Leave height empty for the normal room height.</div>
+  <div class="ddlabel" style="margin-top:12px" data-i18n="cwYours">Your wall types</div>
+  <div id="cwList" style="display:flex;flex-direction:column;gap:4px;margin-top:4px"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+    <button id="cwSave" data-i18n="save">Save</button><button id="cwClose" data-i18n="close">Close</button>
+  </div>
+</div></div>
 <div id="renderGuideModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:62"><div class="box" style="max-width:560px;margin:6vh auto;background:#1c212a;border:1px solid #3a4250;border-radius:12px;padding:20px 24px;max-height:86vh;overflow:auto">
   <h3 style="color:var(--accent);margin-top:0" data-i18n="rgTitle">📷 Pretty pictures — two ways</h3>
   <p style="opacity:.85;margin:6px 0 12px" data-i18n="rgIntro">Your 3D view can become real pictures. Easiest first:</p>
@@ -545,6 +557,9 @@ en: {
   toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
   toolRoom:'⬛ Room', toolRoomT:'Drag a rectangle to make a room — four walls plus a room name in one go. Snaps onto nearby walls and reuses them; hold Shift for no snapping.',
   wallTypeOuter:'Outer wall (35 cm)', wallTypeInner:'Inner wall (10 cm)', wallTypeHalf:'Half wall (1.1 m high)',
+  wallTypeAdd:'➕ Add your own wall…',
+  cwTitle:'➕ Your own wall type', cwName:'Name', cwNamePh:'e.g. Brick wall', cwT:'Thickness (m)', cwH:'Height (m)',
+  cwHNote:'Leave height empty for the normal room height.', cwYours:'Your wall types', cwNone:'none yet',
   wallTypeT:'Preset for new walls — outer for the shell, inner for room dividers, half wall for knee walls and room separations. Any wall\'s exact thickness AND height can be changed by clicking it.',
   undoT:'Undo (Ctrl+Z)', redoT:'Redo (Ctrl+Y)',
   toolDoor:'Door', toolDoorT:'Click on a wall (D)', toolWindow:'Window', toolWindowT:'Click on a wall (N)',
@@ -689,7 +704,7 @@ en: {
   tabToday:'1 · The house today', tabTodayT:'Draw the house as it IS — walls here are the ground truth every idea builds on', tabIdeas:'2 · Ideas', tabIdeasT:'Try out renovation ideas — new walls, demolitions and sketches live in the selected idea, the real house stays untouched', tabView:'View',
   rgHistory:'History', rgDraw:'Draw', rgOpenings:'Openings', rgAnnotate:'Annotate', rgFurniture:'Furniture',
   rgHouse:'House', rgUnderlay:'Underlay', rgLayout:'Layout', rgShow:'Show', rgImage:'Image / 3D', rgRender:'Render',
-  rgIdea:'Idea', rgSketchAI:'Sketch & describe',
+  rgIdea:'Idea', rgSketchAI:'Sketch',
   roofMenu:'🏠 Roof…', variantMoreT:'More actions for this idea', variantNotesM:'📝 Notes', variantDelM:'✕ Delete idea',
   modeNutid:'🏠 TODAY', modeIdea:'💡 IDEA',
   modeNutidT:'You are editing the house as it is TODAY. Changes here show up in every idea.',
@@ -709,6 +724,9 @@ da: {
   toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
   toolRoom:'⬛ Rum', toolRoomT:'Træk et rektangel for at lave et rum — fire vægge og et rumnavn på én gang. Snapper til nærliggende vægge og genbruger dem; hold Shift for ingen snap.',
   wallTypeOuter:'Ydervæg (35 cm)', wallTypeInner:'Indervæg (10 cm)', wallTypeHalf:'Halvmur (1,1 m høj)',
+  wallTypeAdd:'➕ Tilføj din egen væg…',
+  cwTitle:'➕ Din egen vægtype', cwName:'Navn', cwNamePh:'fx Murstensvæg', cwT:'Tykkelse (m)', cwH:'Højde (m)',
+  cwHNote:'Lad højden stå tom for normal rumhøjde.', cwYours:'Dine vægtyper', cwNone:'ingen endnu',
   wallTypeT:'Forvalg for nye vægge — ydervæg til skallen, indervæg til rumdelere, halvmur til knævægge og rumdelinger. Enhver vægs præcise tykkelse OG højde kan ændres ved at klikke på den.',
   undoT:'Fortryd (Ctrl+Z)', redoT:'Gentag (Ctrl+Y)',
   toolDoor:'Dør', toolDoorT:'Klik på en væg (D)', toolWindow:'Vindue', toolWindowT:'Klik på en væg (N)',
@@ -853,7 +871,7 @@ da: {
   tabToday:'1 · Huset i dag', tabTodayT:'Tegn huset som det ER — vægge her er grundlaget, som alle idéer bygger på', tabIdeas:'2 · Idéer', tabIdeasT:'Prøv renoverings-idéer — nye vægge, nedrivninger og skitser ligger i den valgte idé, det rigtige hus røres ikke', tabView:'Vis',
   rgHistory:'Historik', rgDraw:'Tegn', rgOpenings:'Åbninger', rgAnnotate:'Notér', rgFurniture:'Møbler',
   rgHouse:'Hus', rgUnderlay:'Plantegning', rgLayout:'Layout', rgShow:'Vis', rgImage:'Billede / 3D', rgRender:'Rendér',
-  rgIdea:'Idé', rgSketchAI:'Skitse & beskriv',
+  rgIdea:'Idé', rgSketchAI:'Skitse',
   roofMenu:'🏠 Tag…', variantMoreT:'Flere handlinger for denne idé', variantNotesM:'📝 Noter', variantDelM:'✕ Slet idé',
   modeNutid:'🏠 NUTID', modeIdea:'💡 IDÉ',
   modeNutidT:'Du redigerer huset som det er I DAG. Ændringer her slår igennem i alle idéer.',
@@ -927,6 +945,7 @@ function applyI18n(){
   if(cur && FURN[cur]) fk.value = cur;
   buildFurnPicker();
   if(typeof updateViewBtn==='function') updateViewBtn();
+  window.__rebuildWallTypeSel?.();
 }
 const WALL_H_DEFAULT = 2.5, DOOR_H = 2.1, SILL_H = 0.9;
 const FURN = {
@@ -1043,12 +1062,9 @@ const FURN_CATS=[
   ['furnCatGarden',  []],
 ];
 function updateFurnBtn(){
-  const k=document.getElementById('furnKind').value||'underskab';
+  // one calm button: the furniture BAR shows what's selected, the ribbon stays stable
   const el=document.getElementById('furnMenuBtn');
-  if(!el || !FURN[k]) return;
-  el.textContent = k==='model'
-    ? '📦 '+(MODELS[curModelId]?.name||T('furn_model'))+' ▾'
-    : (FURN[k].e||'🍳')+' '+T('furn_'+k)+' ▾';
+  if(el) el.textContent='🛋 '+T('rgFurniture')+'…';
 }
 /* ---------- Sims-style horizontal furniture browser (#furnBar, bottom of the window) ---------- */
 let furnBarCat='furnCatKitchen';
@@ -1782,6 +1798,10 @@ function roomEdgeWalls(x1,y1,x2,y2){
 
 const wallPreset=()=>{
   const v=document.getElementById('wallTypeSel').value;
+  if(v.startsWith('c:')){
+    const c=(PREFS.customWalls||[]).find(x=>'c:'+x.id===v);
+    if(c) return c.h ? {t:c.t, h:c.h} : {t:c.t};
+  }
   return v==='outer' ? {t:0.35} : v==='half' ? {t:0.10, h:1.1} : {t:0.10};
 };
 const drawWallT=()=>wallPreset().t;
@@ -4557,7 +4577,6 @@ document.getElementById('lightsSave').onclick=()=>{
   lightModal.style.display='none';
   refreshLightToggles(); changed();
 };
-document.getElementById('lightsBtn').onclick=()=>openLightsDialog();
 document.getElementById('lightsMenuBtn').onclick=()=>openLightsDialog();
 
 /* clean-slate toggle: hide demolished walls in this variant */
@@ -5338,10 +5357,72 @@ function changed(){
 refreshVariants();
 applySplit();
 snapshotNow();
-{ // wall-type preset: remember the choice; sensible default = outer on an empty plan, inner otherwise
-  const sel=document.getElementById('wallTypeSel');
-  sel.value = PREFS.wallType || (S.base.walls.length ? 'inner' : 'outer');
-  sel.onchange=()=>{ PREFS.wallType=sel.value; savePrefs(); };
+/* wall-type presets: built-ins + the user's own wall library (name/thickness/height,
+   stored in this browser) + an "add your own" entry that opens the editor */
+{
+  const wtSel=document.getElementById('wallTypeSel');
+  const cwModal=document.getElementById('customWallModal');
+  const validWT=v=>[...wtSel.options].some(o=>o.value===v && o.value!=='addcustom');
+  function buildWallTypeSel(){
+    const cur=wtSel.value;
+    wtSel.innerHTML=
+      `<option value="outer" data-i18n="wallTypeOuter">${T('wallTypeOuter')}</option>`+
+      `<option value="inner" data-i18n="wallTypeInner">${T('wallTypeInner')}</option>`+
+      `<option value="half" data-i18n="wallTypeHalf">${T('wallTypeHalf')}</option>`+
+      (PREFS.customWalls||[]).map(c=>`<option value="c:${esc(c.id)}">${esc(c.name)} (${Math.round(c.t*100)} cm${c.h?` · ${c.h} m`:''})</option>`).join('')+
+      `<option value="addcustom" data-i18n="wallTypeAdd">${T('wallTypeAdd')}</option>`;
+    wtSel.value=validWT(cur)?cur:'outer';
+  }
+  window.__rebuildWallTypeSel=buildWallTypeSel;   // applyI18n refreshes labels on language switch
+  function cwRenderList(){
+    const list=document.getElementById('cwList');
+    const cs=PREFS.customWalls||[];
+    list.innerHTML = cs.length ? '' : `<div style="opacity:.5;font-size:12px">${T('cwNone')}</div>`;
+    for(const c of cs){
+      const d=document.createElement('div'); d.className='ddrow';
+      d.innerHTML=`<span style="flex:1">${esc(c.name)} · ${Math.round(c.t*100)} cm${c.h?` · ${c.h} m`:''}</span><button class="danger" style="width:auto">✕</button>`;
+      d.querySelector('button').onclick=()=>{
+        PREFS.customWalls=(PREFS.customWalls||[]).filter(x=>x.id!==c.id);
+        if(PREFS.wallType==='c:'+c.id) PREFS.wallType='outer';
+        savePrefs(); buildWallTypeSel(); cwRenderList();
+      };
+      list.appendChild(d);
+    }
+  }
+  function openCustomWall(){
+    const n=document.getElementById('cwName');
+    n.value=''; n.placeholder=T('cwNamePh');
+    document.getElementById('cwT').value='0.2';
+    document.getElementById('cwH').value='';
+    cwRenderList();
+    cwModal.style.display='block';
+    n.focus();
+  }
+  document.getElementById('cwSave').onclick=()=>{
+    const name=document.getElementById('cwName').value.trim();
+    const t=parseFloat(document.getElementById('cwT').value);
+    const h=parseFloat(document.getElementById('cwH').value);
+    if(!name || !(t>0.02)) return;
+    const c={id:Date.now().toString(36), name, t:+t.toFixed(2)};
+    if(Number.isFinite(h) && h>0.15) c.h=+h.toFixed(2);
+    (PREFS.customWalls??=[]).push(c);
+    PREFS.wallType='c:'+c.id; savePrefs();
+    buildWallTypeSel(); wtSel.value='c:'+c.id;
+    cwModal.style.display='none';
+  };
+  document.getElementById('cwClose').onclick=()=>{ cwModal.style.display='none'; };
+  cwModal.onclick=e=>{ if(e.target===cwModal) cwModal.style.display='none'; };
+  buildWallTypeSel();
+  const stored=PREFS.wallType || (S.base.walls.length ? 'inner' : 'outer');
+  if(validWT(stored)) wtSel.value=stored;
+  wtSel.onchange=()=>{
+    if(wtSel.value==='addcustom'){
+      wtSel.value=validWT(PREFS.wallType)?PREFS.wallType:'outer';
+      openCustomWall();
+      return;
+    }
+    PREFS.wallType=wtSel.value; savePrefs();
+  };
 }
 
 /* ==================== phases: the toolbar only shows the current phase's tools.
