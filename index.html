@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <title>House Planner</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1e2126">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root{
     --bg:#1e2126; --panel:#2a2e35; --panel2:#333842; --fg:#e8e6e1; --dim:#9aa0a8;
@@ -148,6 +151,7 @@
       <button id="versionsBtn" data-i18n-title="versionsT">🕘 <span data-i18n="menuVersions">Version history</span></button>
       <button id="settingsBtn" data-i18n-title="settingsT">⚙ <span data-i18n="menuSettings">Settings</span></button>
       <button id="introBtn" data-i18n-title="menuIntroT">👋 <span data-i18n="menuIntro">Intro & guide</span></button>
+      <button id="installBtn" data-i18n-title="installT" style="display:none">📲 <span data-i18n="installApp">Install app</span></button>
     </div>
   </div>
   <button class="rtab active" data-rtab="huset" data-panel="draw" data-i18n-title="tabTodayT"><span data-i18n="tabToday">1 · The house today</span></button>
@@ -525,6 +529,7 @@ en: {
   introReno:'🏚<br><b>Renovation</b><br><small style="opacity:.75">I have a house and want to change it</small>',
   introNew:'🏗<br><b>New build</b><br><small style="opacity:.75">I\'m designing a new house</small>',
   menuIntro:'Intro & guide', menuIntroT:'Show the welcome intro and the 4-step guide again',
+  installApp:'Install app', installT:'Install House Planner as an app: own icon and window, works offline',
   gReno:'🏚 Renovating a house', gNew:'🏗 Building new',
   gStep2TextReno:'Draw your house as it is today. Easiest: load a photo of your floor plan and trace over it with the ⬛ Room tool (set the scale first). Click Next when the house is drawn.',
   gStep2TextNew:'Draw the outer walls and rooms with the ⬛ Room tool — drag a rectangle per room; they snap together. Click Next when the shell is there.',
@@ -677,6 +682,7 @@ da: {
   introReno:'🏚<br><b>Ombygning</b><br><small style="opacity:.75">Jeg har et hus og vil ændre det</small>',
   introNew:'🏗<br><b>Nybyg</b><br><small style="opacity:.75">Jeg tegner et nyt hus</small>',
   menuIntro:'Intro & guide', menuIntroT:'Vis velkomst-introen og 4-trins-guiden igen',
+  installApp:'Installér som app', installT:'Installér House Planner som app: eget ikon og vindue, virker offline',
   gReno:'🏚 Renovere et hus', gNew:'🏗 Bygge nyt',
   gStep2TextReno:'Tegn dit hus som det er i dag. Nemmest: indlæs et foto af din plantegning og tegn ovenpå med ⬛ Rum-værktøjet (sæt målestokken først). Klik Næste når huset er tegnet.',
   gStep2TextNew:'Tegn ydervægge og rum med ⬛ Rum-værktøjet — træk et rektangel pr. rum; de snapper sammen. Klik Næste når skallen er der.',
@@ -3854,6 +3860,29 @@ document.getElementById('traceBtn').onclick=async e=>{
   else traceWallsFromUnderlay(false);
 };
 document.getElementById('underlayClear').onclick=()=>{ underlay=null; underlayImg=null; saveUnderlay(); draw(); };
+// ✨ Find walls is hidden for EVERYONE until it is reliable — open with ?dev in the URL
+// to work on it (planAPI.traceWalls and the benchmark keep working regardless).
+const isLocalApp = location.protocol==='file:' || ['localhost','127.0.0.1'].includes(location.hostname);
+if(!new URLSearchParams(location.search).has('dev')) document.getElementById('traceBtn').style.display='none';
+/* PWA: on the public site, register the service worker (offline + updates in the
+   background) and surface the browser's install prompt as a File-menu button */
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !isLocalApp){
+  navigator.serviceWorker.register('sw.js').catch(e=>console.warn('sw registration failed', e));
+}
+let installPrompt=null;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault();
+  installPrompt=e;
+  document.getElementById('installBtn').style.display='';
+});
+document.getElementById('installBtn').onclick=async()=>{
+  if(!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice;
+  installPrompt=null;
+  document.getElementById('installBtn').style.display='none';
+};
+window.addEventListener('appinstalled', ()=>{ document.getElementById('installBtn').style.display='none'; });
 
 let showRoof=false;
 let showDoors = PREFS.showDoors !== false;   // real door leaves in 3D — renders follow this

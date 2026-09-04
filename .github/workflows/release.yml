@@ -1,0 +1,18 @@
+name: release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Windows installer
+        run: iscc /DAppVer=${{ github.ref_name }} installer\houseplanner.iss
+      - name: Create release with installer
+        uses: softprops/action-gh-release@v2
+        with:
+          files: installer/Output/HousePlannerSetup.exe
+          generate_release_notes: true

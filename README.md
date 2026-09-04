@@ -22,14 +22,9 @@ The Office-style ribbon walks you through it — the two numbered tabs *are* the
 
 1. **Draw your house as it is today** on the **1 · The house today** tab. Draw walls
    directly (they snap to straight angles — hold Shift for odd ones), or load a photo of
-   your floor plan, set the scale and press **✨ Find walls** — the walls are detected and
-   drawn automatically, ready for touch-ups. When started via `House Planner.cmd` with
-   the [Claude Code](https://claude.com/claude-code) CLI installed, Find walls lets
-   **Claude read the drawing** (it distinguishes walls from roof overhangs, dimension
-   lines and furniture symbols — much better on messy old scans); otherwise a built-in
-   detector runs instantly and offline (Alt-click forces it). Add doors, windows, room
-   names. Everything you draw here is the real house — the ground truth every idea
-   builds on.
+   your floor plan, set the scale and trace over it with the ⬛ Room tool. Add doors,
+   windows, room names. Everything you draw here is the real house — the ground truth
+   every idea builds on.
 2. **Switch to the 2 · Ideas tab.** Press **+** to copy the house into a named idea.
 3. **Change things — safely.** On the Ideas tab, everything you draw belongs to the
    selected idea and the real house is protected: deleting a door only closes it *in that
@@ -94,9 +89,17 @@ version history as your own edits.
 ## Try it
 
 **Online, nothing to install:** [jensmoeslund.github.io/house-planner](https://jensmoeslund.github.io/house-planner/)
-— runs entirely in your browser; your plan never leaves your machine. To get it, clone
-this repo or grab it with the green **Code → Download ZIP** button — it's the same app,
-plus the desktop launcher and one-click Blender rendering.
+— runs entirely in your browser; your plan never leaves your machine. Want it as an app
+with its own icon that works offline? Click **File → 📲 Install app** on that page.
+
+**Windows installer:** download
+[HousePlannerSetup.exe](https://github.com/JensMoeslund/house-planner/releases/latest/download/HousePlannerSetup.exe)
+from the [releases page](https://github.com/JensMoeslund/house-planner/releases) — a
+normal next-next-finish install (no admin needed) with Start-menu and desktop icons,
+plus the extras the web version can't do, like one-click Blender rendering. (Windows
+may show a SmartScreen notice because the
+installer is unsigned — choose "More info → Run anyway".) Developers can also just
+clone the repo and double-click `House Planner.cmd`.
 
 Open `index.html`, click **File → 📂 Open house plan…**, and pick
 [demo/demo-plan.json](demo/demo-plan.json) — a small example house with a "today" plan
@@ -107,6 +110,8 @@ and an open-kitchen idea.
 **Beginner-friendliness (next up)**
 - "Try the example house" button on the empty-plan screen
 - Touch support: pinch zoom, two-finger pan, bigger grab handles
+- ✨ Find walls (auto-trace a floor-plan photo) — built and benchmarked
+  (`tests/trace-bench.js`), hidden behind `?dev` until it's reliable enough to ship
 
 **Deciding between ideas**
 - Compare two ideas: overlay with color-coded differences, side-by-side view, and a
