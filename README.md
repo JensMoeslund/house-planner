@@ -93,6 +93,11 @@ version history as your own edits.
 
 ## Try it
 
+**Online, nothing to install:** [jensmoeslund.github.io/house-planner](https://jensmoeslund.github.io/house-planner/)
+— runs entirely in your browser; your plan never leaves your machine. To get it, clone
+this repo or grab it with the green **Code → Download ZIP** button — it's the same app,
+plus the desktop launcher and one-click Blender rendering.
+
 Open `index.html`, click **File → 📂 Open house plan…**, and pick
 [demo/demo-plan.json](demo/demo-plan.json) — a small example house with a "today" plan
 and an open-kitchen idea.
