@@ -537,7 +537,8 @@ en: {
   gStep2TextReno:'Follow the glowing button: first press Load… and pick a photo of your floor plan. Then set the scale with Scale (click two points with a known distance). Then trace over the photo with Wall or the ⬛ Room tool. Next when the house is drawn.',
   gStep2TextNew:'Draw the house with the glowing tools: Wall for single walls, ⬛ Room for a whole room at a time (drag a rectangle; they snap together). Click Next when the shell is there.',
   gPhoto:'📷 Load floor plan',
-  gStep3Text:'Now the details — the glowing buttons: put Doors and Windows into the walls, and name the rooms with Label.',
+  gStep3Text:'Now the details — the glowing buttons: put Doors and Windows into the walls. Rooms are named automatically; click a name to change it.',
+  genericRoom:n=>`Room ${n}`,
   gStep4Text:'Done! Press the glowing + to copy your plan into an idea and start experimenting — nothing you do in an idea touches the house as it is today.',
   gNext:'Next →', gFinish:'✔ Finish', gSkip:'Skip the guide',
   phaseHus:'1 · House', phaseHusT:'Draw the house: rooms, walls, floor-plan photo, measuring',
@@ -690,7 +691,8 @@ da: {
   gStep2TextReno:'Følg den lysende knap: tryk først Indlæs… og vælg et foto af din plantegning. Sæt så målestokken med Målestok (klik på to punkter med kendt afstand). Tegn derefter ovenpå fotoet med Væg eller ⬛ Rum-værktøjet. Næste når huset er tegnet.',
   gStep2TextNew:'Tegn huset med de lysende værktøjer: Væg til enkelte vægge, ⬛ Rum til et helt rum ad gangen (træk et rektangel; de snapper sammen). Klik Næste når skallen er der.',
   gPhoto:'📷 Indlæs plantegning',
-  gStep3Text:'Nu detaljerne — de lysende knapper: sæt Døre og Vinduer i væggene, og navngiv rummene med Tekst.',
+  gStep3Text:'Nu detaljerne — de lysende knapper: sæt Døre og Vinduer i væggene. Rummene navngives automatisk; klik på et navn for at ændre det.',
+  genericRoom:n=>`Rum ${n}`,
   gStep4Text:'Færdig! Tryk på det lysende + for at kopiere din plan til en idé og eksperimentere løs — intet du gør i en idé rører huset som det er i dag.',
   gNext:'Næste →', gFinish:'✔ Afslut', gSkip:'Spring guiden over',
   phaseHus:'1 · Huset', phaseHusT:'Tegn huset: rum, vægge, plantegnings-foto, opmåling',
@@ -1730,12 +1732,11 @@ function commitRoom(x0,y0,mx,my,noSnap){
     ? [[x1,y1,x2,y1],[x2,y1,x2,y2],[x2,y2,x1,y2],[x1,y2,x1,y1]]   // Shift: free rectangle, all four walls
     : roomEdgeWalls(x1,y1,x2,y2);                                  // only the pieces that do not exist yet
   for(const [a,b,c,d] of segs) addWallSegment(a,b,c,d);
+  // auto-name the room ("Room 1", "Room 2", …) — click the name later to rename
+  let nn=1;
+  while(cv().labels.some(l=>l.text===T('genericRoom')(nn))) nn++;
+  cv().labels.push({id:nextId('label'), at:[+((x1+x2)/2).toFixed(2), +((y1+y2)/2).toFixed(2)], text:T('genericRoom')(nn)});
   changed();
-  const name=prompt(T('promptLabel'),'');
-  if(name){
-    cv().labels.push({id:nextId('label'), at:[+((x1+x2)/2).toFixed(2), +((y1+y2)/2).toFixed(2)], text:name});
-    changed();
-  }
 }
 function addWallSegment(x1,y1,x2,y2){
   let kind=document.getElementById('wallKind').value;
