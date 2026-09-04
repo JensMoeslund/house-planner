@@ -534,8 +534,8 @@ en: {
   menuIntro:'Intro & guide', menuIntroT:'Show the welcome intro and the 4-step guide again',
   installApp:'Install app', installT:'Install House Planner as an app: own icon and window, works offline',
   gReno:'🏚 Renovating a house', gNew:'🏗 Building new',
-  gStep2TextReno:'Follow the glowing button: first press Load… and pick a photo of your floor plan. Then set the scale with Scale (click two points with a known distance). Then trace over the photo with Wall or the ⬛ Room tool. Next when the house is drawn.',
-  gStep2TextNew:'Draw the house with the glowing tools: Wall for single walls, ⬛ Room for a whole room at a time (drag a rectangle; they snap together). Click Next when the shell is there.',
+  gStep2TextReno:'Follow the glowing button: first press Load… and pick a photo of your floor plan. Then set the scale with Scale (click two points with a known distance). Then trace over the photo with Wall or the ⬛ Room tool — the dropdown switches between outer (35 cm) and inner (10 cm) walls, and you can change any wall\'s exact width later by clicking it. Next when the house is drawn.',
+  gStep2TextNew:'Draw the house with the glowing tools: Wall for single walls, ⬛ Room for a whole room at a time (drag a rectangle; they snap together). The dropdown switches between outer (35 cm) and inner (10 cm) walls — any wall\'s exact width can be changed later by clicking it. Next when the shell is there.',
   gPhoto:'📷 Load floor plan',
   gStep3Text:'Now the details — the glowing buttons: put Doors and Windows into the walls. Rooms are named automatically; click a name to change it.',
   genericRoom:n=>`Room ${n}`,
@@ -688,8 +688,8 @@ da: {
   menuIntro:'Intro & guide', menuIntroT:'Vis velkomst-introen og 4-trins-guiden igen',
   installApp:'Installér som app', installT:'Installér House Planner som app: eget ikon og vindue, virker offline',
   gReno:'🏚 Renovere et hus', gNew:'🏗 Bygge nyt',
-  gStep2TextReno:'Følg den lysende knap: tryk først Indlæs… og vælg et foto af din plantegning. Sæt så målestokken med Målestok (klik på to punkter med kendt afstand). Tegn derefter ovenpå fotoet med Væg eller ⬛ Rum-værktøjet. Næste når huset er tegnet.',
-  gStep2TextNew:'Tegn huset med de lysende værktøjer: Væg til enkelte vægge, ⬛ Rum til et helt rum ad gangen (træk et rektangel; de snapper sammen). Klik Næste når skallen er der.',
+  gStep2TextReno:'Følg den lysende knap: tryk først Indlæs… og vælg et foto af din plantegning. Sæt så målestokken med Målestok (klik på to punkter med kendt afstand). Tegn derefter ovenpå fotoet med Væg eller ⬛ Rum-værktøjet — rullemenuen skifter mellem ydervæg (35 cm) og indervæg (10 cm), og du kan altid ændre en vægs præcise bredde ved at klikke på den. Næste når huset er tegnet.',
+  gStep2TextNew:'Tegn huset med de lysende værktøjer: Væg til enkelte vægge, ⬛ Rum til et helt rum ad gangen (træk et rektangel; de snapper sammen). Rullemenuen skifter mellem ydervæg (35 cm) og indervæg (10 cm) — en vægs præcise bredde kan altid ændres ved at klikke på den. Næste når skallen er der.',
   gPhoto:'📷 Indlæs plantegning',
   gStep3Text:'Nu detaljerne — de lysende knapper: sæt Døre og Vinduer i væggene. Rummene navngives automatisk; klik på et navn for at ændre det.',
   genericRoom:n=>`Rum ${n}`,
@@ -5270,8 +5270,8 @@ function updateCoach(){
       if(guide.kind==='reno'){
         if(!underlay) targets=[document.getElementById('underlayBtn'), document.getElementById('gPhoto')];
         else if(Math.abs(underlay.mppx-0.02)<1e-9) targets=[toolBtn('calib')];   // still the load-time default → not calibrated yet
-        else targets=[toolBtn('wall'), toolBtn('room')];
-      } else targets=[toolBtn('wall'), toolBtn('room')];
+        else targets=[toolBtn('wall'), toolBtn('room'), document.getElementById('wallTypeSel')];
+      } else targets=[toolBtn('wall'), toolBtn('room'), document.getElementById('wallTypeSel')];
     }
     else if(st===3) targets=[toolBtn('door'), toolBtn('window'), toolBtn('label')];
     else if(st===4) targets=[document.getElementById('variantAdd')];
