@@ -1873,17 +1873,19 @@ function trMergeCollinear(segs,maxGap,latTol,ev){
       const b1=Math.min(b.a[d],b.b[d]), b2=Math.max(b.a[d],b.b[d]);
       const gap=Math.max(b1-a2, a1-b2);
       if(gap>maxGap) continue;
+      const bothLong=(a2-a1)>=1.0 && (b2-b1)>=1.0;
+      const tightLat=Math.abs(a.a[fx]-b.a[fx])<=0.12;
       if(ev && gap>0.12){
         const lo = b1>a2 ? a2 : b2, hi = b1>a2 ? b1 : a1;
         // doors/windows are often drawn as plain gaps with no ink at all — two LONG,
         // tightly aligned pieces bridge a door-sized gap even without evidence
         // (text underlines are short, so labels still can't chain into walls)
-        const bothLong=(a2-a1)>=1.0 && (b2-b1)>=1.0;
-        const tightLat=Math.abs(a.a[fx]-b.a[fx])<=0.12;
         if(ev(a.vert,(a.a[fx]+b.a[fx])/2,lo,hi)<0.3 && !(bothLong && tightLat && gap<=1.35)) continue;
       }
       const n1=Math.min(a1,b1), n2=Math.max(a2,b2), c=(a.a[fx]+b.a[fx])/2, t=Math.max(a.t,b.t);
-      const wk=!!(a.weak&&b.weak);
+      // two long pieces continuing across a door-sized gap is a WALL pattern — even if
+      // both were individually demoted, the merged run earns strong status
+      const wk=!!(a.weak&&b.weak) && !(bothLong && tightLat && gap>0.5);
       segs[i]= a.vert ? {a:[c,n1], b:[c,n2], t, vert:true, weak:wk} : {a:[n1,c], b:[n2,c], t, vert:false, weak:wk};
       segs.splice(j,1); again=true; break outer;
     }
@@ -2059,8 +2061,8 @@ function traceWallsFromUnderlay(debugMode){
   const toSeg=(r,cap)=>{
     let t=r.thk/ppm; if(cap) t=Math.min(t,cap);
     return r.vert
-      ? {a:[toWx(r.y+r.thk/2), toWy(r.x)], b:[toWx(r.y+r.thk/2), toWy(r.x+r.len)], t, vert:true, weak:!!r.weak}
-      : {a:[toWx(r.x), toWy(r.y+r.thk/2)], b:[toWx(r.x+r.len), toWy(r.y+r.thk/2)], t, vert:false, weak:!!r.weak};
+      ? {a:[toWx(r.y+r.thk/2), toWy(r.x)], b:[toWx(r.y+r.thk/2), toWy(r.x+r.len)], t, vert:true, weak:!!r.weak, fused:!!cap}
+      : {a:[toWx(r.x), toWy(r.y+r.thk/2)], b:[toWx(r.x+r.len), toWy(r.y+r.thk/2)], t, vert:false, weak:!!r.weak, fused:!!cap};
   };
   const r1=[...trMaskRects(mask,w,h,o1,false), ...trMaskRects(mask,w,h,o1,true)];
   const r2=[...trMaskRects(mask,w,h,o2,false), ...trMaskRects(mask,w,h,o2,true)];
@@ -2107,10 +2109,43 @@ function traceWallsFromUnderlay(debugMode){
       if(s.t<0.18 && sol<0.55) s.weak=true;
       keep.push(s);
     } segs=keep; }
+  // thickness registration: a real drawing uses ONE outer and ONE inner wall thickness.
+  // Find the two dominant modes (length-weighted kernel density) and demote candidates
+  // whose thickness matches neither — handwriting and stray strokes have random widths.
+  let tModes=null;
+  const tModeOf=(list,lo,hi)=>{
+    let best=null;
+    for(let tt=lo; tt<=hi+1e-9; tt+=0.01){
+      let sc2=0;
+      for(const c of list){ const d=(c.t-tt)/0.04; sc2+=c.len*Math.exp(-d*d); }
+      if(!best||sc2>best.s) best={t:+tt.toFixed(2), s:+sc2.toFixed(1)};
+    }
+    return best && best.s>=3 ? best : null;
+  };
+  const tMeasure=minLen=>segs.filter(s=>!s.weak && !s.fused)
+    .map(s=>({t:s.t, len:Math.hypot(s.b[0]-s.a[0],s.b[1]-s.a[1])})).filter(c=>c.len>=minLen);
+  {
+    const meas=tMeasure(1);
+    const mO=tModeOf(meas,0.18,0.55), mI=tModeOf(meas,0.045,0.17);
+    const okT=t=> (mO && Math.abs(t-mO.t)<=Math.max(0.06,0.2*mO.t)) ||
+                  (mI && Math.abs(t-mI.t)<=Math.max(0.04,0.45*mI.t));
+    // only SHORT off-mode candidates are demoted — a 3 m stroke is never handwriting,
+    // and blurred photos widen real walls beyond the sharp mode windows
+    if(mO||mI) for(const s of segs){
+      if(s.weak || s.fused || okT(s.t)) continue;
+      if(Math.hypot(s.b[0]-s.a[0],s.b[1]-s.a[1])<2.5) s.weak=true;
+    }
+  }
   segs=trMergeCollinear(segs, 2.2, 0.14, evGap);   // walls continue under windows/doors
   segs=trMergeParallel(segs, 0.42, 0.5);
   segs=trMergeCollinear(segs, 2.2, 0.14, evGap);
   segs=segs.filter(s=>Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1])>=0.45);
+  { // re-register thickness modes on the MERGED segments (double-line strips have fused
+    // to full wall width by now) — used to snap the output thicknesses
+    const meas=tMeasure(1.5);
+    tModes={mO:tModeOf(meas,0.18,0.55), mI:tModeOf(meas,0.045,0.17)};
+    dbg.tOuter=tModes.mO?.t??null; dbg.tInner=tModes.mI?.t??null;
+  }
   { const keep=[]; for(const s of segs){
       if(s.weak){ dbg.killed.dashed.push(s); continue; }                     // thick-short that never joined a real wall
       keep.push(s);
@@ -2297,6 +2332,30 @@ function traceWallsFromUnderlay(debugMode){
       segs=keep;
     }
   }
+  // prior: the outer shell CLOSES — an unclosed outer corner is always wrong, so the
+  // outermost walls may snap onto each other over larger gaps than interior ones
+  {
+    let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;
+    for(const s of segs){
+      mnx=Math.min(mnx,s.a[0],s.b[0]); mxx=Math.max(mxx,s.a[0],s.b[0]);
+      mny=Math.min(mny,s.a[1],s.b[1]); mxy=Math.max(mxy,s.a[1],s.b[1]);
+    }
+    const isOuter=s=> s.vert ? (Math.abs(s.a[0]-mnx)<0.5 || Math.abs(s.a[0]-mxx)<0.5)
+                             : (Math.abs(s.a[1]-mny)<0.5 || Math.abs(s.a[1]-mxy)<0.5);
+    for(const s of segs){
+      if(!isOuter(s)) continue;
+      for(const o of segs){
+        if(s===o || s.vert===o.vert || !isOuter(o)) continue;
+        for(const e of [s.a,s.b]){
+          if(s.vert){
+            if(Math.abs(e[1]-o.a[1])<1.0 && e[0]>Math.min(o.a[0],o.b[0])-0.6 && e[0]<Math.max(o.a[0],o.b[0])+0.6) e[1]=o.a[1];
+          } else {
+            if(Math.abs(e[0]-o.a[0])<1.0 && e[1]>Math.min(o.a[1],o.b[1])-0.6 && e[1]<Math.max(o.a[1],o.b[1])+0.6) e[0]=o.a[0];
+          }
+        }
+      }
+    }
+  }
   dbg.final=segs.length;
   dbg.ms=Math.round(performance.now()-t0);
   window.__traceDebug=dbg;
@@ -2313,8 +2372,11 @@ function traceWallsFromUnderlay(debugMode){
   const newWalls=[];
   for(const s of segs){
     if(Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1])<0.45) continue;
-    newWalls.push({from:[round(s.a[0]),round(s.a[1])], to:[round(s.b[0]),round(s.b[1])],
-      t:Math.min(0.6,Math.max(0.08,round(s.t)))});
+    let t2=Math.min(0.6,Math.max(0.08,round(s.t)));
+    // snap to the registered outer/inner thickness — real plans have uniform walls
+    if(tModes?.mO && Math.abs(t2-tModes.mO.t)<=Math.max(0.1,0.3*tModes.mO.t)) t2=tModes.mO.t;
+    else if(tModes?.mI && Math.abs(t2-tModes.mI.t)<=Math.max(0.05,0.5*tModes.mI.t)) t2=tModes.mI.t;
+    newWalls.push({from:[round(s.a[0]),round(s.a[1])], to:[round(s.b[0]),round(s.b[1])], t:t2});
   }
   refineWallsOnInk(newWalls);        // iterative polish against the ink itself
   let n=0;
