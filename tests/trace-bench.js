@@ -192,5 +192,67 @@ window.__bench = (() => {
     console.table([res]);
     return res;
   }
-  return {render, runCase, runAll, runFixture, scoreAgainst, GT};
+  /* wall-by-wall diff — the strict view. Matches traced walls to truth walls by
+   * orientation + tight lateral offset, then reports what a human sees as errors:
+   *   - per truth wall: covered %, number of traced fragments, mean lateral offset
+   *   - MISSING walls (coverage < 70%), OFFSET walls (>0.12 m sideways)
+   *   - SPURIOUS traced walls (mostly not near any truth wall)
+   *   - DUPLICATES (two traced walls claiming the same truth wall side by side)
+   */
+  function wallDiff(truthWalls, opts={}){
+    const latTol=opts.latTol??0.30, strictLat=opts.strictLat??0.12;
+    const traced=window.planAPI.get().base.walls.filter(w=>/auto-traced/.test(w.notes||''));
+    const axis=s=>Math.abs(s[2]-s[0])>=Math.abs(s[3]-s[1])?'h':'v';
+    const T=traced.map(w=>({s:[w.from[0],w.from[1],w.to[0],w.to[1]], w}));
+    const G=truthWalls.map(w=>({id:w.id, s:[w.from[0],w.from[1],w.to[0],w.to[1]], t:w.t}));
+    const per=[];
+    for(const g of G){
+      const a=axis(g.s), di=a==='h'?0:1, fi=a==='h'?1:0;
+      const g1=Math.min(g.s[di],g.s[di+2]), g2=Math.max(g.s[di],g.s[di+2]);
+      const gc=(g.s[fi]+g.s[fi+2])/2, L=g2-g1;
+      const ivs=[]; const offs=[];
+      for(const t of T){
+        if(axis(t.s)!==a) continue;
+        const tc=(t.s[fi]+t.s[fi+2])/2;
+        if(Math.abs(tc-gc)>latTol) continue;
+        const t1=Math.min(t.s[di],t.s[di+2]), t2=Math.max(t.s[di],t.s[di+2]);
+        const o1=Math.max(g1,t1), o2=Math.min(g2,t2);
+        if(o2-o1<0.1) continue;
+        ivs.push([o1,o2]); offs.push({off:tc-gc, len:o2-o1});
+        (t.hits??=[]).push({id:g.id, len:o2-o1});
+      }
+      ivs.sort((p,q)=>p[0]-q[0]);
+      let cov=0, cur=-1e9, pieces=0;
+      for(const [a1,b1] of ivs){
+        if(a1>cur){ pieces++; cov+=b1-a1; cur=b1; }
+        else if(b1>cur){ cov+=b1-cur; cur=b1; }
+      }
+      const meanOff=offs.length? offs.reduce((s2,o)=>s2+o.off*o.len,0)/offs.reduce((s2,o)=>s2+o.len,0) : null;
+      per.push({id:g.id, len:+L.toFixed(1), covPct:+(cov/L*100).toFixed(0), pieces:ivs.length,
+                latOff: meanOff===null?null:+meanOff.toFixed(2)});
+    }
+    const spurious=[];
+    for(const t of T){
+      const L=Math.hypot(t.s[2]-t.s[0], t.s[3]-t.s[1]);
+      const matched=(t.hits||[]).reduce((s2,h)=>s2+h.len,0);
+      if(matched < 0.5*L) spurious.push({wall:`(${t.w.from})→(${t.w.to})`, len:+L.toFixed(1), matchedPct:+(matched/L*100).toFixed(0)});
+    }
+    // duplicates: >1 traced piece overlapping the same truth stretch on clearly different lateral lines
+    const report={
+      truthWalls:G.length, tracedWalls:T.length,
+      missing:per.filter(p=>p.covPct<70),
+      offset:per.filter(p=>p.covPct>=70 && p.latOff!==null && Math.abs(p.latOff)>strictLat),
+      fragmented:per.filter(p=>p.covPct>=70 && p.pieces>2),
+      spurious,
+      ok:per.filter(p=>p.covPct>=70 && Math.abs(p.latOff??0)<=strictLat).length,
+      perWall:per,
+    };
+    console.table(report.perWall);
+    return report;
+  }
+  async function diffFixture(name){
+    const truth=await (await fetch('tests/fixtures/'+name+'/truth.json')).json();
+    return wallDiff(truth.base.walls);
+  }
+  return {render, runCase, runAll, runFixture, scoreAgainst, wallDiff, diffFixture, GT};
 })();
