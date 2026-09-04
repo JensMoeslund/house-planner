@@ -10,6 +10,12 @@ It's **one HTML file**. No installation, no account, no server. Open `index.html
 Chrome or Edge and start drawing. It's also **agent-native**: an AI assistant can work on
 your plan with you (more below).
 
+**Run it as its own app (Windows):** double-click **`House Planner.cmd`** — it opens in
+its own window (no browser tabs or address bar), the built-in furniture catalog works
+without any setup, and 📷 Render can drive a locally installed Blender with one click.
+Run `launcher\Install shortcut.cmd` once to get a House Planner icon on the Desktop and
+in the Start Menu.
+
 ## How it works
 
 The Office-style ribbon walks you through it — the two numbered tabs *are* the workflow:
@@ -45,13 +51,21 @@ a "clean slate" switch that hides the demolition markings entirely.
   Jacobsen's Swan and Ant, PH5 and Artichoke pendants, an Eames lounge and monstera
   plants (CC-BY, credits in `catalog/ATTRIBUTION.txt`) — all with curated real-world
   sizes; one click in the furniture bar imports a piece
-- Sunlight simulation for your exact location, any date and time
+- Sunlight simulation for your exact location, any date and time — plus a **weather**
+  switch (sunny / partly cloudy / overcast) that carries through to every render
+- **Garden tool**: place trees, pines, bushes and hedges around the house — drawn
+  procedurally in 3D and included in renders; plus 26 CC0 nature models (Kenney Nature
+  Kit) under the 🌳 Garden & outdoor tab in the furniture bar
 - Roofs in two clicks: classic gable roof with trusses, or flat roof — plus roof windows,
   skylight strips and glass gables per idea. Roof windows are placed with the mouse and
   snap into the free bays between the trusses (with an opt-out if you're happy to cut one)
 - Photorealistic pictures, three ways (⚙ Settings): right **in the browser** (default,
-  zero setup), via a **downloaded script for Blender** on your own computer, or on a
-  self-hosted **render server**
+  zero setup), with **your own Blender** — one click when started via `House
+  Planner.cmd` (the launcher finds Blender, renders in the background and shows the
+  picture in the app; otherwise you get a self-contained script to run) — or on a
+  self-hosted **render server**. The exported scene has named, editable objects
+  (walls by id, roof, trusses, windows, furniture, trees), so it's also a real starting
+  point for working in Blender yourself
 - Automatic version history with one-click restore — experiments are always undoable
 - Room areas, measuring tool, furniture (kitchen, bath, bedroom), PNG and 3D (.glb) export
 - English and Danish

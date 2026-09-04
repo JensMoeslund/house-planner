@@ -3377,7 +3377,17 @@ document.getElementById('serverRender').onclick=()=>{
   if(m==='server') serverRender(); else if(m==='blender') blenderRender(); else nativeRender();
 };
 
-/* --- local Blender: download ONE self-contained .py (scene embedded) and run it with your own Blender --- */
+/* --- local Blender ---
+   Started via the desktop launcher: the page asks the launcher's /blender API to run the
+   render script with the locally installed Blender and shows the finished image right here.
+   Opened without the launcher (file:// or another server): downloads the self-contained .py. */
+async function blenderHelper(){
+  try{
+    const r=await fetch('/blender/check',{signal:AbortSignal.timeout(1500)});
+    if(r.ok) return (await r.json()).blender;
+  }catch(e){}
+  return null;
+}
 async function blenderRender(){
   const btn=document.getElementById('serverRender');
   if(btn.disabled) return;
@@ -3389,13 +3399,24 @@ async function blenderRender(){
     for(let i=0;i<buf.length;i+=CH) b64+=btoa(String.fromCharCode.apply(null, buf.subarray(i,i+CH)));
     const fast=document.getElementById('renderQuality').value==='fast';
     const py=makeBlenderScript(b64, fast?{samples:128,resx:1280,resy:720}:{samples:1024,resx:1920,resy:1080});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob([py],{type:'text/x-python'}));
-    const name=`render-${cv().name.replace(/[^\w-]+/g,'_')}.py`;
-    a.download=name; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-    alert(T('blenderHowTo')(name));
-  }catch(e){ alert('Blender export failed: '+e.message); }
+    const helper=await blenderHelper();
+    if(helper){
+      const t0=Date.now();
+      const tick=setInterval(()=>{ btn.textContent='🧊 '+Math.round((Date.now()-t0)/1000)+' s…'; },500);
+      try{
+        const r=await fetch('/blender/render',{method:'POST', headers:{'Content-Type':'text/x-python'}, body:py});
+        if(!r.ok) throw new Error(await r.text());
+        showRenderResult(URL.createObjectURL(await r.blob()));
+      } finally { clearInterval(tick); }
+    } else {
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([py],{type:'text/x-python'}));
+      const name=`render-${cv().name.replace(/[^\w-]+/g,'_')}.py`;
+      a.download=name; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+      alert(T('blenderHowTo')(name));
+    }
+  }catch(e){ alert('Blender render failed: '+e.message); }
   btn.disabled=false; btn.textContent=T('render');
 }
 function makeBlenderScript(b64, q){
@@ -3479,13 +3500,24 @@ for m in bpy.data.materials:
         p.inputs['Roughness'].default_value = 0.05
         m.blend_method = 'BLEND'
 
-# ground plane
+# ground plane with a subtle procedural grass mix
 bpy.ops.mesh.primitive_plane_add(size=400, location=(0, 0, -0.7))
-g = bpy.context.active_object
+g = bpy.context.active_object; g.name = 'ground'
 gm = bpy.data.materials.new('ground'); gm.use_nodes = True
-gp = next(n for n in gm.node_tree.nodes if n.type == 'BSDF_PRINCIPLED')
-gp.inputs['Base Color'].default_value = (0.16, 0.20, 0.15, 1)
+nt = gm.node_tree
+gp = next(n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED')
 gp.inputs['Roughness'].default_value = 1.0
+try:
+    noise = nt.nodes.new('ShaderNodeTexNoise')
+    noise.inputs['Scale'].default_value = 9.0
+    noise.inputs['Detail'].default_value = 6.0
+    mix = nt.nodes.new('ShaderNodeMixRGB')
+    mix.inputs['Color1'].default_value = (0.11, 0.19, 0.08, 1)
+    mix.inputs['Color2'].default_value = (0.18, 0.26, 0.11, 1)
+    nt.links.new(noise.outputs['Fac'], mix.inputs['Fac'])
+    nt.links.new(mix.outputs['Color'], gp.inputs['Base Color'])
+except Exception:
+    gp.inputs['Base Color'].default_value = (0.16, 0.22, 0.13, 1)
 g.data.materials.append(gm)
 
 sc = bpy.context.scene
@@ -3495,7 +3527,8 @@ sc.cycles.use_denoising = True
 try: sc.cycles.device = 'GPU'
 except Exception: pass
 sc.render.resolution_x, sc.render.resolution_y = RES
-sc.view_settings.view_transform = 'Filmic'
+try: sc.view_settings.view_transform = 'AgX'          # Blender 4.x — best-looking default
+except Exception: sc.view_settings.view_transform = 'Filmic'
 sc.render.film_transparent = False
 out = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'house-render.png')
 sc.render.filepath = out
@@ -4119,9 +4152,10 @@ function rebuild3d(){
     const zoff=w.floor||0;
     const HH=w.h||H;
     const ops=(byWall[w.id]||[]).map(o=>({o,at:atOf(o,w)})).sort((a,b)=>a.at-b.at);
-    const addBox=(o0,o1,y0,y1,m)=>{
+    const addBox=(o0,o1,y0,y1,m,nm)=>{
       if(o1-o0<0.01||y1-y0<0.01) return;
       const mesh=new THREE.Mesh(new THREE.BoxGeometry(o1-o0,y1-y0,t),m);
+      mesh.name=nm||w.id;                          // carried into the .glb → editable objects in Blender
       const mid=(o0+o1)/2;
       mesh.position.set(w.from[0]+Math.cos(ang)*mid,zoff+(y0+y1)/2,w.from[1]+Math.sin(ang)*mid);
       mesh.rotation.y=-ang; group.add(mesh);
@@ -4133,11 +4167,11 @@ function rebuild3d(){
       const sill=o.type==='window' ? Math.max(0, Math.min(top-0.1, o.sill ?? SILL_H)) : 0;
       addBox(cur,a,0,HH,mat);
       addBox(a,b,top,HH,mat);
-      if(o.type==='window'){ addBox(a,b,0,sill,mat); addBox(a+0.02,b-0.02,sill,top,matGlass); }
+      if(o.type==='window'){ addBox(a,b,0,sill,mat); addBox(a+0.02,b-0.02,sill,top,matGlass,'glass '+o.id); }
       else if(o.type==='door' && showDoors){
         // real door: frame (karm) + slightly-open leaf hinged per the 2D swing arrows
         const dirX=Math.cos(ang), dirZ=Math.sin(ang), perX=-Math.sin(ang), perZ=Math.cos(ang);
-        const place=(lx,ly,mesh)=>{ mesh.position.set(w.from[0]+dirX*lx, zoff+ly, w.from[1]+dirZ*lx); mesh.rotation.y=-ang; group.add(mesh); };
+        const place=(lx,ly,mesh)=>{ mesh.name=o.id; mesh.position.set(w.from[0]+dirX*lx, zoff+ly, w.from[1]+dirZ*lx); mesh.rotation.y=-ang; group.add(mesh); };
         for(const jx of [a+0.03, b-0.03]) place(jx, top/2, new THREE.Mesh(new THREE.BoxGeometry(0.06, top, t+0.04), matDoorFrame));
         place((a+b)/2, top-0.03, new THREE.Mesh(new THREE.BoxGeometry(b-a, 0.06, t+0.04), matDoorFrame));
         const d = o.flipH ? -1 : 1;                 // hinge side along the wall
@@ -4166,6 +4200,7 @@ function rebuild3d(){
     const HH=Math.min(cf.wA.h||H, cf.wB.h||H);
     const zoff=cf.wA.floor||cf.wB.floor||0;
     const mesh=new THREE.Mesh(new THREE.BoxGeometry(lu,HH,lv), cf.kind==='new'?matNew:matBase);
+    mesh.name='corner';
     mesh.position.set((P[0]+cf.pts[2][0])/2, zoff+HH/2, (P[1]+cf.pts[2][1])/2);
     mesh.rotation.y=-Math.atan2(du[1],du[0]);
     group.add(mesh);
@@ -4175,6 +4210,7 @@ function rebuild3d(){
   for(const f of (cv().furniture||[])){
     const FT=FURN[f.kind]||FURN.underskab;
     const fg=furn3d(THREE,f);
+    fg.name=f.id+' '+(f.name||f.kind);
     const zBase=(inHouse(f.at[0],f.at[1]) ? floorZAt(f.at[0],f.at[1]) : -0.68) + (f.z ?? FT.z ?? 0);
     fg.position.set(f.at[0], zBase, f.at[1]);
     fg.rotation.y=-(f.angle||0)*Math.PI/180;
@@ -4182,6 +4218,7 @@ function rebuild3d(){
   }
   for(const g of (S.base.garden||[])){
     const pg=plant3d(THREE,g);
+    pg.name=g.id+' '+g.kind;
     pg.position.set(g.at[0],-0.68,g.at[1]);   // planted on the terrain, not the floor slab
     group.add(pg);
   }
@@ -4193,6 +4230,7 @@ function rebuild3d(){
       const fw=Math.abs(fx2-fx1), fd=Math.abs(fy2-fy1);
       if(fw<0.05||fd<0.05) continue;
       const slab=new THREE.Mesh(new THREE.BoxGeometry(fw,0.12,fd),matFloor);
+      slab.name='floor';
       slab.position.set((fx1+fx2)/2,(f.z||0)-0.06,(fy1+fy2)/2);
       group.add(slab);
     }
@@ -4200,6 +4238,7 @@ function rebuild3d(){
   }
   else if(minX<maxX){
     const floor=new THREE.Mesh(new THREE.BoxGeometry(maxX-minX+0.6,0.1,maxY-minY+0.6),matFloor);
+    floor.name='floor';
     floor.position.set((minX+maxX)/2,-0.03,(minY+maxY)/2);
     group.add(floor);
     setInitialTarget((minX+maxX)/2,(minY+maxY)/2);
@@ -4360,6 +4399,7 @@ function buildRoof3d(THREE, group){
         if(x2s-x1s<0.01||sB-sA<0.01) return;
         const sm=(sA+sB)/2;
         const m=new THREE.Mesh(new THREE.BoxGeometry(x2s-x1s,0.07,sB-sA), mat);
+        m.name = mat===matRoofGlass ? 'roof glass' : 'roof';
         m.position.set((x1s+x2s)/2, ridgeH - sm*Math.sin(slope) + proud*Math.cos(slope), midY + dir*sm*Math.cos(slope));
         m.rotation.x = dir*slope;
         group.add(m);
@@ -4391,12 +4431,14 @@ function buildRoof3d(THREE, group){
         if(sky.some(s=>sx>s.x-s.w/2 && sx<s.x+s.w/2)) continue; // no spær inside a skylight strip
         for(const dir of [-1,1]){
           const ch=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.15,sw-0.1), matWood);
+          ch.name='truss';
           ch.position.set(sx, ridgeH-(half/2)*Math.tan(slope)-0.13, midY+dir*(half/2));
           ch.rotation.x=dir*slope;
           group.add(ch);
         }
         // bottom tie stays in ALL trusses (statically required) — exposed in open ceiling zones
         const tie=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.1,P.yS-P.yN-0.2), matWood);
+        tie.name='truss';
         tie.position.set(sx, P.top+0.08, midY);
         group.add(tie);
         // W-truss web members per the 1958 Snit: apex → third-points on the tie → mid-slope struts
@@ -4406,6 +4448,7 @@ function buildRoof3d(THREE, group){
         const web=(p1,p2)=>{
           const dp=p2[0]-p1[0], dh=p2[1]-p1[1], L=Math.hypot(dp,dh);
           const m=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.09,L), matWood);
+          m.name='truss';
           m.position.set(sx,(p1[1]+p2[1])/2,(p1[0]+p2[0])/2);
           m.rotation.x=Math.atan2(-dh,dp);
           group.add(m);
@@ -4480,6 +4523,7 @@ function buildRoof3d(THREE, group){
       const addCeilY=(cx1,cx2,cy1,cy2)=>{
         if(cx2-cx1<0.02||cy2-cy1<0.02) return;
         const m=new THREE.Mesh(new THREE.BoxGeometry(cx2-cx1,0.05,cy2-cy1), matCeil);
+        m.name='ceiling';
         m.position.set((cx1+cx2)/2, top, (cy1+cy2)/2);
         group.add(m);
       };

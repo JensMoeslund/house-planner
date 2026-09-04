@@ -7,7 +7,7 @@ above the main floor. Use compass directions in notes, never left/right.
 ```jsonc
 {
   "meta":     { ... },
-  "base":     { "walls": [...], "openings": [...], "floors": [...], "roof": { ... } },
+  "base":     { "walls": [...], "openings": [...], "floors": [...], "garden": [...], "roof": { ... } },
   "variants": [ { ... }, ... ]
 }
 ```
@@ -45,6 +45,13 @@ distance in metres of the opening **centre** from the wall's `from` end (or the 
 ### floors
 Slab rectangles `{id, rect:[x1,y1,x2,y2], z, notes}` for split levels; optional
 `noCeiling: true`.
+
+### garden
+Outdoor greenery, shared by every variant (scenery, not house geometry):
+`{id, kind, at:[x,y], h}` where `kind` is `"tree"`, `"pine"`, `"bush"` or `"hedge"`.
+Trees/pines/bushes add `r` (crown radius, m); hedges add `len` (m) and `angle` (deg,
+clockwise from east). Rendered procedurally in 3D and included in every render/export.
+Placed on the terrain (0.68 m below the main floor).
 
 ### roof
 Optional. Either or both of:
