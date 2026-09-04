@@ -598,7 +598,7 @@ en: {
   plant_tree:'🌳 Tree', plant_pine:'🌲 Pine', plant_bush:'🌿 Bush', plant_hedge:'🟩 Hedge',
   plantR:'Crown radius (m)', delPlant:'Delete plant', rgGarden:'Garden',
   traceWalls:'✨ Find walls', traceWallsT:'Detect the walls in the floor-plan photo automatically (set the scale first) — then tidy up by hand. Shift-click = debug overlay: shows every candidate colour-coded, changes nothing.',
-  traceDbg_kept:'kept as walls', traceDbg_flank:'rejected: no open side', traceDbg_axis:'rejected: axis line', traceDbg_prune:'rejected: not connected',
+  traceDbg_kept:'kept as walls', traceDbg_flank:'rejected: no open side', traceDbg_axis:'rejected: axis line', traceDbg_prune:'rejected: not connected', traceDbg_dashed:'rejected: dashed/dotted line',
   hintTraceDebug:d=>`🔎 debug: scale ${d.pxm} px/m · ink ${Math.round(d.inkFrac*100)}% · candidates ${d.merged} → kept ${d.final} (${d.ms} ms) — nothing added; click without Shift to apply. Esc clears.`,
   hintTraceNoUnderlay:'Load a floor-plan photo first (Load…).',
   hintTraceNutid:'Auto-trace draws the house as it is today — switch to tab 1 · The house today.',
@@ -747,7 +747,7 @@ da: {
   plant_tree:'🌳 Løvtræ', plant_pine:'🌲 Grantræ', plant_bush:'🌿 Busk', plant_hedge:'🟩 Hæk',
   plantR:'Krone-radius (m)', delPlant:'Slet plante', rgGarden:'Have',
   traceWalls:'✨ Find vægge', traceWallsT:'Find væggene i plantegnings-fotoet automatisk (sæt målestokken først) — ryd op i hånden bagefter. Shift-klik = fejlsøgnings-overlay: viser alle kandidater farvekodet, ændrer intet.',
-  traceDbg_kept:'beholdt som vægge', traceDbg_flank:'afvist: ingen åben side', traceDbg_axis:'afvist: akselinje', traceDbg_prune:'afvist: ikke forbundet',
+  traceDbg_kept:'beholdt som vægge', traceDbg_flank:'afvist: ingen åben side', traceDbg_axis:'afvist: akselinje', traceDbg_prune:'afvist: ikke forbundet', traceDbg_dashed:'afvist: stiplet linje',
   hintTraceDebug:d=>`🔎 fejlsøgning: målestok ${d.pxm} px/m · blæk ${Math.round(d.inkFrac*100)}% · kandidater ${d.merged} → beholdt ${d.final} (${d.ms} ms) — intet tilføjet; klik uden Shift for at tegne. Esc rydder.`,
   hintTraceNoUnderlay:'Indlæs først et foto af plantegningen (Indlæs…).',
   hintTraceNutid:'Auto-optegning tegner huset som det er i dag — skift til fane 1 · Huset i dag.',
@@ -1820,7 +1820,12 @@ function trMaskRects(mask,w,h,opt,vert){
     const len=a.x2-a.x1+1, thk=a.rows;
     if(thk<opt.minThk || thk>opt.maxThk) return;
     if(len<opt.minLen || len<thk*opt.aspect) return;
-    if(opt.thickCut && thk>opt.thickCut && len<opt.longNeed) return;   // thick blobs must be LONG (text)
+    if(opt.thickCut && thk>opt.thickCut && len<opt.longNeed){
+      // thick-but-short: usually text, but on blurry photos also real wall stubs between a
+      // corner and a window — keep as WEAK candidates that must join the wall network to survive
+      if(len>=opt.minLen*1.2) rects.push({x:a.x1, y:a.y0, len, thk, vert, weak:true});
+      return;
+    }
     rects.push({x:a.x1, y:a.y0, len, thk, vert});
   };
   for(let y=0;y<H;y++){
@@ -1862,10 +1867,16 @@ function trMergeCollinear(segs,maxGap,latTol,ev){
       if(gap>maxGap) continue;
       if(ev && gap>0.12){
         const lo = b1>a2 ? a2 : b2, hi = b1>a2 ? b1 : a1;
-        if(ev(a.vert,(a.a[fx]+b.a[fx])/2,lo,hi)<0.3) continue;
+        // doors/windows are often drawn as plain gaps with no ink at all — two LONG,
+        // tightly aligned pieces bridge a door-sized gap even without evidence
+        // (text underlines are short, so labels still can't chain into walls)
+        const bothLong=(a2-a1)>=1.0 && (b2-b1)>=1.0;
+        const tightLat=Math.abs(a.a[fx]-b.a[fx])<=0.12;
+        if(ev(a.vert,(a.a[fx]+b.a[fx])/2,lo,hi)<0.3 && !(bothLong && tightLat && gap<=1.35)) continue;
       }
       const n1=Math.min(a1,b1), n2=Math.max(a2,b2), c=(a.a[fx]+b.a[fx])/2, t=Math.max(a.t,b.t);
-      segs[i]= a.vert ? {a:[c,n1], b:[c,n2], t, vert:true} : {a:[n1,c], b:[n2,c], t, vert:false};
+      const wk=!!(a.weak&&b.weak);
+      segs[i]= a.vert ? {a:[c,n1], b:[c,n2], t, vert:true, weak:wk} : {a:[n1,c], b:[n2,c], t, vert:false, weak:wk};
       segs.splice(j,1); again=true; break outer;
     }
   }
@@ -1884,6 +1895,7 @@ function trMergeParallel(segs,maxSep,minOv){
       const fx=a.vert?0:1, d=a.vert?1:0;
       const sep=Math.abs(a.a[fx]-b.a[fx]);
       if(sep<0.001 || sep>maxSep) continue;
+      if(!!a.weak !== !!b.weak) continue;   // a dashed grid line must not fuse with (and drag) a real wall edge
       const t=sep+(a.t+b.t)/2;
       if(t>0.5) continue;
       const a1=Math.min(a.a[d],a.b[d]), a2=Math.max(a.a[d],a.b[d]);
@@ -1891,7 +1903,8 @@ function trMergeParallel(segs,maxSep,minOv){
       const ov=Math.min(a2,b2)-Math.max(a1,b1);
       if(ov < minOv*Math.min(a2-a1,b2-b1)) continue;
       const c=(a.a[fx]+b.a[fx])/2, n1=Math.min(a1,b1), n2=Math.max(a2,b2);
-      segs[i]= a.vert ? {a:[c,n1], b:[c,n2], t, vert:true} : {a:[n1,c], b:[n2,c], t, vert:false};
+      const wk2=!!(a.weak&&b.weak);
+      segs[i]= a.vert ? {a:[c,n1], b:[c,n2], t, vert:true, weak:wk2} : {a:[n1,c], b:[n2,c], t, vert:false, weak:wk2};
       segs.splice(j,1); again=true; break outer;
     }
   }
@@ -1956,25 +1969,38 @@ function trThinRects(ink,w,h,ppm){
   return out;
 }
 function trBigWhite(ink,w,h,minArea){
-  // connected open areas (rooms / the sheet) of the RAW ink — computed once, flood fill
-  const lab=new Int32Array(w*h), stack=new Int32Array(w*h), areas=[0];
+  // connected open areas (rooms / the sheet) of the RAW ink — computed once, flood fill.
+  // Also returns the joint bbox of ENCLOSED components (rooms): white areas that do not
+  // touch the image border — their hull is the building envelope.
+  const lab=new Int32Array(w*h), stack=new Int32Array(w*h), areas=[0], boxes=[null], border=[false];
   let next=1;
   for(let s=0;s<w*h;s++){
     if(ink[s]||lab[s]) continue;
     let sp=0; stack[sp++]=s; lab[s]=next; let area=0;
+    let bx1=1e9,by1=1e9,bx2=-1e9,by2=-1e9,touch=false;
     while(sp){
       const p=stack[--sp]; area++;
-      const x=p%w;
+      const x=p%w, y=(p-x)/w;
+      if(x<bx1)bx1=x; if(x>bx2)bx2=x; if(y<by1)by1=y; if(y>by2)by2=y;
+      if(x===0||x===w-1||y===0||y===h-1) touch=true;
       if(x>0     && !ink[p-1] && !lab[p-1]){ lab[p-1]=next; stack[sp++]=p-1; }
       if(x<w-1   && !ink[p+1] && !lab[p+1]){ lab[p+1]=next; stack[sp++]=p+1; }
       if(p>=w    && !ink[p-w] && !lab[p-w]){ lab[p-w]=next; stack[sp++]=p-w; }
       if(p<w*h-w && !ink[p+w] && !lab[p+w]){ lab[p+w]=next; stack[sp++]=p+w; }
     }
-    areas.push(area); next++;
+    areas.push(area); boxes.push({x1:bx1,y1:by1,x2:bx2,y2:by2}); border.push(touch); next++;
   }
   const big=new Uint8Array(w*h);
   for(let i=0;i<w*h;i++) if(!ink[i] && areas[lab[i]]>=minArea) big[i]=1;
-  return big;
+  let interior=null;
+  for(let id=1; id<next; id++){
+    if(border[id] || areas[id]<minArea) continue;
+    const b=boxes[id];
+    if(!interior) interior={...b};
+    else { interior.x1=Math.min(interior.x1,b.x1); interior.y1=Math.min(interior.y1,b.y1);
+           interior.x2=Math.max(interior.x2,b.x2); interior.y2=Math.max(interior.y2,b.y2); }
+  }
+  return {big, interior};
 }
 let traceDbg=null;   // debug overlay buckets from the last Shift-click trace
 function traceWallsFromUnderlay(debugMode){
@@ -2013,7 +2039,8 @@ function traceWallsFromUnderlay(debugMode){
   let mask=trMorph(ink,w,h,rc,false);              // closing: seals hatching and window lines...
   mask=trMorph(mask,w,h,rc,true);                  // ...without changing wall thickness
   const ppm=pxm*sc;
-  const bigwhite=trBigWhite(ink,w,h,1.2*ppm*ppm);  // open areas: rooms + the sheet around the plan
+  const bwRes=trBigWhite(ink,w,h,1.2*ppm*ppm);     // open areas: rooms + the sheet around the plan
+  const bigwhite=bwRes.big;
   const wxp=v=>Math.round((v-underlay.x)/underlay.mppx*sc), wyp=v=>Math.round((v-underlay.y)/underlay.mppx*sc);
   // pass 1: normal walls · pass 2: very thick fused bands (wall + built-ins drawn against it)
   const o1={minThk:Math.max(2.5,0.06*ppm), maxThk:0.55*ppm, minLen:Math.max(8,0.8*ppm),
@@ -2024,8 +2051,8 @@ function traceWallsFromUnderlay(debugMode){
   const toSeg=(r,cap)=>{
     let t=r.thk/ppm; if(cap) t=Math.min(t,cap);
     return r.vert
-      ? {a:[toWx(r.y+r.thk/2), toWy(r.x)], b:[toWx(r.y+r.thk/2), toWy(r.x+r.len)], t, vert:true}
-      : {a:[toWx(r.x), toWy(r.y+r.thk/2)], b:[toWx(r.x+r.len), toWy(r.y+r.thk/2)], t, vert:false};
+      ? {a:[toWx(r.y+r.thk/2), toWy(r.x)], b:[toWx(r.y+r.thk/2), toWy(r.x+r.len)], t, vert:true, weak:!!r.weak}
+      : {a:[toWx(r.x), toWy(r.y+r.thk/2)], b:[toWx(r.x+r.len), toWy(r.y+r.thk/2)], t, vert:false, weak:!!r.weak};
   };
   const r1=[...trMaskRects(mask,w,h,o1,false), ...trMaskRects(mask,w,h,o1,true)];
   const r2=[...trMaskRects(mask,w,h,o2,false), ...trMaskRects(mask,w,h,o2,true)];
@@ -2035,7 +2062,7 @@ function traceWallsFromUnderlay(debugMode){
              pxm:+pxm.toFixed(1), sc:+sc.toFixed(2), ppm:+ppm.toFixed(1),
              otsu:thr, inkFrac:+(ink.reduce((a,b)=>a+b,0)/(w*h)).toFixed(3),
              rectsThick:r1.length, rectsFused:r2.length, rectsThin:r3.length,
-             killed:{flank:[], axis:[], prune:[]}};
+             killed:{dashed:[], flank:[], axis:[], prune:[]}};
   const sample=(arr,x0,y0,x1,y1)=>{
     x0=Math.max(0,x0); y0=Math.max(0,y0); x1=Math.min(w,x1); y1=Math.min(h,y1);
     if(x1<=x0||y1<=y0) return -1;
@@ -2050,10 +2077,36 @@ function traceWallsFromUnderlay(debugMode){
       : sample(mask, wxp(lo), wyp(c)-bw, wxp(hi), wyp(c)+bw);
     return v<0 ? 0 : v;
   };
+  // dashed module-grid lines and dimension/digit rows are mostly WHITE along their band;
+  // real wall candidates are dense: solid pen lines ~0.7+, hatched bands ~0.4+. Gate the
+  // raw candidates BEFORE merging, so dashes can't chain up or drag a real wall sideways.
+  const bandSol=s=>{
+    const di=s.vert?1:0, fi=s.vert?0:1;
+    const a1=Math.min(s.a[di],s.b[di])+0.06, a2=Math.max(s.a[di],s.b[di])-0.06;
+    if(a2-a1<0.2) return 1;
+    const c0=s.a[fi], hw=Math.max(0.03, Math.min(s.t,0.45)/2);
+    const v = s.vert
+      ? sample(ink, wxp(c0-hw), wyp(a1), wxp(c0+hw), wyp(a2))
+      : sample(ink, wxp(a1), wyp(c0-hw), wxp(a2), wyp(c0+hw));
+    return v<0 ? 1 : v;
+  };
+  if(debugMode) dbg.cand=segs.map(s=>({a:s.a.map(v=>+v.toFixed(2)), b:s.b.map(v=>+v.toFixed(2)), t:+s.t.toFixed(2), sol:+bandSol(s).toFixed(2)}));
+  { const keep=[]; for(const s of segs){
+      const sol=bandSol(s);
+      if(sol < (s.t>=0.18?0.22:0.35)){ dbg.killed.dashed.push(s); continue; }
+      // dash-quality thin strokes (module grid) become WEAK: they only survive by being
+      // absorbed into a solid collinear neighbour — a full-length dashed line never is
+      if(s.t<0.18 && sol<0.55) s.weak=true;
+      keep.push(s);
+    } segs=keep; }
   segs=trMergeCollinear(segs, 2.2, 0.14, evGap);   // walls continue under windows/doors
   segs=trMergeParallel(segs, 0.42, 0.5);
   segs=trMergeCollinear(segs, 2.2, 0.14, evGap);
   segs=segs.filter(s=>Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1])>=0.45);
+  { const keep=[]; for(const s of segs){
+      if(s.weak){ dbg.killed.dashed.push(s); continue; }                     // thick-short that never joined a real wall
+      keep.push(s);
+    } segs=keep; }
   // room test: at least one flank must be mostly open area (kills text rows and symbols)
   const flankOK=s=>{
     const t=Math.min(s.t,0.45), off=t/2+0.14, bw=0.05;
@@ -2108,7 +2161,35 @@ function traceWallsFromUnderlay(debugMode){
         const qx=o.a[0]+u*dx, qy=o.a[1]+u*dy;
         if((e[0]-qx)*(e[0]-qx)+(e[1]-qy)*(e[1]-qy)<=0.1225){ ok=true; break; }
       }
+      // a wall that continues on the same line after a door-sized gap is connected,
+      // not floating — without this, door gaps orphan the middle of interior walls
+      if(!ok){
+        const fx=s.vert?0:1, d=s.vert?1:0;
+        for(const o of segs){
+          if(o===s || o.vert!==s.vert) continue;
+          if(Math.abs(o.a[fx]-s.a[fx])>0.15) continue;
+          if(Math.min(Math.abs(e[d]-o.a[d]), Math.abs(e[d]-o.b[d]))<=1.35){ ok=true; break; }
+        }
+      }
       if(ok) n++;
+    }
+    // T-joints along the interior count too: a long facade whose merged ends overshoot
+    // into the empty margin is still connected via the interior walls that end on it
+    if(n<2){
+      let touches=0;
+      const dx=s.b[0]-s.a[0], dy=s.b[1]-s.a[1], LL=dx*dx+dy*dy;
+      if(LL>1e-9) for(const o of segs){
+        if(o===s) continue;
+        for(const e of [o.a,o.b]){
+          const u=((e[0]-s.a[0])*dx+(e[1]-s.a[1])*dy)/LL;
+          if(u<0.05||u>0.95) continue;
+          const qx=s.a[0]+u*dx, qy=s.a[1]+u*dy;
+          if((e[0]-qx)*(e[0]-qx)+(e[1]-qy)*(e[1]-qy)<=0.1225){ touches++; break; }
+        }
+        if(touches>=2) break;
+      }
+      if(touches>=2) n=Math.max(n,1)+1;   // ≥2 interior T-joints ≈ fully connected
+      else if(touches===1) n=Math.max(n,1);
     }
     return n;
   };
@@ -2118,8 +2199,36 @@ function traceWallsFromUnderlay(debugMode){
     for(const s of segs){
       const len=Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1]);
       const cn=connEnds(s);
-      if(cn>=2 || (cn>=1 && len>=1.2) || (s.t>0.2 && len>=3.0)) keep.push(s);
+      if(cn>=2 || (cn>=1 && len>=1.2) || (!s.weak && s.t>0.2 && len>=3.0)) keep.push(s);
       else { dbg.killed.prune.push(s); changed=true; }
+    }
+    segs=keep;
+  }
+  // roof-overhang outlines: byggesag drawings draw the roof edge as a thin solid line
+  // 0.3–0.8 m OUTSIDE every facade. Kill thin lines that shadow a substantial parallel
+  // wall on the side facing away from the building.
+  {
+    let cx=0, cy=0, tl=0;
+    for(const s of segs){ const L=Math.hypot(s.b[0]-s.a[0],s.b[1]-s.a[1]); cx+=(s.a[0]+s.b[0])/2*L; cy+=(s.a[1]+s.b[1])/2*L; tl+=L; }
+    if(tl){ cx/=tl; cy/=tl; }
+    const keep=[];
+    for(const s of segs){
+      let kill=false;
+      if(s.t<0.22){
+        const fi=s.vert?0:1, di=s.vert?1:0;
+        const c0=s.a[fi], a1=Math.min(s.a[di],s.b[di]), a2=Math.max(s.a[di],s.b[di]);
+        const outDir=Math.sign(c0-(s.vert?cx:cy))||1;
+        for(const o of segs){
+          if(o===s||o.vert!==s.vert) continue;
+          const off=(c0-o.a[fi])*outDir;                 // + : o lies INSIDE of s
+          if(off<0.15||off>1.0) continue;
+          const b1=Math.min(o.a[di],o.b[di]), b2=Math.max(o.a[di],o.b[di]);
+          if(b2-b1<3.0) continue;
+          const ov=Math.min(a2,b2)-Math.max(a1,b1);
+          if(ov>=0.6*(a2-a1)){ kill=true; break; }
+        }
+      }
+      if(kill) dbg.killed.axis.push(s); else keep.push(s);
     }
     segs=keep;
   }
@@ -2134,11 +2243,57 @@ function traceWallsFromUnderlay(debugMode){
       }
     }
   }
+  // keep the largest connected wall NETWORK: real walls all join it (door-sized gaps on
+  // the same line count as connected). Sheet furniture — dimension rows, axis lines,
+  // title blocks — forms separate, mostly collinear components that never touch a real
+  // wall. A satellite component survives only if it looks like an outbuilding: ≥8 m of
+  // wall in BOTH orientations (i.e. it has corners).
+  {
+    const n=segs.length, par=segs.map((_,i)=>i);
+    const find=i=>par[i]===i?i:(par[i]=find(par[i]));
+    const near=(e,o)=>{
+      const dx=o.b[0]-o.a[0], dy=o.b[1]-o.a[1], LL=dx*dx+dy*dy;
+      if(LL<1e-9) return false;
+      const u=Math.max(0,Math.min(1,((e[0]-o.a[0])*dx+(e[1]-o.a[1])*dy)/LL));
+      const qx=o.a[0]+u*dx, qy=o.a[1]+u*dy;
+      return (e[0]-qx)*(e[0]-qx)+(e[1]-qy)*(e[1]-qy)<=0.1225;
+    };
+    for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){
+      if(find(i)===find(j)) continue;
+      const s=segs[i], o=segs[j];
+      let con = near(s.a,o)||near(s.b,o)||near(o.a,s)||near(o.b,s);
+      if(!con && s.vert===o.vert){
+        const fx=s.vert?0:1, d2=s.vert?1:0;
+        if(Math.abs(o.a[fx]-s.a[fx])<=0.15)
+          for(const e of [s.a,s.b]){ if(Math.min(Math.abs(e[d2]-o.a[d2]),Math.abs(e[d2]-o.b[d2]))<=1.35){ con=true; break; } }
+      }
+      if(con) par[find(i)]=find(j);
+    }
+    const comps=new Map();
+    segs.forEach((s,i)=>{
+      const r=find(i);
+      if(!comps.has(r)) comps.set(r,{len:0,h:0,v:0,segs:[]});
+      const c=comps.get(r);
+      const L=Math.hypot(s.b[0]-s.a[0],s.b[1]-s.a[1]);
+      c.len+=L; if(s.vert) c.v+=L; else c.h+=L;
+      c.segs.push(s);
+    });
+    let main=null;
+    for(const c of comps.values()) if(!main||c.len>main.len) main=c;
+    if(main){
+      const keep=[];
+      for(const c of comps.values()){
+        if(c===main || (c.len>=8 && c.h>=1.5 && c.v>=1.5)) keep.push(...c.segs);
+        else dbg.killed.axis.push(...c.segs);
+      }
+      segs=keep;
+    }
+  }
   dbg.final=segs.length;
   dbg.ms=Math.round(performance.now()-t0);
   window.__traceDebug=dbg;
   if(debugMode){
-    traceDbg={kept:segs, flank:dbg.killed.flank, axis:dbg.killed.axis, prune:dbg.killed.prune};
+    traceDbg={kept:segs, flank:dbg.killed.flank, axis:dbg.killed.axis, prune:dbg.killed.prune, dashed:dbg.killed.dashed};
     console.table([dbg]);
     console.log('trace debug:', dbg);
     flashHint(T('hintTraceDebug')(dbg));
@@ -2243,7 +2398,7 @@ function draw(){
   // ✨ Shift-trace debug overlay: candidates colour-coded by which filter rejected them
   if(traceDbg){
     ctx.save();
-    for(const [k,col] of [['prune','#ff5c5c'],['axis','#c47bff'],['flank','#ffb454'],['kept','#4ee08a']]){
+    for(const [k,col] of [['dashed','#8b93a2'],['prune','#ff5c5c'],['axis','#c47bff'],['flank','#ffb454'],['kept','#4ee08a']]){
       ctx.strokeStyle=col; ctx.globalAlpha=0.7;
       for(const s of traceDbg[k]){
         ctx.lineWidth=Math.max(3, Math.min(s.t,0.45)*view.ppm);
@@ -2252,7 +2407,7 @@ function draw(){
     }
     ctx.globalAlpha=1; ctx.font='12px sans-serif'; ctx.textAlign='left';
     let ly=c2d.clientHeight-86;
-    for(const [k,col] of [['kept','#4ee08a'],['flank','#ffb454'],['axis','#c47bff'],['prune','#ff5c5c']]){
+    for(const [k,col] of [['kept','#4ee08a'],['flank','#ffb454'],['axis','#c47bff'],['prune','#ff5c5c'],['dashed','#8b93a2']]){
       ctx.fillStyle=col;
       ctx.fillText('■ '+T('traceDbg_'+k)+' ('+traceDbg[k].length+')', 12, ly); ly+=16;
     }
