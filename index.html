@@ -85,6 +85,9 @@
   .furnGrid button{text-align:left; font-size:12px; padding:3px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .furnGrid button.fsel, .dropdown button.fsel{border-color:var(--accent); background:rgba(77,163,255,.15);}
   #guideBar{display:flex; align-items:center; gap:10px; padding:7px 12px; background:#1d2b42; border-bottom:2px solid var(--accent); font-size:13px;}
+  /* coach marks: the guide highlights the exact button to press next */
+  .coach{ outline:2px solid #ffd166 !important; outline-offset:1px; border-radius:6px; animation:coachPulse 1.3s ease-in-out infinite; position:relative; z-index:46;}
+  @keyframes coachPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(255,209,102,.8);} 55%{ box-shadow:0 0 0 10px rgba(255,209,102,0);} }
   #guideBar button{white-space:nowrap;}
   #fileDot{font-size:9px; color:var(--dim); vertical-align:middle;}
   #fileDot.linked{color:#5dd39e;} #fileDot.conflict{color:#ffd166;}
@@ -531,11 +534,11 @@ en: {
   menuIntro:'Intro & guide', menuIntroT:'Show the welcome intro and the 4-step guide again',
   installApp:'Install app', installT:'Install House Planner as an app: own icon and window, works offline',
   gReno:'🏚 Renovating a house', gNew:'🏗 Building new',
-  gStep2TextReno:'Draw your house as it is today. Easiest: load a photo of your floor plan and trace over it with the ⬛ Room tool (set the scale first). Click Next when the house is drawn.',
-  gStep2TextNew:'Draw the outer walls and rooms with the ⬛ Room tool — drag a rectangle per room; they snap together. Click Next when the shell is there.',
+  gStep2TextReno:'Follow the glowing button: first press Load… and pick a photo of your floor plan. Then set the scale with Scale (click two points with a known distance). Then trace the rooms over the photo with the ⬛ Room tool. Next when the house is drawn.',
+  gStep2TextNew:'Draw the outer walls and rooms with the glowing ⬛ Room tool — drag a rectangle per room; they snap together. Click Next when the shell is there.',
   gPhoto:'📷 Load floor plan',
-  gStep3Text:'Now the details: put doors and windows into the walls, name the rooms (Tekst), and place furniture if you like.',
-  gStep4Text:'Done! Press + to copy your plan into an idea and start experimenting — nothing you do in an idea touches the house as it is today.',
+  gStep3Text:'Now the details — the glowing buttons: put Doors and Windows into the walls, and name the rooms with Label.',
+  gStep4Text:'Done! Press the glowing + to copy your plan into an idea and start experimenting — nothing you do in an idea touches the house as it is today.',
   gNext:'Next →', gFinish:'✔ Finish', gSkip:'Skip the guide',
   phaseHus:'1 · House', phaseHusT:'Draw the house: rooms, walls, floor-plan photo, measuring',
   phaseDet:'2 · Details', phaseDetT:'Doors, windows, room names and furniture',
@@ -684,11 +687,11 @@ da: {
   menuIntro:'Intro & guide', menuIntroT:'Vis velkomst-introen og 4-trins-guiden igen',
   installApp:'Installér som app', installT:'Installér House Planner som app: eget ikon og vindue, virker offline',
   gReno:'🏚 Renovere et hus', gNew:'🏗 Bygge nyt',
-  gStep2TextReno:'Tegn dit hus som det er i dag. Nemmest: indlæs et foto af din plantegning og tegn ovenpå med ⬛ Rum-værktøjet (sæt målestokken først). Klik Næste når huset er tegnet.',
-  gStep2TextNew:'Tegn ydervægge og rum med ⬛ Rum-værktøjet — træk et rektangel pr. rum; de snapper sammen. Klik Næste når skallen er der.',
+  gStep2TextReno:'Følg den lysende knap: tryk først Indlæs… og vælg et foto af din plantegning. Sæt så målestokken med Målestok (klik på to punkter med kendt afstand). Tegn derefter rummene ovenpå fotoet med ⬛ Rum-værktøjet. Næste når huset er tegnet.',
+  gStep2TextNew:'Tegn ydervægge og rum med det lysende ⬛ Rum-værktøj — træk et rektangel pr. rum; de snapper sammen. Klik Næste når skallen er der.',
   gPhoto:'📷 Indlæs plantegning',
-  gStep3Text:'Nu detaljerne: sæt døre og vinduer i væggene, navngiv rummene (Tekst), og placér evt. møbler.',
-  gStep4Text:'Færdig! Tryk + for at kopiere din plan til en idé og eksperimentere løs — intet du gør i en idé rører huset som det er i dag.',
+  gStep3Text:'Nu detaljerne — de lysende knapper: sæt Døre og Vinduer i væggene, og navngiv rummene med Tekst.',
+  gStep4Text:'Færdig! Tryk på det lysende + for at kopiere din plan til en idé og eksperimentere løs — intet du gør i en idé rører huset som det er i dag.',
   gNext:'Næste →', gFinish:'✔ Afslut', gSkip:'Spring guiden over',
   phaseHus:'1 · Huset', phaseHusT:'Tegn huset: rum, vægge, plantegnings-foto, opmåling',
   phaseDet:'2 · Detaljer', phaseDetT:'Døre, vinduer, rumnavne og møbler',
@@ -2841,6 +2844,7 @@ function draw(){
 
   document.getElementById('stats').textContent =
     T('statusLine')(cv().name, S.base.walls.length, cv().demolish.length, cv().walls.length);
+  if(guide && typeof updateCoach==='function') updateCoach();   // keep the highlighted button in step
   document.getElementById('firstRun').style.display =
     (S.base.walls.length || cv().walls.length || underlay || guide) ? 'none' : '';
 }
@@ -5250,8 +5254,34 @@ function applyPhase(){
   const at=document.querySelector('#ribbonTabs .rtab.active');
   if(at && at.style.display==='none') setRtab('huset');
   if(allow && !allow.includes(tool)) setTool('select'); else draw();
+  if(typeof updateCoach==='function') updateCoach();
 }
 
+/* coach marks: highlight the exact control the current guide step wants pressed.
+   Reactive inside a step: load photo → set scale → draw rooms. */
+let coachKey='';
+function updateCoach(){
+  const toolBtn=t=>document.querySelector(`#ribbon button.tool[data-tool="${t}"]`);
+  let targets=[];
+  if(guide && guide.step>1){
+    const st=guide.step;
+    if(st===2){
+      if(guide.kind==='reno'){
+        if(!underlay) targets=[document.getElementById('underlayBtn'), document.getElementById('gPhoto')];
+        else if(Math.abs(underlay.mppx-0.02)<1e-9) targets=[toolBtn('calib')];   // still the load-time default → not calibrated yet
+        else targets=[toolBtn('room')];
+      } else targets=[toolBtn('room')];
+    }
+    else if(st===3) targets=[toolBtn('door'), toolBtn('window'), toolBtn('label')];
+    else if(st===4) targets=[document.getElementById('variantAdd')];
+  }
+  targets=targets.filter(el=>el && el.style.display!=='none');
+  const key=targets.map(el=>el.id||el.dataset?.tool||'').join(',');
+  if(key===coachKey) return;
+  coachKey=key;
+  document.querySelectorAll('.coach').forEach(el=>el.classList.remove('coach'));
+  for(const el of targets) el.classList.add('coach');
+}
 function applyGuide(){
   const bar=document.getElementById('guideBar'); if(!bar) return;
   const im=document.getElementById('introModal');
