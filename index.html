@@ -2012,6 +2012,38 @@ function trBigWhite(ink,w,h,minArea){
   }
   return {big, interior};
 }
+/* text eraser: letters and digits are SMALL, LOW-DENSITY ink blobs (each glyph its own
+   component) — walls, hatching and symbol lines are long or solid. Erasing glyphs from
+   the raw ink up front cleans every later stage, and word length is irrelevant: a 3 m
+   title is still built of 30 cm letters. Also wipes sub-glyph specks (scan noise). */
+function trEraseText(ink,w,h,ppm){
+  const lab=new Uint8Array(w*h), stack=new Int32Array(w*h);
+  const maxDim=0.5*ppm, noiseDim=0.05*ppm, minDim=0.06*ppm;
+  let erased=0;
+  const px=new Int32Array(w*h);
+  for(let s0=0;s0<w*h;s0++){
+    if(!ink[s0]||lab[s0]) continue;
+    let sp=0, np=0;
+    stack[sp++]=s0; lab[s0]=1;
+    let x1=1e9,y1=1e9,x2=-1,y2=-1;
+    while(sp){
+      const p=stack[--sp]; px[np++]=p;
+      const x=p%w, y=(p-x)/w;
+      if(x<x1)x1=x; if(x>x2)x2=x; if(y<y1)y1=y; if(y>y2)y2=y;
+      for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){
+        const nx=x+dx, ny=y+dy;
+        if(nx<0||ny<0||nx>=w||ny>=h) continue;
+        const q=ny*w+nx;
+        if(ink[q]&&!lab[q]){ lab[q]=1; stack[sp++]=q; }
+      }
+    }
+    const bw=x2-x1+1, bh=y2-y1+1, dens=np/(bw*bh);
+    const glyph = bw<=maxDim && bh<=maxDim && Math.max(bw,bh)>=minDim && dens<0.62;
+    const speck = Math.max(bw,bh)<noiseDim;
+    if(glyph||speck){ for(let i=0;i<np;i++) ink[px[i]]=0; erased++; }
+  }
+  return erased;
+}
 let traceDbg=null;   // debug overlay buckets from the last Shift-click trace
 function traceWallsFromUnderlay(debugMode){
   const t0=performance.now();
@@ -2045,6 +2077,8 @@ function traceWallsFromUnderlay(debugMode){
   }
   const ink=new Uint8Array(w*h);
   for(let i=0;i<w*h;i++) ink[i]=gray[i]<thr?1:0;
+  const inkPre=ink.slice(0);                        // incl. text/fixture clutter — kept for the furniture test
+  const textErased=trEraseText(ink,w,h,pxm*sc);
   const rc=Math.max(1,Math.round(0.045*pxm*sc));
   let mask=trMorph(ink,w,h,rc,false);              // closing: seals hatching and window lines...
   mask=trMorph(mask,w,h,rc,true);                  // ...without changing wall thickness
@@ -2071,7 +2105,7 @@ function traceWallsFromUnderlay(debugMode){
   const dbg={imgW:underlayImg.naturalWidth, imgH:underlayImg.naturalHeight,
              pxm:+pxm.toFixed(1), sc:+sc.toFixed(2), ppm:+ppm.toFixed(1),
              otsu:thr, inkFrac:+(ink.reduce((a,b)=>a+b,0)/(w*h)).toFixed(3),
-             rectsThick:r1.length, rectsFused:r2.length, rectsThin:r3.length,
+             rectsThick:r1.length, rectsFused:r2.length, rectsThin:r3.length, textErased,
              killed:{dashed:[], flank:[], axis:[], prune:[]}};
   const sample=(arr,x0,y0,x1,y1)=>{
     x0=Math.max(0,x0); y0=Math.max(0,y0); x1=Math.min(w,x1); y1=Math.min(h,y1);
@@ -2353,6 +2387,38 @@ function traceWallsFromUnderlay(debugMode){
             if(Math.abs(e[0]-o.a[0])<1.0 && e[1]>Math.min(o.a[1],o.b[1])-0.6 && e[1]<Math.max(o.a[1],o.b[1])+0.6) e[0]=o.a[0];
           }
         }
+      }
+    }
+  }
+  // prior: walls reach each other — a FREE end (touching nothing) with a perpendicular
+  // wall line crossing within 2 m is a detection gap (door/short-stub blind spot), not a
+  // real opening. Extend the end to meet it.
+  {
+    const near2=(e)=>segs.some(o=>{
+      const dx=o.b[0]-o.a[0], dy=o.b[1]-o.a[1], LL=dx*dx+dy*dy;
+      if(LL<1e-9) return false;
+      const u=Math.max(0,Math.min(1,((e[0]-o.a[0])*dx+(e[1]-o.a[1])*dy)/LL));
+      const qx=o.a[0]+u*dx, qy=o.a[1]+u*dy;
+      return o.a!==e && o.b!==e && (e[0]-qx)*(e[0]-qx)+(e[1]-qy)*(e[1]-qy)<=0.16;
+    });
+    for(const s of segs){
+      const L=Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1]); if(L<0.3) continue;
+      for(const e of [s.a,s.b]){
+        if(near2(e)) continue;                       // already connected
+        const other = e===s.a ? s.b : s.a;
+        const di=s.vert?1:0, fi=s.vert?0:1;
+        const dir=Math.sign(e[di]-other[di])||1;
+        let best=null;
+        for(const o of segs){
+          if(o===s || o.vert===s.vert) continue;
+          const oc=o.a[di];   // o is perpendicular: its fixed coord lies along s's axis
+          const d2=(oc-e[di])*dir;
+          if(d2<0.05 || d2>2.0) continue;
+          const o1=Math.min(o.a[fi],o.b[fi]), o2=Math.max(o.a[fi],o.b[fi]);
+          if(e[fi]<o1-0.3 || e[fi]>o2+0.3) continue;               // crossing point must be on o's span
+          if(!best || d2<best.d2) best={d2, oc};
+        }
+        if(best) e[di]=+best.oc.toFixed(2);
       }
     }
   }

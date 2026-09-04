@@ -99,6 +99,12 @@ window.__bench = (() => {
     g.font=Math.round(pxm*0.3)+'px sans-serif'; g.textAlign='center';
     for(const [t,x,y] of [['STUE',2,6],['KØKKEN',6,2],['BAD',10,2],['VÆRELSE',8,6],['1958 BYGGESAG',6,-1.6]])
       g.fillText(t, X(x), Y(y));
+    if(opts.bigText){    // huge title lettering — drawings are not to scale, words can span metres
+      g.font='bold '+Math.round(pxm*0.55)+'px sans-serif';
+      g.fillText('OPSTALT SYD ANNO 1958', X(6), Y(-2.2));
+      g.font='bold '+Math.round(pxm*0.45)+'px sans-serif';
+      g.fillText('OPHOLDSSTUE', X(2), Y(6.9));
+    }
     g.lineWidth=Math.max(1,pxm*0.015);
     g.beginPath(); g.moveTo(X(0),Y(-0.8)); g.lineTo(X(12),Y(-0.8)); g.stroke();
     for(const x of [0,4,8,12]){ g.beginPath(); g.moveTo(X(x),Y(-1.0)); g.lineTo(X(x),Y(-0.6)); g.stroke(); }
@@ -170,6 +176,7 @@ window.__bench = (() => {
     out.push(await runCase('thin @50','thin',50,{}));
     out.push(await runCase('hand+grid+noise @70','hand',70,{wobble:0.015,noise:0.05,grid:true}));
     out.push(await runCase('hand lowres @25','hand',80,{wobble:0.015,noise:0.05,grid:true,downTo:25}));
+    out.push(await runCase('hand + huge text @70','hand',70,{wobble:0.015,noise:0.05,grid:true,bigText:true}));
     console.table(out);
     return out;
   }
