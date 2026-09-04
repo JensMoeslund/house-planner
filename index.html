@@ -296,6 +296,15 @@
       </div>
       <div class="rcap" data-i18n="rgHouse">House</div>
     </div>
+    <div class="rgsep"></div>
+    <div class="rgroup">
+      <div class="rbtns">
+        <button id="cmpBtn" data-i18n-title="cmpT">🆚 <span data-i18n="cmpBtn">Compare</span></button>
+        <select id="cmpSel" data-i18n-title="cmpSelT" style="display:none;max-width:140px"></select>
+        <button id="cmpSwap" data-i18n-title="cmpSwapT" style="display:none">⇄</button>
+      </div>
+      <div class="rcap" data-i18n="rgCompare">Compare</div>
+    </div>
   </div>
   <div class="rpanel" data-rpanel="export">
     <div class="rgroup">
@@ -403,6 +412,12 @@
       </span>
     </div>
     <div id="err3d" data-i18n-html="err3d">3D needs internet on first load (Three.js from unpkg.com).<br>2D works fully offline.</div>
+    <div id="cmpLabels" style="display:none;position:absolute;bottom:8px;left:0;right:0;pointer-events:none;z-index:5">
+      <div style="display:flex;gap:8px;padding:0 8px">
+        <div id="cmpLabA" style="flex:1;text-align:center"><span style="background:rgba(20,22,26,.85);border:1px solid var(--accent);border-radius:10px;padding:3px 12px;font-weight:600"></span></div>
+        <div id="cmpLabB" style="flex:1;text-align:center"><span style="background:rgba(20,22,26,.85);border:1px solid var(--border);border-radius:10px;padding:3px 12px;font-weight:600"></span></div>
+      </div>
+    </div>
   </div>
 </div>
 <div id="modal"><div class="box">
@@ -614,6 +629,8 @@ en: {
   clickCycle:'click again to switch wall',
   walkBtn:'🚶 Walk', walkBtnT:'Walk around the house: WASD + mouse (Shift = run). Esc releases the mouse.',
   rgOffer:'See it in higher quality?', rgOfferXT:'Not now — the guide stays under File → Picture guide and Export', rgMenu:'Picture guide',
+  cmpBtn:'Compare', cmpT:'Side-by-side 3D of this idea and another — orbiting and walking move through BOTH at once',
+  cmpSelT:'What the right side shows', cmpSwapT:'Swap: make the right side the one you edit', rgCompare:'Compare',
   rgBtn:'How do I get pictures?', rgBtnT:'Step-by-step guide to renders — in the browser or with Blender', rgHelp:'Help',
   rgTitle:'📷 Pretty pictures — two ways', rgIntro:'Your 3D view can become real pictures. Easiest first:',
   rgWay1:'1 · In the browser — nothing to set up', rgWay1Body:'Open the 3D view, go to Export and press 📷 Render. The image sharpens over time; press Render again to stop and keep it.',
@@ -783,6 +800,8 @@ da: {
   clickCycle:'klik igen for at skifte væg',
   walkBtn:'🚶 Gå-tur', walkBtnT:'Gå rundt i huset: WASD + mus (Shift = løb). Esc slipper musen igen.',
   rgOffer:'Se det i højere kvalitet?', rgOfferXT:'Ikke nu — guiden ligger under Filer → Billed-guide og Eksport', rgMenu:'Billed-guide',
+  cmpBtn:'Sammenlign', cmpT:'3D side om side af denne idé og en anden — drej og gå-tur bevæger sig i BEGGE på én gang',
+  cmpSelT:'Hvad højre side viser', cmpSwapT:'Byt: gør højre side til den du redigerer', rgCompare:'Sammenlign',
   rgBtn:'Hvordan får jeg billeder?', rgBtnT:'Trin-for-trin guide til renders — i browseren eller med Blender', rgHelp:'Hjælp',
   rgTitle:'📷 Flotte billeder — to veje', rgIntro:'Din 3D-visning kan blive til rigtige billeder. Nemmest først:',
   rgWay1:'1 · I browseren — ingen opsætning', rgWay1Body:'Åbn 3D-visningen, gå til Eksport og tryk 📷 Rendér. Billedet bliver skarpere over tid; tryk Rendér igen for at stoppe og beholde det.',
@@ -3705,6 +3724,7 @@ function refreshVariants(){
   // nutid is not in the picker — the "house today" ribbon tab is how you edit it
   vsel.innerHTML=S.variants.filter(v=>v.id!=='nutid').map(v=>`<option value="${esc(v.id)}" ${v.id===S.meta.activeVariant?'selected':''}>${esc(v.name)}</option>`).join('');
   refreshLightToggles();
+  if(typeof refreshCmpUI==='function') refreshCmpUI();
 }
 vsel.onchange=()=>{ saveVersion('variant-switch'); S.meta.activeVariant=vsel.value; sel=null; updateProps(); refreshLightToggles(); changed(); };
 document.getElementById('variantAdd').onclick=()=>{
@@ -4584,6 +4604,30 @@ document.getElementById('lightsSave').onclick=()=>{
 };
 document.getElementById('lightsMenuBtn').onclick=()=>openLightsDialog();
 
+/* compare mode controls */
+document.getElementById('cmpBtn').onclick=()=>{
+  if(compareOther){ compareOther=null; }
+  else {
+    compareOther = cv().id==='nutid'
+      ? (S.variants.find(v=>v.id!=='nutid')?.id ?? null)
+      : 'nutid';
+    if(compareOther && document.body.className==='only2d') document.getElementById('viewBoth').click();
+  }
+  refreshCmpUI(); resize3d(); rebuild3d();
+};
+document.getElementById('cmpSel').onchange=e=>{
+  compareOther=e.target.value||null;
+  refreshCmpUI(); rebuild3d();
+};
+document.getElementById('cmpSwap').onclick=()=>{
+  if(!compareActive()) return;
+  const target=compareOther;
+  compareOther=cv().id;
+  if(target==='nutid') setRtab('huset');
+  else { if(cv().id==='nutid') setRtab('ideer'); switchVariantTo(target); }
+  refreshCmpUI(); rebuild3d();
+};
+
 /* clean-slate toggle: hide demolished walls in this variant */
 document.getElementById('variantHideDem').onclick=()=>{
   const v=cv(); v.hideDemolished=!v.hideDemolished;
@@ -4819,8 +4863,9 @@ async function init3d(){
     const ground=new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshLambertMaterial({color:0x3d4a3f}));
     ground.rotation.x=-Math.PI/2; ground.position.y=-0.68; ground.receiveShadow=true; scene.add(ground);
     const group=new THREE.Group(); scene.add(group);
+    const groupB=new THREE.Group(); groupB.visible=false; scene.add(groupB);   // compare: the other variant
     const plc=new PointerLockControls(camera, renderer.domElement);
-    three={THREE,scene,camera,renderer,controls,group,hemi,amb,baseSun,sunLight,plc};
+    three={THREE,scene,camera,renderer,controls,group,groupB,hemi,amb,baseSun,sunLight,plc};
     if(furnBarOpen()) buildFurnPicker();   // thumbs could not render before three was ready
     document.getElementById('walkBtn').onclick=()=>{ if(document.body.className!=='only2d') plc.lock(); };
     plc.addEventListener('lock',()=>{ controls.enabled=false; });
@@ -4837,6 +4882,7 @@ async function init3d(){
     window.addEventListener('keydown',e=>{ wkeys[e.code]=true; });
     window.addEventListener('keyup',e=>{ wkeys[e.code]=false; });
     resize3d();
+    const cmpSize=new THREE.Vector2();
     let prevT=performance.now();
     (function loop(){
       requestAnimationFrame(loop);
@@ -4859,6 +4905,19 @@ async function init3d(){
         pt.renderSample();
         ptSamples++;
         if(ptSamples%5===0) document.getElementById('serverRender').textContent='📷 '+ptSamples;
+      } else if(compareActive()){
+        // split screen: same camera, left = this idea, right = the other one
+        renderer.getSize(cmpSize);
+        renderer.setScissorTest(true);
+        group.visible=true; groupB.visible=false;
+        renderer.setViewport(0,0,cmpSize.x/2,cmpSize.y); renderer.setScissor(0,0,cmpSize.x/2,cmpSize.y);
+        renderer.render(scene,camera);
+        group.visible=false; groupB.visible=true;
+        renderer.setViewport(cmpSize.x/2,0,cmpSize.x/2,cmpSize.y); renderer.setScissor(cmpSize.x/2,0,cmpSize.x/2,cmpSize.y);
+        renderer.render(scene,camera);
+        group.visible=true; groupB.visible=false;
+        renderer.setScissorTest(false);
+        renderer.setViewport(0,0,cmpSize.x,cmpSize.y);
       } else renderer.render(scene,camera);
     })();
     updateSun();
@@ -4870,7 +4929,8 @@ function resize3d(){
   const r=document.getElementById('c3dwrap').getBoundingClientRect();
   if(r.width<5||r.height<5) return;
   three.renderer.setSize(r.width,r.height);
-  three.camera.aspect=r.width/r.height; three.camera.updateProjectionMatrix();
+  three.camera.aspect=(compareActive() ? r.width/2 : r.width)/r.height;
+  three.camera.updateProjectionMatrix();
 }
 // aim the orbit camera at the house center on the FIRST build only —
 // later rebuilds (toggles, edits) must not move the user's camera
@@ -4880,10 +4940,43 @@ function setInitialTarget(cx,cz){
   targetInitDone=true;
   three.controls.target.set(cx,0,cz);
 }
+/* side-by-side compare: which variant the RIGHT half of the 3D view shows (null = off) */
+let compareOther=null;
+function compareActive(){ return !!compareOther && !!S.variants.find(v=>v.id===compareOther) && compareOther!==cv().id; }
+function refreshCmpUI(){
+  const selEl=document.getElementById('cmpSel');
+  if(!selEl) return;
+  const on=compareActive();
+  selEl.style.display=compareOther?'':'none';
+  document.getElementById('cmpSwap').style.display=on?'':'none';
+  document.getElementById('cmpBtn').classList.toggle('fsel', !!compareOther);
+  document.getElementById('cmpLabels').style.display=on?'':'none';
+  if(on){
+    document.getElementById('cmpLabA').firstElementChild.textContent=cv().name;
+    document.getElementById('cmpLabB').firstElementChild.textContent=S.variants.find(v=>v.id===compareOther)?.name||'';
+  }
+  selEl.innerHTML=S.variants.filter(v=>v.id!==cv().id)
+    .map(v=>`<option value="${esc(v.id)}"${v.id===compareOther?' selected':''}>${esc(v.name)}</option>`).join('');
+}
 function rebuild3d(){
   if(!three) return;
   if(ptActive) stopNativeRender();     // scene is changing — leave render mode
-  const {THREE,group}=three;
+  if(compareOther && (!S.variants.find(v=>v.id===compareOther) || compareOther===cv().id)) compareOther=null;
+  buildVariantInto(three.group);
+  const gB=three.groupB;
+  while(gB.children.length){
+    const c=gB.children.pop();
+    c.traverse(o=>{ o.geometry?.dispose(); o.material?.dispose?.(); });
+  }
+  if(compareActive()){
+    const saved=S.meta.activeVariant;
+    S.meta.activeVariant=compareOther;
+    try{ buildVariantInto(gB); } finally { S.meta.activeVariant=saved; }
+  }
+  refreshCmpUI();
+}
+function buildVariantInto(group){
+  const THREE=three.THREE;
   while(group.children.length){
     const c=group.children.pop();
     c.traverse(o=>{ o.geometry?.dispose(); o.material?.dispose?.(); });
