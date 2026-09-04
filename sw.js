@@ -1,7 +1,9 @@
-/* House Planner service worker: stale-while-revalidate for the app + its CDN modules.
-   First visit caches everything touched; afterwards the app works fully offline and
-   picks up updates in the background (visible on the next load). */
-const CACHE = 'houseplanner-v1';
+/* House Planner service worker.
+   - Navigations (the app page itself): NETWORK-FIRST, so a normal reload always shows
+     the newest version; the cache only answers when offline.
+   - Assets (catalog models, CDN modules, icons): stale-while-revalidate — instant from
+     cache, refreshed in the background. */
+const CACHE = 'houseplanner-v2';
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', 'index.html', 'manifest.webmanifest'])));
@@ -17,6 +19,20 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const u = new URL(e.request.url);
   if (u.origin !== location.origin && u.hostname !== 'unpkg.com') return;
+
+  if (e.request.mode === 'navigate' || u.pathname.endsWith('/index.html')) {
+    e.respondWith(caches.open(CACHE).then(async c => {
+      try {
+        const r = await fetch(e.request);
+        if (r && r.ok) c.put(e.request, r.clone());
+        return r;
+      } catch (err) {
+        return (await c.match(e.request)) || (await c.match('index.html')) || (await c.match('./'));
+      }
+    }));
+    return;
+  }
+
   e.respondWith(caches.open(CACHE).then(async c => {
     const hit = await c.match(e.request);
     const net = fetch(e.request).then(r => {
