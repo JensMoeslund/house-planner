@@ -211,6 +211,7 @@
         <select id="wallTypeSel" data-i18n-title="wallTypeT">
           <option value="outer" data-i18n="wallTypeOuter">Outer wall (35 cm)</option>
           <option value="inner" data-i18n="wallTypeInner">Inner wall (10 cm)</option>
+          <option value="half" data-i18n="wallTypeHalf">Half wall (1.1 m high)</option>
         </select>
         <select id="wallKind" style="display:none">
           <option value="base" data-i18n="wallKindBase">Existing (base)</option>
@@ -508,8 +509,8 @@ en: {
   'ver_before-new':'before new plan',
   toolSelectT:'Select / move (V)', toolWall:'Wall', toolWallT:'Draw walls (W); right-click/Esc ends the chain. Type a number + Enter for an exact length.',
   toolRoom:'⬛ Room', toolRoomT:'Drag a rectangle to make a room — four walls plus a room name in one go. Snaps onto nearby walls and reuses them; hold Shift for no snapping.',
-  wallTypeOuter:'Outer wall (35 cm)', wallTypeInner:'Inner wall (10 cm)',
-  wallTypeT:'Wall thickness for new walls — outer walls for the shell, inner walls for room dividers. Fine-tune any wall in its properties.',
+  wallTypeOuter:'Outer wall (35 cm)', wallTypeInner:'Inner wall (10 cm)', wallTypeHalf:'Half wall (1.1 m high)',
+  wallTypeT:'Preset for new walls — outer for the shell, inner for room dividers, half wall for knee walls and room separations. Any wall\'s exact thickness AND height can be changed by clicking it.',
   undoT:'Undo (Ctrl+Z)', redoT:'Redo (Ctrl+Y)',
   toolDoor:'Door', toolDoorT:'Click on a wall (D)', toolWindow:'Window', toolWindowT:'Click on a wall (N)',
   toolVelux:'☀ Velux', toolVeluxT:'Click the plan to place a roof window — it snaps into the free bays between the roof trusses',
@@ -662,8 +663,8 @@ da: {
   'ver_before-new':'før ny plan',
   toolSelectT:'Vælg / flyt (V)', toolWall:'Væg', toolWallT:'Tegn vægge (W); højreklik/Esc afslutter kæden. Skriv et tal + Enter for præcis længde.',
   toolRoom:'⬛ Rum', toolRoomT:'Træk et rektangel for at lave et rum — fire vægge og et rumnavn på én gang. Snapper til nærliggende vægge og genbruger dem; hold Shift for ingen snap.',
-  wallTypeOuter:'Ydervæg (35 cm)', wallTypeInner:'Indervæg (10 cm)',
-  wallTypeT:'Vægtykkelse for nye vægge — ydervægge til skallen, indervægge til rumdelere. Finjustér enhver væg i dens egenskaber.',
+  wallTypeOuter:'Ydervæg (35 cm)', wallTypeInner:'Indervæg (10 cm)', wallTypeHalf:'Halvmur (1,1 m høj)',
+  wallTypeT:'Forvalg for nye vægge — ydervæg til skallen, indervæg til rumdelere, halvmur til knævægge og rumdelinger. Enhver vægs præcise tykkelse OG højde kan ændres ved at klikke på den.',
   undoT:'Fortryd (Ctrl+Z)', redoT:'Gentag (Ctrl+Y)',
   toolDoor:'Dør', toolDoorT:'Klik på en væg (D)', toolWindow:'Vindue', toolWindowT:'Klik på en væg (N)',
   toolVelux:'☀ Velux', toolVeluxT:'Klik på planen for at placere et ovenlysvindue — det snapper ind i de frie fag mellem spærene',
@@ -1724,7 +1725,11 @@ function roomEdgeWalls(x1,y1,x2,y2){
   return out.map(s=>s.map(v=>+v.toFixed(3)));
 }
 
-const drawWallT=()=>document.getElementById('wallTypeSel').value==='outer' ? 0.35 : 0.10;
+const wallPreset=()=>{
+  const v=document.getElementById('wallTypeSel').value;
+  return v==='outer' ? {t:0.35} : v==='half' ? {t:0.10, h:1.1} : {t:0.10};
+};
+const drawWallT=()=>wallPreset().t;
 function commitRoom(x0,y0,mx,my,noSnap){
   if(Math.abs(mx-x0)<=0.5 || Math.abs(my-y0)<=0.5) return;
   const {x1,y1,x2,y2}=roomRect(x0,y0,mx,my,noSnap);
@@ -1741,7 +1746,9 @@ function commitRoom(x0,y0,mx,my,noSnap){
 function addWallSegment(x1,y1,x2,y2){
   let kind=document.getElementById('wallKind').value;
   if(kind==='base' && !editingNutid()){ kind='new'; flashHint(T('hintBaseDowngrade')); }
-  const wall={id:nextId('wall'), from:[x1,y1], to:[x2,y2], t:drawWallT(), notes:''};
+  const p=wallPreset();
+  const wall={id:nextId('wall'), from:[x1,y1], to:[x2,y2], t:p.t, notes:''};
+  if(p.h) wall.h=p.h;
   (kind==='base'?S.base.walls:cv().walls).push(wall);
   return wall;
 }
@@ -2893,9 +2900,11 @@ function drawWall(w, kind, isSel){
   if(kind==='removed'){ ctx.strokeStyle='rgba(255,107,107,.75)'; ctx.setLineDash([8,6]); }
   else if(kind==='new'){ ctx.strokeStyle=isSel?'#8ef0c0':'#5dd39e'; }
   else ctx.strokeStyle=isSel?'#ffffff':'#c9c4ba';
+  const lowWall = w.h && w.h < wallH()-0.05;         // half walls draw lighter
+  if(lowWall) ctx.globalAlpha=0.55;
   if(isSel){ ctx.shadowColor='#4da3ff'; ctx.shadowBlur=10; }
   ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-  ctx.shadowBlur=0; ctx.setLineDash([]);
+  ctx.shadowBlur=0; ctx.setLineDash([]); ctx.globalAlpha=1;
   if(isSel){
     ctx.fillStyle='#4da3ff';
     for(const [px,py] of [[x1,y1],[x2,y2]]){ ctx.beginPath(); ctx.arc(px,py,4,0,7); ctx.fill(); }
@@ -3455,6 +3464,7 @@ function updateProps(){
       <div class="row"><label>id</label><input type="text" id="pId" value="${esc(w.id)}" style="width:130px"></div>
       <div class="row"><label>${T('lengthLbl')}</label><input type="number" id="pL" step="0.01" min="0.05" value="${wallLen(w).toFixed(2)}"></div>
       <div class="row"><label>${T('thickLbl')}</label><input type="number" id="pT" step="0.05" min="0.05" max="0.6" value="${w.t||0.35}"></div>
+      <div class="row"><label>${T('heightLbl')}</label><input type="number" id="pH2" step="0.1" min="0.2" max="6" value="${w.h ?? wallH()}"></div>
       <div class="row"><textarea id="pNotes" rows="2" placeholder="${T('notesPh')}">${esc(w.notes)}</textarea></div>
       ${sel.isBase?`<div class="row"><button id="pRem" style="width:100%">${isRem?T('keepBtn'):T('demolishBtn')}</button></div>
       ${editingNutid()?`<div class="row"><button id="pHard" class="danger" style="width:100%">${T('deleteFromBase')}</button></div>`:''}`
@@ -3469,6 +3479,12 @@ function updateProps(){
       }
     };
     propsEl.querySelector('#pT').onchange=e=>{ w.t=parseFloat(e.target.value)||0.35; changed(); };
+    propsEl.querySelector('#pH2').onchange=e=>{
+      const v=parseFloat(e.target.value);
+      if(Number.isFinite(v) && v>0.15 && Math.abs(v-wallH())>0.01) w.h=+v.toFixed(2);
+      else delete w.h;                                 // back to the plan's default height
+      changed();
+    };
     propsEl.querySelector('#pNotes').onchange=e=>{ w.notes=e.target.value; changed(); };
     propsEl.querySelector('#pRem') && (propsEl.querySelector('#pRem').onclick=()=>toggleDemolish(sel.id));
     propsEl.querySelector('#pDel') && (propsEl.querySelector('#pDel').onclick=deleteSel);
@@ -3479,7 +3495,7 @@ function updateProps(){
       }
     });
     if(sel.isBase && !editingNutid()){
-      for(const q of ['pId','pL','pT','pNotes']){ const el=propsEl.querySelector('#'+q); if(el) el.disabled=true; }
+      for(const q of ['pId','pL','pT','pH2','pNotes']){ const el=propsEl.querySelector('#'+q); if(el) el.disabled=true; }
       const note=document.createElement('div'); note.className='row'; note.style.opacity='.75';
       note.textContent=T('lockNoteWall');
       propsEl.appendChild(note);
