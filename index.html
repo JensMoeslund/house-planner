@@ -311,6 +311,7 @@
       <div class="rbtns">
         <button id="exportPng">🖼 PNG</button>
         <button id="exportGlb" data-i18n-title="glbT">📦 .glb</button>
+        <button id="galleryBtn" data-i18n-title="galleryT">🖼 <span data-i18n="galleryBtn">Gallery</span></button>
       </div>
       <div class="rcap" data-i18n="rgImage">Image / 3D</div>
     </div>
@@ -489,6 +490,15 @@
     <button id="roofClose" data-i18n="close">Close</button></span>
   </div>
 </div></div>
+<div id="galleryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:61"><div class="box" style="max-width:740px;margin:6vh auto;background:#1c212a;border:1px solid #3a4250;border-radius:12px;padding:18px 22px;max-height:86vh;display:flex;flex-direction:column">
+  <h3 style="color:var(--accent);margin-top:0">🖼 <span data-i18n="galleryTitle">Render gallery</span></h3>
+  <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+    <button id="gallerySnap" data-i18n-title="gallerySnapT">📷 <span data-i18n="gallerySnap">Snapshot of the 3D view</span></button>
+    <span style="flex:1"></span>
+  </div>
+  <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;overflow:auto;min-height:120px"></div>
+  <div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="galleryClose" data-i18n="close">Close</button></div>
+</div></div>
 <div id="customWallModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:63"><div class="box" style="max-width:400px;margin:12vh auto;background:#1c212a;border:1px solid #3a4250;border-radius:10px;padding:18px 20px">
   <h3 style="color:var(--accent);margin-top:0" data-i18n="cwTitle">➕ Your own wall type</h3>
   <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center">
@@ -629,6 +639,10 @@ en: {
   clickCycle:'click again to switch wall',
   walkBtn:'🚶 Walk', walkBtnT:'Walk around the house: WASD + mouse (Shift = run). Esc releases the mouse.',
   rgOffer:'See it in higher quality?', rgOfferXT:'Not now — the guide stays under File → Picture guide and Export', rgMenu:'Picture guide',
+  galleryBtn:'Gallery', galleryT:'All your saved renders and snapshots, per idea',
+  galleryTitle:'Render gallery', gallerySnap:'Snapshot of the 3D view', gallerySnapT:'Save the current 3D view as a picture in the gallery',
+  galleryEmpty:'Nothing here yet — save a render (🖼 button on a finished render) or take a snapshot.',
+  gallerySaveBtn:'🖼 Save to gallery', gallerySaved:'🖼 Saved to the gallery',
   cmpBtn:'Compare', cmpT:'Side-by-side 3D of this idea and another — orbiting and walking move through BOTH at once',
   cmpSelT:'What the right side shows', cmpSwapT:'Swap: make the right side the one you edit', rgCompare:'Compare',
   rgBtn:'How do I get pictures?', rgBtnT:'Step-by-step guide to renders — in the browser or with Blender', rgHelp:'Help',
@@ -800,6 +814,10 @@ da: {
   clickCycle:'klik igen for at skifte væg',
   walkBtn:'🚶 Gå-tur', walkBtnT:'Gå rundt i huset: WASD + mus (Shift = løb). Esc slipper musen igen.',
   rgOffer:'Se det i højere kvalitet?', rgOfferXT:'Ikke nu — guiden ligger under Filer → Billed-guide og Eksport', rgMenu:'Billed-guide',
+  galleryBtn:'Galleri', galleryT:'Alle dine gemte renders og snapshots, pr. idé',
+  galleryTitle:'Render-galleri', gallerySnap:'Snapshot af 3D-visningen', gallerySnapT:'Gem den aktuelle 3D-visning som billede i galleriet',
+  galleryEmpty:'Intet endnu — gem et render (🖼-knappen på et færdigt render) eller tag et snapshot.',
+  gallerySaveBtn:'🖼 Gem i galleri', gallerySaved:'🖼 Gemt i galleriet',
   cmpBtn:'Sammenlign', cmpT:'3D side om side af denne idé og en anden — drej og gå-tur bevæger sig i BEGGE på én gang',
   cmpSelT:'Hvad højre side viser', cmpSwapT:'Byt: gør højre side til den du redigerer', rgCompare:'Sammenlign',
   rgBtn:'Hvordan får jeg billeder?', rgBtnT:'Trin-for-trin guide til renders — i browseren eller med Blender', rgHelp:'Hjælp',
@@ -1483,11 +1501,12 @@ function setStatus(cls, txt){
 const idbKV = {
   db:null,
   async open(){ if(this.db) return this.db;
-    this.db = await new Promise((res,rej)=>{ const r=indexedDB.open('hrp2',3);
+    this.db = await new Promise((res,rej)=>{ const r=indexedDB.open('hrp2',4);
       r.onupgradeneeded=()=>{ const db=r.result;
         if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
         if(!db.objectStoreNames.contains('versions')) db.createObjectStore('versions', {keyPath:'t'});
-        if(!db.objectStoreNames.contains('models')) db.createObjectStore('models', {keyPath:'id'}); };
+        if(!db.objectStoreNames.contains('models')) db.createObjectStore('models', {keyPath:'id'});
+        if(!db.objectStoreNames.contains('gallery')) db.createObjectStore('gallery', {keyPath:'id'}); };
       r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
     return this.db; },
   async set(k,v){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(v,k); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
@@ -1497,7 +1516,10 @@ const idbKV = {
   async vdel(t){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('versions','readwrite'); tx.objectStore('versions').delete(t); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
   async mput(rec){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('models','readwrite'); tx.objectStore('models').put(rec); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
   async mall(){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('models','readonly'); const rq=tx.objectStore('models').getAll(); rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>rej(rq.error); }); },
-  async mdel(id){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('models','readwrite'); tx.objectStore('models').delete(id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+  async mdel(id){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('models','readwrite'); tx.objectStore('models').delete(id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
+  async gput(rec){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('gallery','readwrite'); tx.objectStore('gallery').put(rec); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); },
+  async gall(){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('gallery','readonly'); const rq=tx.objectStore('gallery').getAll(); rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>rej(rq.error); }); },
+  async gdel(id){ const db=await this.open(); return new Promise((res,rej)=>{ const tx=db.transaction('gallery','readwrite'); tx.objectStore('gallery').delete(id); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
 };
 
 /* ---------- persistent version snapshots (survive reloads; last 60 kept) ---------- */
@@ -4366,13 +4388,24 @@ function showRenderResult(url){
   let ov=document.getElementById('renderResult');
   if(!ov){
     ov=document.createElement('div'); ov.id='renderResult';
-    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:64;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px';
     ov.innerHTML='<img style="max-width:94vw;max-height:88vh;border:1px solid #444a55;border-radius:4px"><div>'
-      +'<button id="rrSave" style="margin-right:8px">💾 Gem PNG</button><button id="rrClose">Luk</button></div>';
+      +'<button id="rrGallery" style="margin-right:8px"></button>'
+      +'<button id="rrSave" style="margin-right:8px">💾 PNG</button><button id="rrClose"></button></div>';
     document.body.appendChild(ov);
     ov.querySelector('#rrClose').onclick=()=>{ ov.style.display='none'; };
     ov.onclick=e=>{ if(e.target===ov) ov.style.display='none'; };
   }
+  ov.querySelector('#rrClose').textContent=T('close');
+  const gb=ov.querySelector('#rrGallery');
+  gb.textContent=T('gallerySaveBtn'); gb.disabled=false;
+  gb.onclick=async()=>{
+    try{
+      const blob=await (await fetch(url)).blob();
+      await saveToGallery(blob);
+      gb.textContent='✓ '+T('gallerySaved'); gb.disabled=true;
+    }catch(e){ alert('gallery: '+(e?.message||e)); }
+  };
   const img=ov.querySelector('img');
   img.src=url;
   ov.querySelector('#rrSave').onclick=()=>{
@@ -4381,6 +4414,54 @@ function showRenderResult(url){
     a.click();
   };
   ov.style.display='flex';
+}
+
+/* ---------- render gallery (IndexedDB — pictures stay out of the plan file) ---------- */
+async function saveToGallery(blob){
+  await idbKV.gput({id:'g'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    t:Date.now(), variantId:cv().id, variantName:cv().name, blob});
+}
+let galleryUrls=[];
+async function renderGalleryGrid(){
+  const grid=document.getElementById('galleryGrid');
+  for(const u of galleryUrls) URL.revokeObjectURL(u);
+  galleryUrls=[];
+  let all=[]; try{ all=await idbKV.gall(); }catch(e){}
+  all.sort((a,b)=>b.t-a.t);
+  grid.innerHTML = all.length ? '' : `<div style="opacity:.6;grid-column:1/-1">${T('galleryEmpty')}</div>`;
+  const loc=LANG==='da'?'da-DK':'en-GB';
+  for(const rec of all){
+    const url=URL.createObjectURL(rec.blob); galleryUrls.push(url);
+    const card=document.createElement('div');
+    card.style.cssText='position:relative;border:1px solid #2c3340;border-radius:8px;overflow:hidden;cursor:pointer;background:#171b22';
+    card.innerHTML=`<img src="${url}" style="width:100%;height:105px;object-fit:cover;display:block">
+      <div style="font-size:11px;padding:4px 7px;line-height:1.35"><b>${esc(rec.variantName||'')}</b><br>
+      <span style="opacity:.6">${new Date(rec.t).toLocaleDateString(loc,{day:'numeric',month:'short'})} ${new Date(rec.t).toLocaleTimeString(loc,{hour:'2-digit',minute:'2-digit'})}</span></div>
+      <button class="danger" style="position:absolute;top:4px;right:4px;padding:0 7px">✕</button>`;
+    card.querySelector('img').onclick=()=>showRenderResult(url);
+    card.querySelector('button').onclick=async e=>{
+      e.stopPropagation();
+      await idbKV.gdel(rec.id);
+      renderGalleryGrid();
+    };
+    grid.appendChild(card);
+  }
+}
+{
+  const gm=document.getElementById('galleryModal');
+  document.getElementById('galleryBtn').onclick=async()=>{ gm.style.display='block'; await renderGalleryGrid(); };
+  document.getElementById('galleryClose').onclick=()=>{ gm.style.display='none'; };
+  gm.onclick=e=>{ if(e.target===gm) gm.style.display='none'; };
+  document.getElementById('gallerySnap').onclick=()=>{
+    if(!three) return;
+    three.renderer.render(three.scene, three.camera);            // fresh frame — the buffer isn't preserved
+    three.renderer.domElement.toBlob(async blob=>{
+      if(!blob) return;
+      await saveToGallery(blob);
+      flashHint(T('gallerySaved'));
+      renderGalleryGrid();
+    }, 'image/png');
+  };
 }
 document.getElementById('newPlanBtn').onclick=async()=>{
   if(!confirm(T('confirmNew'))) return;
