@@ -242,6 +242,19 @@
       <div class="rcap" data-i18n="rgFurniture">Furniture</div>
     </div>
     <div class="rgsep"></div>
+    <div class="rgroup">
+      <div class="rbtns">
+        <button class="tool" data-tool="plant" data-i18n="toolPlant" data-i18n-title="toolPlantT">🌳 Plant</button>
+        <select id="plantKind" data-i18n-title="plantKindT">
+          <option value="tree" data-i18n="plant_tree">🌳 Tree</option>
+          <option value="pine" data-i18n="plant_pine">🌲 Pine</option>
+          <option value="bush" data-i18n="plant_bush">🌿 Bush</option>
+          <option value="hedge" data-i18n="plant_hedge">🟩 Hedge</option>
+        </select>
+      </div>
+      <div class="rcap" data-i18n="rgGarden">Garden</div>
+    </div>
+    <div class="rgsep"></div>
     <div class="rgroup" data-wmode="huset">
       <div class="rbtns">
         <button id="roofDialogBtn" data-i18n="roofMenu" data-i18n-title="roofEditT">🏠 Roof…</button>
@@ -566,7 +579,7 @@ en: {
   reloaded:'(reloaded)', resumeLink:'click 📂 once to reopen your plan file', resumeBtn:'📂 Reopen ',
   furn_underskab:'base cabinet/counter', furn_overskab:'wall cabinet', furn_koekkenoe:'kitchen island', furn_komfur:'stove', furn_vask:'sink', furn_koeleskab:'fridge', furn_opvasker:'dishwasher', furn_spisebord:'dining table', furn_sofa:'sofa', furn_seng:'bed', furn_toilet:'toilet', furn_brus:'shower', furn_badekar:'bathtub', furn_garderobeskab:'wardrobe', furn_skrivebord:'desk',
   furn_stol:'chair', furn_laenestol:'armchair', furn_sofabord:'coffee table', furn_tvbord:'TV bench', furn_braendeovn:'wood stove', furn_potteplante:'plant', furn_barneseng:'crib', furn_sengebord:'bedside table', furn_kommode:'dresser', furn_vaskemaskine:'washing machine', furn_toerretumbler:'dryer', furn_reol:'bookcase',
-  furnCatKitchen:'Kitchen', furnCatLiving:'Living & dining', furnCatBed:'Bedroom', furnCatBath:'Bathroom & laundry', furnCatOffice:'Office & storage',
+  furnCatKitchen:'Kitchen', furnCatLiving:'Living & dining', furnCatBed:'Bedroom', furnCatBath:'Bathroom & laundry', furnCatOffice:'Office & storage', furnCatGarden:'🌳 Garden & outdoor',
   furnCatCustom:'My 3D models', furn_model:'3D model',
   furnImport:'📦 Import 3D model (.glb)…',
   furnImportT:'Load a .glb file as furniture. Free models: IKEA product pages (via the IKEA-3D-model browser script), furnimesh.com, sketchfab.com. Real size is read from the file.',
@@ -580,6 +593,10 @@ en: {
   catalogLbl:n=>`Catalog · ${n} free furniture models (CC0)`,
   furnCatCatalog:'Catalog', furnBarT:'Browse furniture — bar at the bottom with 3D previews',
   furnCatOther:'Misc', modelCatT:'Which room tab this model appears under',
+  toolPlant:'🌳 Plant', toolPlantT:'Place trees, bushes and hedges around the house — click the plan; they show up in 3D and in every render. R rotates a selected hedge.',
+  plantKindT:'What to plant',
+  plant_tree:'🌳 Tree', plant_pine:'🌲 Pine', plant_bush:'🌿 Bush', plant_hedge:'🟩 Hedge',
+  plantR:'Crown radius (m)', delPlant:'Delete plant', rgGarden:'Garden',
   traceWalls:'✨ Find walls', traceWallsT:'Detect the walls in the floor-plan photo automatically (set the scale first) — then tidy up by hand. Shift-click = debug overlay: shows every candidate colour-coded, changes nothing.',
   traceDbg_kept:'kept as walls', traceDbg_flank:'rejected: no open side', traceDbg_axis:'rejected: axis line', traceDbg_prune:'rejected: not connected',
   hintTraceDebug:d=>`🔎 debug: scale ${d.pxm} px/m · ink ${Math.round(d.inkFrac*100)}% · candidates ${d.merged} → kept ${d.final} (${d.ms} ms) — nothing added; click without Shift to apply. Esc clears.`,
@@ -711,7 +728,7 @@ da: {
   reloaded:'(genindlæst)', resumeLink:'ét klik på 📂 genåbner din plan-fil', resumeBtn:'📂 Genåbn ',
   furn_underskab:'underskab/bordplade', furn_overskab:'overskab', furn_koekkenoe:'køkkenø', furn_komfur:'komfur', furn_vask:'vask', furn_koeleskab:'køleskab', furn_opvasker:'opvaskemaskine', furn_spisebord:'spisebord', furn_sofa:'sofa', furn_seng:'seng', furn_toilet:'toilet', furn_brus:'brusekabine', furn_badekar:'badekar', furn_garderobeskab:'garderobeskab', furn_skrivebord:'skrivebord',
   furn_stol:'stol', furn_laenestol:'lænestol', furn_sofabord:'sofabord', furn_tvbord:'tv-bord', furn_braendeovn:'brændeovn', furn_potteplante:'potteplante', furn_barneseng:'barneseng', furn_sengebord:'sengebord', furn_kommode:'kommode', furn_vaskemaskine:'vaskemaskine', furn_toerretumbler:'tørretumbler', furn_reol:'reol',
-  furnCatKitchen:'Køkken', furnCatLiving:'Stue & spisestue', furnCatBed:'Soveværelse', furnCatBath:'Bad & bryggers', furnCatOffice:'Kontor & opbevaring',
+  furnCatKitchen:'Køkken', furnCatLiving:'Stue & spisestue', furnCatBed:'Soveværelse', furnCatBath:'Bad & bryggers', furnCatOffice:'Kontor & opbevaring', furnCatGarden:'🌳 Have & udendørs',
   furnCatCustom:'Mine 3D-modeller', furn_model:'3D-model',
   furnImport:'📦 Importér 3D-model (.glb)…',
   furnImportT:'Indlæs en .glb-fil som møbel. Gratis modeller: IKEAs produktsider (via browser-scriptet IKEA-3D-model), furnimesh.com, sketchfab.com. Den rigtige størrelse læses fra filen.',
@@ -725,6 +742,10 @@ da: {
   catalogLbl:n=>`Katalog · ${n} gratis møbler (CC0)`,
   furnCatCatalog:'Katalog', furnBarT:'Gennemse møbler — bjælke i bunden med 3D-forhåndsvisning',
   furnCatOther:'Diverse', modelCatT:'Hvilken rum-fane modellen vises under',
+  toolPlant:'🌳 Plante', toolPlantT:'Placér træer, buske og hække omkring huset — klik i planen; de vises i 3D og i alle renders. R roterer en valgt hæk.',
+  plantKindT:'Hvad skal plantes',
+  plant_tree:'🌳 Løvtræ', plant_pine:'🌲 Grantræ', plant_bush:'🌿 Busk', plant_hedge:'🟩 Hæk',
+  plantR:'Krone-radius (m)', delPlant:'Slet plante', rgGarden:'Have',
   traceWalls:'✨ Find vægge', traceWallsT:'Find væggene i plantegnings-fotoet automatisk (sæt målestokken først) — ryd op i hånden bagefter. Shift-klik = fejlsøgnings-overlay: viser alle kandidater farvekodet, ændrer intet.',
   traceDbg_kept:'beholdt som vægge', traceDbg_flank:'afvist: ingen åben side', traceDbg_axis:'afvist: akselinje', traceDbg_prune:'afvist: ikke forbundet',
   hintTraceDebug:d=>`🔎 fejlsøgning: målestok ${d.pxm} px/m · blæk ${Math.round(d.inkFrac*100)}% · kandidater ${d.merged} → beholdt ${d.final} (${d.ms} ms) — intet tilføjet; klik uden Shift for at tegne. Esc rydder.`,
@@ -863,6 +884,13 @@ const FURN = {
   reol:      {name:'reol',      e:'📚', w:0.8, d:0.35,h:1.9, z:0, color:0x8a7a63, c2d:'138,122,99'},
   model:     {name:'3D model',  e:'📦', w:1.0, d:1.0, h:1.0, z:0, color:0x8a8f98, c2d:'150,155,165'},
 };
+/* outdoor greenery (base.garden) — shared scenery, drawn procedurally in 3D */
+const PLANTS = {
+  tree: {e:'🌳', h:6,   r:2.2},
+  pine: {e:'🌲', h:8,   r:1.6},
+  bush: {e:'🌿', h:0.9, r:0.7},
+  hedge:{e:'🟩', h:1.6, len:4},
+};
 let three=null;         // the 3D module context ({THREE, scene, …}) — set by init3d()
 /* user-imported .glb furniture models — bytes live in IndexedDB, instances reference them by id */
 const MODELS={};        // id → {id,name,w,d,h,glb:ArrayBuffer}
@@ -937,6 +965,7 @@ const FURN_CATS=[
   ['furnCatBed',     ['seng','barneseng','sengebord','garderobeskab','kommode']],
   ['furnCatBath',    ['toilet','brus','badekar','vaskemaskine','toerretumbler']],
   ['furnCatOffice',  ['skrivebord','reol']],
+  ['furnCatGarden',  []],
 ];
 function updateFurnBtn(){
   const k=document.getElementById('furnKind').value||'underskab';
@@ -986,6 +1015,7 @@ function cardSpec(key){            // cardKey → {f (furniture-like, for furn3d
 function catFor(name){   // guess a room category from a model name (imports without explicit category)
   const s=(name||'').toLowerCase();
   const has=(...ws)=>ws.some(w=>s.includes(w));
+  if(has('tree','pine','palm','bush','hedge','hæk','flower','blomst','grass','græs','rock','sten','fence','hegn','stump','garden','have')) return 'furnCatGarden';
   if(has('bath','toilet','shower','brus','badekar','vaske','washer','dryer','toerretumbler','tørretumbler')) return 'furnCatBath';
   if(has('kitchen','køkken','koekken','fridge','køleskab','stove','komfur','oven','hood','emhætte','sink','opvask','dish','freezer','fryser')) return 'furnCatKitchen';
   if(has('bed','seng','pillow','pude','wardrobe','garderobe','klædeskab','dresser','kommode','crib')) return 'furnCatBed';
@@ -1292,7 +1322,7 @@ function normalize(){
     normalize.warned = true;
     setTimeout(()=>alert(T('fmtWarn')(S.meta.format)), 0);
   }
-  S.base.walls ??= []; S.base.openings ??= []; S.base.floors ??= [];
+  S.base.walls ??= []; S.base.openings ??= []; S.base.floors ??= []; S.base.garden ??= [];
   if(!Array.isArray(S.variants) || !S.variants.length)
     S.variants = [{id:'idea-1', name:'Idea 1', notes:'', demolish:[], walls:[], openings:[], labels:[], sketch:[]}];
   for(const v of S.variants){
@@ -1321,6 +1351,7 @@ function nextId(prefix){
   const scan = id => { const m = typeof id==='string' && id.match(new RegExp('^'+prefix+'-(\\d+)$')); if(m) mx=Math.max(mx,+m[1]); };
   for(const w of S.base.walls) scan(w.id);
   for(const o of S.base.openings) scan(o.id);
+  for(const g of S.base.garden||[]) scan(g.id);
   for(const v of S.variants){ scan(v.id);
     for(const a of [v.walls,v.openings,v.labels,v.sketch,v.furniture||[]]) for(const e of a) scan(e.id); }
   return `${prefix}-${mx+1}`;
@@ -2288,6 +2319,30 @@ function draw(){
     }
     ctx.restore();
   }
+  // garden: trees/bushes as circles, hedges as rotated rectangles
+  for(const g of (S.base.garden||[])){
+    const isSel=sel?.id===g.id;
+    const [px,py]=W2S(...g.at);
+    ctx.save(); ctx.translate(px,py);
+    if(g.kind==='hedge'){
+      ctx.rotate((g.angle||0)*Math.PI/180);
+      const wp=(g.len||4)*view.ppm, dp=0.5*view.ppm;
+      ctx.fillStyle=isSel?'rgba(93,211,158,.45)':'rgba(76,122,76,.35)';
+      ctx.strokeStyle=isSel?'#4da3ff':'rgba(110,160,110,.9)';
+      ctx.lineWidth=isSel?2.5:1.5;
+      ctx.fillRect(-wp/2,-dp/2,wp,dp); ctx.strokeRect(-wp/2,-dp/2,wp,dp);
+    } else {
+      const rp=Math.max(4,(g.r||1)*view.ppm);
+      ctx.fillStyle=isSel?'rgba(93,211,158,.35)':'rgba(76,122,76,.25)';
+      ctx.strokeStyle=isSel?'#4da3ff':'rgba(110,160,110,.9)';
+      ctx.lineWidth=isSel?2.5:1.5;
+      ctx.beginPath(); ctx.arc(0,0,rp,0,7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='rgba(107,84,54,.9)';
+      ctx.beginPath(); ctx.arc(0,0,Math.max(2,0.12*view.ppm),0,7); ctx.fill();
+    }
+    if(view.ppm>14){ ctx.font=Math.round(Math.min(26,view.ppm*0.55))+'px sans-serif'; ctx.textAlign='center'; ctx.fillText(PLANTS[g.kind]?.e||'🌳',0,5); }
+    ctx.restore();
+  }
   // roof windows (velux) — dashed outline at their plan position
   if(S.base.roof?.pitched){
     const Pp=S.base.roof.pitched, thR=Pp.pitch*Math.PI/180, mYR=(Pp.yN+Pp.yS)/2;
@@ -2576,7 +2631,15 @@ function pick(wx,wy){
     if(n.d<Math.max(tol,(w.t||0.35)/2+tol/2) && (!best||n.d<best.d))
       best={type:'wall',id:w.id,w,d:n.d,isBase:S.base.walls.includes(w)};
   }
-  return best;
+  if(best) return best;
+  for(const g of (S.base.garden||[])){    // garden last — trees never steal clicks from walls
+    if(g.kind==='hedge'){
+      const th=(g.angle||0)*Math.PI/180, dx=wx-g.at[0], dy=wy-g.at[1];
+      const lx=dx*Math.cos(th)+dy*Math.sin(th), ly=-dx*Math.sin(th)+dy*Math.cos(th);
+      if(Math.abs(lx)<(g.len||4)/2+0.05 && Math.abs(ly)<0.3+tol) return {type:'plant',id:g.id,g};
+    } else if(dist(wx,wy,...g.at)<Math.max(0.4,g.r||1)) return {type:'plant',id:g.id,g};
+  }
+  return null;
 }
 
 c2d.addEventListener('pointerdown', e=>{
@@ -2644,6 +2707,14 @@ c2d.addEventListener('pointerdown', e=>{
       f.model=m.id; f.name=m.name; f.w=m.w; f.d=m.d; f.h=m.h;
     }
     cv().furniture.push(f); sel={type:'furn',id:f.id,f}; changed(); updateProps();
+    return;
+  }
+  if(tool==='plant'){
+    const k=document.getElementById('plantKind').value, P=PLANTS[k]||PLANTS.tree;
+    const g={id:nextId('plant'), kind:k, at:[+wx.toFixed(2),+wy.toFixed(2)], h:P.h};
+    if(k==='hedge'){ g.len=P.len; g.angle=0; } else g.r=P.r;
+    S.base.garden.push(g);
+    sel={type:'plant',id:g.id,g}; changed(); updateProps();
     return;
   }
   if(tool==='velux'){
@@ -2723,6 +2794,7 @@ c2d.addEventListener('pointerdown', e=>{
       dragging={type:'velux', rw, offX:rw.x-wx, offS:scV-(wy-mYv)/csV};
     }
     else if(hit.type==='furn') dragging={type:'furn',f:hit.f,wx,wy,x0:hit.f.at[0],y0:hit.f.at[1]};
+    else if(hit.type==='plant') dragging={type:'plant',g:hit.g,wx,wy,x0:hit.g.at[0],y0:hit.g.at[1]};
     else if(hit.type==='label') dragging={type:'label',l:hit.l,wx,wy,x0:hit.l.at[0],y0:hit.l.at[1]};
     else if(hit.type==='wall'){
       const w=hit.w;
@@ -2769,6 +2841,9 @@ c2d.addEventListener('pointermove', e=>{
     }
     else if(dragging.type==='furn'){
       dragging.f.at=[+(dragging.x0+(mouse.wx-dragging.wx)).toFixed(2), +(dragging.y0+(mouse.wy-dragging.wy)).toFixed(2)];
+    }
+    else if(dragging.type==='plant'){
+      dragging.g.at=[+(dragging.x0+(mouse.wx-dragging.wx)).toFixed(2), +(dragging.y0+(mouse.wy-dragging.wy)).toFixed(2)];
     }
     else if(dragging.type==='velux'){
       const rw=dragging.rw, free=document.getElementById('veluxFree').checked;
@@ -2918,6 +2993,7 @@ window.addEventListener('keydown', e=>{
   else if(k==='f') setTool('furn');
   else if(k==='delete'||k==='backspace') deleteSel();
   else if(k==='r' && sel?.type==='furn'){ sel.f.angle=((sel.f.angle||0)+(e.shiftKey?15:90))%360; changed(); updateProps(); }
+  else if(k==='r' && sel?.type==='plant' && sel.g.kind==='hedge'){ sel.g.angle=((sel.g.angle||0)+(e.shiftKey?15:90))%360; changed(); updateProps(); }
   else if(k==='r' && sel?.type==='wall' && sel.isBase) toggleDemolish(sel.id);
 });
 
@@ -2963,6 +3039,8 @@ function deleteSel(){
     if(!v.roofWindows.length) delete v.roofWindows;
   } else if(sel.type==='furn'){
     cv().furniture=cv().furniture.filter(f=>f!==sel.f);
+  } else if(sel.type==='plant'){
+    S.base.garden=(S.base.garden||[]).filter(g=>g.id!==sel.id);
   } else if(sel.type==='label'){
     cv().labels=cv().labels.filter(l=>l.id!==sel.id);
   } else if(sel.type==='sketch'){
@@ -3057,6 +3135,18 @@ function updateProps(){
     propsEl.querySelector('#pFA').onchange=e=>{ f.angle=parseFloat(e.target.value)||0; changed(); };
     propsEl.querySelector('#pFZ').onchange=e=>{ const v=parseFloat(e.target.value); if(Number.isFinite(v)&&v>0) f.z=+v.toFixed(2); else delete f.z; changed(); };
     propsEl.querySelector('#pRot').onclick=()=>{ f.angle=((f.angle||0)+90)%360; changed(); updateProps(); };
+    propsEl.querySelector('#pDel').onclick=deleteSel;
+  } else if(sel.type==='plant'){
+    const g=sel.g;
+    propsEl.innerHTML=`<h3>${PLANTS[g.kind]?.e||'🌳'} ${T('plant_'+g.kind).replace(/^\S+\s/,'')}</h3>
+      <div class="row"><label>${T('heightLbl')}</label><input id="pGH" type="number" step="0.5" min="0.3" max="30" value="${g.h}"></div>
+      ${g.kind==='hedge'
+        ? `<div class="row"><label>${T('lengthLbl')}</label><input id="pGL" type="number" step="0.5" min="0.5" max="60" value="${g.len||4}"></div>
+           <div class="row"><label>${T('furnA')}</label><input id="pGA" type="number" step="15" value="${g.angle||0}"></div>`
+        : `<div class="row"><label>${T('plantR')}</label><input id="pGR" type="number" step="0.1" min="0.2" max="8" value="${g.r||1}"></div>`}
+      <div class="row"><button id="pDel" class="danger" style="width:100%">${T('delPlant')}</button></div>`;
+    const numG=(q,f)=>{ const el=propsEl.querySelector(q); if(el) el.onchange=e=>{ const v=parseFloat(e.target.value); if(Number.isFinite(v)){ f(v); changed(); } }; };
+    numG('#pGH',v=>g.h=v); numG('#pGL',v=>g.len=v); numG('#pGA',v=>g.angle=v); numG('#pGR',v=>g.r=v);
     propsEl.querySelector('#pDel').onclick=deleteSel;
   } else if(sel.type==='velux'){
     const rw=sel.rw;
@@ -4080,13 +4170,20 @@ function rebuild3d(){
     mesh.rotation.y=-Math.atan2(du[1],du[0]);
     group.add(mesh);
   }
+  // inside the house → on the floor slab; outside → on the terrain (grass level)
+  const inHouse=(x,y)=> minX<maxX && x>=minX-0.6 && x<=maxX+0.6 && y>=minY-0.6 && y<=maxY+0.6;
   for(const f of (cv().furniture||[])){
     const FT=FURN[f.kind]||FURN.underskab;
     const fg=furn3d(THREE,f);
-    const zBase=floorZAt(f.at[0],f.at[1]) + (f.z ?? FT.z ?? 0);
+    const zBase=(inHouse(f.at[0],f.at[1]) ? floorZAt(f.at[0],f.at[1]) : -0.68) + (f.z ?? FT.z ?? 0);
     fg.position.set(f.at[0], zBase, f.at[1]);
     fg.rotation.y=-(f.angle||0)*Math.PI/180;
     group.add(fg);
+  }
+  for(const g of (S.base.garden||[])){
+    const pg=plant3d(THREE,g);
+    pg.position.set(g.at[0],-0.68,g.at[1]);   // planted on the terrain, not the floor slab
+    group.add(pg);
   }
   buildRoof3d(THREE, group);
   const customFloors = (S.base.floors||[]).filter(f=>f.rect);
@@ -4192,6 +4289,44 @@ function furn3d(THREE, f){
     }
     return fg;
   }
+}
+/* one garden plant → THREE.Group; origin at ground level under the trunk */
+function plant3d(THREE, g){
+  const fg=new THREE.Group();
+  const M=c=>new THREE.MeshLambertMaterial({color:c});
+  const seed=[...(g.id||'p')].reduce((a,c)=>a+c.charCodeAt(0),0);
+  const green=[0x4e7a3d,0x557f46,0x466f38,0x5c8a4a][seed%4];
+  const h=g.h||4;
+  if(g.kind==='hedge'){
+    const m=new THREE.Mesh(new THREE.BoxGeometry(g.len||4,h,0.5),M(0x44693c));
+    m.position.y=h/2; fg.add(m);
+    fg.rotation.y=-(g.angle||0)*Math.PI/180;
+  } else if(g.kind==='bush'){
+    const m=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),M(green));
+    m.scale.set(g.r||0.7,h*0.62,g.r||0.7); m.position.y=h*0.52; fg.add(m);
+  } else if(g.kind==='pine'){
+    const r=g.r||1.6, trunkH=h*0.22;
+    const tr=new THREE.Mesh(new THREE.CylinderGeometry(0.05*h*0.3+0.04,0.05*h*0.3+0.07,trunkH+0.2,8),M(0x6b5436));
+    tr.position.y=trunkH/2; fg.add(tr);
+    const folH=h-trunkH;
+    for(let i=0;i<3;i++){
+      const ch=folH*(0.5-0.08*i), base=trunkH+folH*0.55*i/3*1.6;
+      const c=new THREE.Mesh(new THREE.ConeGeometry(r*(1-0.27*i),ch,9),M(0x39603f));
+      c.position.y=Math.min(base,h-ch/2-0.01)+ch/2; fg.add(c);
+    }
+  } else {  // deciduous tree: trunk + clustered spheres
+    const r=g.r||2, trunkH=h*0.42, cr=(h-trunkH)/2;
+    const tr=new THREE.Mesh(new THREE.CylinderGeometry(Math.max(0.07,h*0.028),Math.max(0.1,h*0.04),trunkH+0.3,8),M(0x6b5436));
+    tr.position.y=trunkH/2; fg.add(tr);
+    const cy=trunkH+cr;
+    const s1=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),M(green));
+    s1.scale.set(r,cr,r); s1.position.y=cy; fg.add(s1);
+    const s2=new THREE.Mesh(new THREE.SphereGeometry(1,9,7),M(0x557f46));
+    s2.scale.set(r*0.62,cr*0.62,r*0.62); s2.position.set(r*0.45,cy+cr*0.4,r*0.25); fg.add(s2);
+    const s3=new THREE.Mesh(new THREE.SphereGeometry(1,9,7),M(0x466f38));
+    s3.scale.set(r*0.55,cr*0.55,r*0.55); s3.position.set(-r*0.4,cy+cr*0.3,-r*0.3); fg.add(s3);
+  }
+  return fg;
 }
 /* roof, ceilings and trusses — split out of rebuild3d */
 function buildRoof3d(THREE, group){

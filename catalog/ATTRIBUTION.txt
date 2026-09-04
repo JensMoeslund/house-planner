@@ -1,6 +1,7 @@
 House Planner built-in catalog — licenses & credits
 
 Kenney Furniture Kit (140 models): CC0 / public domain — kenney.nl (see LICENSE-kenney.txt)
+Kenney Nature Kit (26 models: trees, pines, bushes, flowers, rocks, fences): CC0 / public domain — kenney.nl/assets/nature-kit
 
 Danish design classics & plants, from Sketchfab under CC Attribution (CC-BY 4.0).
 Files were converted/optimized (Draco compression, resized textures). Credits:
