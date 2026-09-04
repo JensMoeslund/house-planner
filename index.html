@@ -155,6 +155,7 @@
       <button id="settingsBtn" data-i18n-title="settingsT">⚙ <span data-i18n="menuSettings">Settings</span></button>
       <button id="introBtn" data-i18n-title="menuIntroT">👋 <span data-i18n="menuIntro">Intro & guide</span></button>
       <button id="installBtn" data-i18n-title="installT" style="display:none">📲 <span data-i18n="installApp">Install app</span></button>
+      <button id="renderGuideMenuBtn" data-i18n-title="rgBtnT">📷 <span data-i18n="rgMenu">Picture guide</span></button>
     </div>
   </div>
   <button class="rtab active" data-rtab="huset" data-panel="draw" data-i18n-title="tabTodayT"><span data-i18n="tabToday">1 · The house today</span></button>
@@ -382,7 +383,10 @@
   <div id="splitter" title="Drag to resize · double-click = 50/50"></div>
   <div id="pane3d">
     <div id="c3dwrap" style="width:100%;height:100%"></div>
-    <button id="rgOffer" style="position:absolute;right:8px;top:8px;z-index:6;display:none;background:rgba(29,43,66,.95);border-color:var(--accent)">📷 <span data-i18n="rgOffer">See it in higher quality?</span></button>
+    <div id="rgOfferWrap" style="position:absolute;right:8px;top:8px;z-index:6;display:none;gap:4px">
+      <button id="rgOffer" style="background:rgba(29,43,66,.95);border-color:var(--accent)">📷 <span data-i18n="rgOffer">See it in higher quality?</span></button>
+      <button id="rgOfferX" data-i18n-title="rgOfferXT" style="background:rgba(29,43,66,.95);padding:4px 7px">✕</button>
+    </div>
     <div id="sunPanel">
       <button id="inspectBtn" data-i18n-title="inspectT">🔍 <span data-i18n="inspect">Inspect</span> ▾</button>
       <span id="inspectBody" style="display:none;align-items:center;gap:8px">
@@ -591,7 +595,7 @@ en: {
   hintBar:'V select · W wall · D door · N window · L label · S sketch · Del delete · R = toggle demolish · walls snap to 45°/90° — hold Shift for free angles · drag empty/middle = pan · wheel = zoom',
   clickCycle:'click again to switch wall',
   walkBtn:'🚶 Walk', walkBtnT:'Walk around the house: WASD + mouse (Shift = run). Esc releases the mouse.',
-  rgOffer:'See it in higher quality?',
+  rgOffer:'See it in higher quality?', rgOfferXT:'Not now — the guide stays under File → Picture guide and Export', rgMenu:'Picture guide',
   rgBtn:'How do I get pictures?', rgBtnT:'Step-by-step guide to renders — in the browser or with Blender', rgHelp:'Help',
   rgTitle:'📷 Pretty pictures — two ways', rgIntro:'Your 3D view can become real pictures. Easiest first:',
   rgWay1:'1 · In the browser — nothing to set up', rgWay1Body:'Open the 3D view, go to Export and press 📷 Render. The image sharpens over time; press Render again to stop and keep it.',
@@ -755,7 +759,7 @@ da: {
   hintBar:'V vælg · W væg · D dør · N vindue · L tekst · S skitse · Del slet · R = riv ned/behold · vægge snapper til 45°/90° — hold Shift for frie vinkler · træk tomt/midterklik = panorér · hjul = zoom',
   clickCycle:'klik igen for at skifte væg',
   walkBtn:'🚶 Gå-tur', walkBtnT:'Gå rundt i huset: WASD + mus (Shift = løb). Esc slipper musen igen.',
-  rgOffer:'Se det i højere kvalitet?',
+  rgOffer:'Se det i højere kvalitet?', rgOfferXT:'Ikke nu — guiden ligger under Filer → Billed-guide og Eksport', rgMenu:'Billed-guide',
   rgBtn:'Hvordan får jeg billeder?', rgBtnT:'Trin-for-trin guide til renders — i browseren eller med Blender', rgHelp:'Hjælp',
   rgTitle:'📷 Flotte billeder — to veje', rgIntro:'Din 3D-visning kan blive til rigtige billeder. Nemmest først:',
   rgWay1:'1 · I browseren — ingen opsætning', rgWay1Body:'Åbn 3D-visningen, gå til Eksport og tryk 📷 Rendér. Billedet bliver skarpere over tid; tryk Rendér igen for at stoppe og beholde det.',
@@ -2904,8 +2908,8 @@ function draw(){
   document.getElementById('stats').textContent =
     T('statusLine')(cv().name, S.base.walls.length, cv().demolish.length, cv().walls.length);
   if(guide && typeof updateCoach==='function') updateCoach();   // keep the highlighted button in step
-  { const off=document.getElementById('rgOffer');
-    if(off) off.style.display = (!PREFS.renderGuideShown && !guide && (S.base.walls.length||cv().walls.length)) ? '' : 'none'; }
+  { const off=document.getElementById('rgOfferWrap');
+    if(off) off.style.display = (!PREFS.renderGuideShown && !guide && (S.base.walls.length||cv().walls.length)) ? 'flex' : 'none'; }
   document.getElementById('firstRun').style.display =
     (S.base.walls.length || cv().walls.length || underlay || guide) ? 'none' : '';
 }
@@ -4468,12 +4472,15 @@ document.getElementById('rgModeBtn').onclick=()=>{ PREFS.renderMode='blender'; s
 document.getElementById('rgClose').onclick=()=>{ rgModal.style.display='none'; };
 rgModal.onclick=e=>{ if(e.target===rgModal) rgModal.style.display='none'; };
 document.getElementById('renderGuideBtn').onclick=openRenderGuide;
-// standing invitation in the 3D view — also for people who skipped the drawing guide
-document.getElementById('rgOffer').onclick=()=>{
+// standing invitation in the 3D view — also for people who skipped the drawing guide.
+// ✕ dismisses without opening; the guide stays under File → Picture guide and Export.
+document.getElementById('renderGuideMenuBtn').onclick=openRenderGuide;
+function retireRgOffer(){
   PREFS.renderGuideShown=true; savePrefs();
-  document.getElementById('rgOffer').style.display='none';
-  openRenderGuide();
-};
+  document.getElementById('rgOfferWrap').style.display='none';
+}
+document.getElementById('rgOffer').onclick=()=>{ retireRgOffer(); openRenderGuide(); };
+document.getElementById('rgOfferX').onclick=retireRgOffer;
 
 /* ==================== settings dialog ==================== */
 const setModal=document.getElementById('settingsModal');
