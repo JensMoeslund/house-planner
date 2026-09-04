@@ -136,6 +136,7 @@ $browserProc = if ($NoBrowser) { $null } else { Start-AppWindow -Browser (Find-B
 function Send-Bytes($resp, [byte[]]$bytes, [string]$type, [int]$code = 200) {
     $resp.StatusCode = $code
     $resp.ContentType = $type
+    $resp.Headers['Cache-Control'] = 'no-cache'   # local files: always revalidate, never stale
     $resp.ContentLength64 = $bytes.Length
     $resp.OutputStream.Write($bytes, 0, $bytes.Length)
     $resp.Close()

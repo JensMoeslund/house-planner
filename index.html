@@ -183,6 +183,7 @@
             <button id="variantRen" data-i18n="rename">Rename</button>
             <button id="variantNotes" data-i18n="variantNotesM" data-i18n-title="variantNotesT">📝 Notes</button>
             <button id="describeBtn" data-i18n-title="describeT">🧾 <span data-i18n="describe">Describe</span></button>
+            <button id="shareIdeaBtn" data-i18n-title="shareIdeaT">🔗 <span data-i18n="shareIdea">Share this idea (copy link)</span></button>
             <button id="variantHideDem" data-i18n-title="hideDemT"></button>
             <hr>
             <button id="variantDel" class="danger" data-i18n="variantDelM">✕ Delete variant</button>
@@ -639,6 +640,10 @@ en: {
   clickCycle:'click again to switch wall',
   walkBtn:'🚶 Walk', walkBtnT:'Walk around the house: WASD + mouse (Shift = run). Esc releases the mouse.',
   rgOffer:'See it in higher quality?', rgOfferXT:'Not now — the guide stays under File → Picture guide and Export', rgMenu:'Picture guide',
+  shareIdea:'Share this idea (copy link)', shareIdeaT:'Copies a link containing the house today + this idea — anyone can open it on the House Planner website. Imported 3D furniture shows as plain boxes for the recipient.',
+  shareCopied:kb=>`🔗 Link copied (${kb} kB) — paste it anywhere. The recipient sees the house today + this idea.`,
+  sharedBar:'Someone shared a house plan with you. Open it? Your current plan is saved to 🕘 Version history first.',
+  sharedOpen:'Open the shared plan', 'ver_before-shared':'before shared plan',
   galleryBtn:'Gallery', galleryT:'All your saved renders and snapshots, per idea',
   galleryTitle:'Render gallery', gallerySnap:'Snapshot of the 3D view', gallerySnapT:'Save the current 3D view as a picture in the gallery',
   galleryEmpty:'Nothing here yet — save a render (🖼 button on a finished render) or take a snapshot.',
@@ -814,6 +819,10 @@ da: {
   clickCycle:'klik igen for at skifte væg',
   walkBtn:'🚶 Gå-tur', walkBtnT:'Gå rundt i huset: WASD + mus (Shift = løb). Esc slipper musen igen.',
   rgOffer:'Se det i højere kvalitet?', rgOfferXT:'Ikke nu — guiden ligger under Filer → Billed-guide og Eksport', rgMenu:'Billed-guide',
+  shareIdea:'Del denne idé (kopiér link)', shareIdeaT:'Kopierer et link med huset i dag + denne idé — alle kan åbne det på House Planner-hjemmesiden. Importerede 3D-møbler vises som simple kasser hos modtageren.',
+  shareCopied:kb=>`🔗 Link kopieret (${kb} kB) — sæt det ind hvor som helst. Modtageren ser huset i dag + denne idé.`,
+  sharedBar:'Nogen har delt en husplan med dig. Åbn den? Din nuværende plan gemmes først i 🕘 Versionshistorik.',
+  sharedOpen:'Åbn den delte plan', 'ver_before-shared':'før delt plan',
   galleryBtn:'Galleri', galleryT:'Alle dine gemte renders og snapshots, pr. idé',
   galleryTitle:'Render-galleri', gallerySnap:'Snapshot af 3D-visningen', gallerySnapT:'Gem den aktuelle 3D-visning som billede i galleriet',
   galleryEmpty:'Intet endnu — gem et render (🖼-knappen på et færdigt render) eller tag et snapshot.',
@@ -4823,6 +4832,36 @@ window.planAPI = {
   },
 };
 
+/* ---------- share an idea as a link (deflate-compressed plan in the URL fragment —
+   the data rides in the hash, so it never touches any server) ---------- */
+async function deflateB64(str){
+  const cs=new CompressionStream('deflate-raw');
+  const buf=await new Response(new Blob([new TextEncoder().encode(str)]).stream().pipeThrough(cs)).arrayBuffer();
+  const u=new Uint8Array(buf);
+  let b='';
+  for(let i=0;i<u.length;i+=0x8000) b+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));
+  return btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function inflateB64(b64){
+  const bin=atob(b64.replace(/-/g,'+').replace(/_/g,'/'));
+  const u=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+  const ds=new DecompressionStream('deflate-raw');
+  const buf=await new Response(new Blob([u]).stream().pipeThrough(ds)).arrayBuffer();
+  return new TextDecoder().decode(buf);
+}
+document.getElementById('shareIdeaBtn').onclick=async()=>{
+  try{
+    const v=cv();
+    const variants=[S.variants.find(x=>x.id==='nutid'), v.id!=='nutid'?v:null]
+      .filter(Boolean).map(x=>structuredClone(x));
+    const payload={meta:{...structuredClone(S.meta), activeVariant:v.id}, base:structuredClone(S.base), variants};
+    const url='https://jensmoeslund.github.io/house-planner/#plan='+await deflateB64(JSON.stringify(payload));
+    await navigator.clipboard.writeText(url);
+    flashHint(T('shareCopied')(Math.max(1,Math.round(url.length/1024))));
+  }catch(e){ alert('Share: '+(e?.message||e)); }
+};
+
 const modal=document.getElementById('modal');
 document.getElementById('describeBtn').onclick=()=>{
   document.getElementById('modalBody').textContent=describePlan();
@@ -5733,6 +5772,32 @@ if(!guide) setRtab(S.meta.activeVariant==='nutid' ? 'huset' : 'ideer');
 init3d();
 loadModels();
 loadCatalog();
+// arriving via a share link? (#plan=… in the URL) — no confirm() here: browsers
+// suppress dialogs during page load, so we show an in-page banner instead
+(async()=>{
+  const m=location.hash.match(/^#plan=([A-Za-z0-9\-_]+)/);
+  if(!m) return;
+  let pf=null;
+  try{ pf=JSON.parse(await inflateB64(m[1])); }catch(e){ console.warn('share link decode failed', e); return; }
+  if(!pf || !pf.base) return;
+  const bar=document.createElement('div');
+  bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:80;background:#1d2b42;border-bottom:2px solid var(--accent);padding:10px 14px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.4)';
+  bar.innerHTML=`<span style="flex:1">📩 ${T('sharedBar')}</span>
+    <button id="shOpen" style="border-color:var(--accent);font-weight:600">${T('sharedOpen')}</button>
+    <button id="shIgnore">${T('close')}</button>`;
+  document.body.appendChild(bar);
+  const clearHash=()=>{ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} };
+  bar.querySelector('#shIgnore').onclick=()=>{ clearHash(); bar.remove(); };
+  bar.querySelector('#shOpen').onclick=async()=>{
+    bar.remove();
+    await saveVersion('before-shared');
+    if(guide) finishGuide(false);
+    adoptPlan(pf); persist();
+    setRtab(pf.meta?.activeVariant==='nutid'?'huset':'ideer');
+    fitView();
+    clearHash();
+  };
+})();
 </script>
 </body>
 </html>
