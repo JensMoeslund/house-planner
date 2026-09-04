@@ -184,6 +184,7 @@
             <button id="variantNotes" data-i18n="variantNotesM" data-i18n-title="variantNotesT">📝 Notes</button>
             <button id="describeBtn" data-i18n-title="describeT">🧾 <span data-i18n="describe">Describe</span></button>
             <button id="shareIdeaBtn" data-i18n-title="shareIdeaT">🔗 <span data-i18n="shareIdea">Share this idea (copy link)</span></button>
+            <button id="estimateBtn" data-i18n-title="estT">💰 <span data-i18n="estBtn">Price estimate</span></button>
             <button id="variantHideDem" data-i18n-title="hideDemT"></button>
             <hr>
             <button id="variantDel" class="danger" data-i18n="variantDelM">✕ Delete variant</button>
@@ -491,6 +492,15 @@
     <button id="roofClose" data-i18n="close">Close</button></span>
   </div>
 </div></div>
+<div id="estimateModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:61"><div class="box" style="max-width:520px;margin:7vh auto;background:#1c212a;border:1px solid #3a4250;border-radius:12px;padding:18px 22px;max-height:84vh;overflow:auto">
+  <h3 style="color:var(--accent);margin-top:0">💰 <span data-i18n="estTitle">Rough price estimate</span> · <span id="estIdeaName"></span></h3>
+  <div id="estRows" style="display:grid;grid-template-columns:1fr auto auto auto;gap:6px 12px;align-items:center;font-size:13px"></div>
+  <div style="display:flex;justify-content:space-between;border-top:1px solid #3a4250;margin-top:10px;padding-top:8px;font-weight:700">
+    <span data-i18n="estTotal">Rough total</span><span id="estTotalVal"></span>
+  </div>
+  <div style="opacity:.6;font-size:12px;margin-top:10px" data-i18n="estDisclaimer">Very rough ballpark from standard unit prices — edit them to match real quotes. Excludes kitchen/bath fittings, surfaces, technical installations and everything a contractor discovers along the way.</div>
+  <div style="display:flex;justify-content:flex-end;margin-top:12px"><button id="estClose" data-i18n="close">Close</button></div>
+</div></div>
 <div id="galleryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:61"><div class="box" style="max-width:740px;margin:6vh auto;background:#1c212a;border:1px solid #3a4250;border-radius:12px;padding:18px 22px;max-height:86vh;display:flex;flex-direction:column">
   <h3 style="color:var(--accent);margin-top:0">🖼 <span data-i18n="galleryTitle">Render gallery</span></h3>
   <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
@@ -644,6 +654,14 @@ en: {
   shareCopied:kb=>`🔗 Link copied (${kb} kB) — paste it anywhere. The recipient sees the house today + this idea.`,
   sharedBar:'Someone shared a house plan with you. Open it? Your current plan is saved to 🕘 Version history first.',
   sharedOpen:'Open the shared plan', 'ver_before-shared':'before shared plan',
+  estBtn:'Price estimate', estT:'Rough renovation cost for this idea vs the house today — editable unit prices',
+  estTitle:'Rough price estimate', estTotal:'Rough total',
+  estDisclaimer:'Very rough ballpark from standard unit prices — click the prices to match real quotes; they are remembered. Excludes kitchen/bath fittings, surfaces, technical installations and everything a contractor discovers along the way.',
+  estNoChanges:'This idea has no changes compared to the house today yet.',
+  est_demo:'Demolish wall', est_outer:'New outer wall', est_inner:'New inner wall',
+  est_door:'New door', est_window:'New window', est_closed:'Close door/window',
+  est_velux:'Roof window (velux)', est_sky:'Skylight strip', est_gavl:'Glass gable',
+  estUnitM2:'m²', estUnitPcs:'pcs',
   galleryBtn:'Gallery', galleryT:'All your saved renders and snapshots, per idea',
   galleryTitle:'Render gallery', gallerySnap:'Snapshot of the 3D view', gallerySnapT:'Save the current 3D view as a picture in the gallery',
   galleryEmpty:'Nothing here yet — save a render (🖼 button on a finished render) or take a snapshot.',
@@ -823,6 +841,14 @@ da: {
   shareCopied:kb=>`🔗 Link kopieret (${kb} kB) — sæt det ind hvor som helst. Modtageren ser huset i dag + denne idé.`,
   sharedBar:'Nogen har delt en husplan med dig. Åbn den? Din nuværende plan gemmes først i 🕘 Versionshistorik.',
   sharedOpen:'Åbn den delte plan', 'ver_before-shared':'før delt plan',
+  estBtn:'Prisoverslag', estT:'Groft renoverings-overslag for denne idé vs. huset i dag — redigérbare enhedspriser',
+  estTitle:'Groft prisoverslag', estTotal:'Groft i alt',
+  estDisclaimer:'Meget groft overslag ud fra standard-enhedspriser — klik på priserne og ret dem til rigtige tilbud; de huskes. Eksklusive køkken/bad-inventar, overflader, installationer og alt det en håndværker opdager undervejs.',
+  estNoChanges:'Denne idé har endnu ingen ændringer i forhold til huset i dag.',
+  est_demo:'Nedrivning af væg', est_outer:'Ny ydervæg', est_inner:'Ny indervæg',
+  est_door:'Ny dør', est_window:'Nyt vindue', est_closed:'Lukning af dør/vindue',
+  est_velux:'Ovenlysvindue (velux)', est_sky:'Ovenlys-stribe', est_gavl:'Glasgavl',
+  estUnitM2:'m²', estUnitPcs:'stk',
   galleryBtn:'Galleri', galleryT:'Alle dine gemte renders og snapshots, pr. idé',
   galleryTitle:'Render-galleri', gallerySnap:'Snapshot af 3D-visningen', gallerySnapT:'Gem den aktuelle 3D-visning som billede i galleriet',
   galleryEmpty:'Intet endnu — gem et render (🖼-knappen på et færdigt render) eller tag et snapshot.',
@@ -4423,6 +4449,66 @@ function showRenderResult(url){
     a.click();
   };
   ov.style.display='flex';
+}
+
+/* ---------- rough price estimate: quantities of THIS idea vs the house today,
+   times editable unit prices (remembered in this browser) ---------- */
+const EST_DEFAULT_RATES={demo:900, outer:6500, inner:3500, door:6000, window:12000, closed:4500, velux:22000, sky:35000, gavl:80000};
+const EST_ROWS=[
+  ['demo','est_demo','m2'], ['outer','est_outer','m2'], ['inner','est_inner','m2'],
+  ['door','est_door','pcs'], ['window','est_window','pcs'], ['closed','est_closed','pcs'],
+  ['velux','est_velux','pcs'], ['sky','est_sky','pcs'], ['gavl','est_gavl','pcs'],
+];
+function ideaQuantities(v){
+  const H=wallH(), q={demo:0, outer:0, inner:0, door:0, window:0, closed:0, velux:0, sky:0, gavl:0};
+  for(const id of v.demolish){ const w=S.base.walls.find(x=>x.id===id); if(w) q.demo+=wallLen(w)*(w.h||H); }
+  for(const w of v.walls){
+    if(w.partial) continue;                       // kept part of a demolished wall — not new construction
+    const a=wallLen(w)*(w.h||H);
+    if((w.t||0.35)>=0.2) q.outer+=a; else q.inner+=a;
+  }
+  for(const o of v.openings) q[o.type==='door'?'door':'window']++;
+  q.closed=(v.removeOpenings||[]).length;
+  q.velux=(v.roofWindows||[]).length;
+  q.sky=(v.skylights||[]).length;
+  q.gavl=(v.glassGables||[]).length;
+  q.demo=+q.demo.toFixed(1); q.outer=+q.outer.toFixed(1); q.inner=+q.inner.toFixed(1);
+  return q;
+}
+function renderEstimate(){
+  PREFS.rates ??= {...EST_DEFAULT_RATES};
+  const v=cv(), q=ideaQuantities(v);
+  document.getElementById('estIdeaName').textContent=v.name;
+  const rows=document.getElementById('estRows');
+  const fmt=n=>Math.round(n).toLocaleString(LANG==='da'?'da-DK':'en-GB')+' kr';
+  let total=0, any=false;
+  rows.innerHTML='';
+  for(const [key,label,unit] of EST_ROWS){
+    if(!q[key]) continue;
+    any=true;
+    const rate=PREFS.rates[key] ?? EST_DEFAULT_RATES[key];
+    const sub=q[key]*rate; total+=sub;
+    const r=document.createElement('div'); r.style.display='contents';
+    r.innerHTML=`<span>${T(label)}</span>
+      <span style="text-align:right;opacity:.8">${q[key]} ${unit==='m2'?T('estUnitM2'):T('estUnitPcs')}</span>
+      <span>× <input type="number" data-rate="${key}" value="${rate}" min="0" step="100" style="width:74px;background:var(--panel2);color:var(--fg);border:1px solid var(--border);border-radius:3px;padding:1px 4px"> kr</span>
+      <span style="text-align:right" data-sub="${key}">${fmt(sub)}</span>`;
+    rows.appendChild(r);
+  }
+  if(!any) rows.innerHTML=`<div style="grid-column:1/-1;opacity:.7">${T('estNoChanges')}</div>`;
+  document.getElementById('estTotalVal').textContent=fmt(total);
+  for(const inp of rows.querySelectorAll('input[data-rate]')){
+    inp.onchange=()=>{
+      const val=parseFloat(inp.value);
+      if(Number.isFinite(val)&&val>=0){ PREFS.rates[inp.dataset.rate]=val; savePrefs(); renderEstimate(); }
+    };
+  }
+}
+{
+  const em=document.getElementById('estimateModal');
+  document.getElementById('estimateBtn').onclick=()=>{ renderEstimate(); em.style.display='block'; };
+  document.getElementById('estClose').onclick=()=>{ em.style.display='none'; };
+  em.onclick=e=>{ if(e.target===em) em.style.display='none'; };
 }
 
 /* ---------- render gallery (IndexedDB — pictures stay out of the plan file) ---------- */
