@@ -36,6 +36,65 @@ function Find-Blender {
     return $null
 }
 
+function Find-ClaudeCli {
+    $c = Get-Command claude -ErrorAction SilentlyContinue
+    if ($c) { return $c.Source }
+    foreach ($x in @("$env:APPDATA\npm\claude.cmd", "$env:USERPROFILE\.local\bin\claude.exe")) {
+        if (Test-Path $x) { return $x }
+    }
+    return $null
+}
+
+function Invoke-AiTrace($resp, [string]$jsonBody) {
+    $claude = Find-ClaudeCli
+    if (-not $claude) { Send-Text $resp 'claude CLI not found on this machine.' 'text/plain' 404; return }
+    $req2 = $jsonBody | ConvertFrom-Json
+    $work = Join-Path $env:LOCALAPPDATA ('HousePlanner\trace-' + [guid]::NewGuid().ToString('n').Substring(0, 8))
+    New-Item -ItemType Directory -Force $work | Out-Null
+    try {
+        $b64 = $req2.png
+        if ($b64 -match '^data:') { $b64 = ($b64 -split ',', 2)[1] }
+        [System.IO.File]::WriteAllBytes((Join-Path $work 'floorplan.png'), [Convert]::FromBase64String($b64))
+        $pxm = [math]::Round(1 / [double]$req2.mppx, 2)
+        $prompt = @"
+Read the image file floorplan.png in the current directory. It is a scanned/photographed architectural floor plan (often a hand-drawn Danish 'byggesag' drawing).
+
+Coordinate mapping: the image's top-left pixel is world coordinate ($($req2.x), $($req2.y)) in metres. world_x = $($req2.x) + pixel_x * $($req2.mppx); world_y = $($req2.y) + pixel_y * $($req2.mppx). (Scale: $pxm pixels per metre. x grows east/right, y grows south/down.)
+
+Identify every WALL of the buildings on the plan: outer walls (often hatched bands or double parallel lines ~0.3-0.4 m thick) and interior partition walls (thin single or double lines, ~0.1 m). Include attached garages/outbuildings.
+
+Do NOT include: roof-overhang outlines (thin lines running just outside and parallel to the facades), dimension/measurement lines and their numbers, dashed module/axis grid lines, door swing arcs, window symbols, furniture and fixture symbols (stoves, sinks, cupboards, beds), terrace/patio edges and posts, stairs, text, the sheet border, stamps and title blocks.
+
+Doors and windows are openings IN a wall: output the full wall run straight through them, not fragments. Walls are axis-aligned unless clearly diagonal. Read dimension numbers on the drawing to sanity-check your coordinates where possible.
+
+Reply with ONLY a JSON object, nothing else:
+{"walls":[{"from":[x1,y1],"to":[x2,y2],"t":0.35}, ...]}
+Coordinates in world metres rounded to 2 decimals; t = estimated thickness in metres (~0.35 outer, ~0.1 inner).
+"@
+        [System.IO.File]::WriteAllText((Join-Path $work 'prompt.txt'), $prompt)
+        $p = Start-Process cmd -ArgumentList '/c', 'claude -p --output-format json < prompt.txt > out.json 2> err.txt' `
+            -WorkingDirectory $work -PassThru -WindowStyle Hidden
+        if (-not $p.WaitForExit(6 * 60 * 1000)) {
+            try { $p.Kill() } catch {}
+            Send-Text $resp 'AI trace timed out after 6 minutes.' 'text/plain' 500
+            return
+        }
+        $outFile = Join-Path $work 'out.json'
+        if (-not (Test-Path $outFile) -or (Get-Item $outFile).Length -eq 0) {
+            $err = ''; $ef = Join-Path $work 'err.txt'
+            if (Test-Path $ef) { $err = (Get-Content $ef -Tail 10) -join "`n" }
+            Send-Text $resp "claude produced no output.`n$err" 'text/plain' 500
+            return
+        }
+        $out = Get-Content $outFile -Raw | ConvertFrom-Json
+        Send-Text $resp ([string]$out.result) 'text/plain; charset=utf-8'
+    } catch {
+        Send-Text $resp ("AI trace failed: " + $_.Exception.Message) 'text/plain' 500
+    } finally {
+        try { Remove-Item $work -Recurse -Force } catch {}
+    }
+}
+
 function Start-AppWindow {
     param([string]$Browser, [string]$Url)
     $profileDir = Join-Path $env:LOCALAPPDATA 'HousePlanner\browser-profile'
@@ -131,6 +190,17 @@ try {
                 $b = Find-Blender
                 $json = if ($b) { '{"blender":' + ($b | ConvertTo-Json) + '}' } else { '{"blender":null}' }
                 Send-Text $resp $json 'application/json'
+                continue
+            }
+            if ($path -eq '/trace/check') {
+                $cl = Find-ClaudeCli
+                $json = if ($cl) { '{"claude":' + ($cl | ConvertTo-Json) + '}' } else { '{"claude":null}' }
+                Send-Text $resp $json 'application/json'
+                continue
+            }
+            if ($path -eq '/trace' -and $req.HttpMethod -eq 'POST') {
+                $reader = [System.IO.StreamReader]::new($req.InputStream, $req.ContentEncoding)
+                Invoke-AiTrace $resp $reader.ReadToEnd()
                 continue
             }
             if ($path -eq '/blender/render' -and $req.HttpMethod -eq 'POST') {

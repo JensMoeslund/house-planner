@@ -412,6 +412,8 @@
     </select>
     <label data-i18n="setRender">Render server URL</label>
     <input type="text" id="setRender" placeholder="http://host:8787 (optional)">
+    <label data-i18n="setGemini">Gemini API key</label>
+    <input type="password" id="setGemini" data-i18n-title="setGeminiT" placeholder="AIza… (aistudio.google.com)">
   </div>
   <div style="opacity:.65;font-size:12px;margin-top:10px" data-i18n="setNote">Location drives the sun simulator (stored in the plan file). Times use this browser's timezone. Render server is optional and stored only in this browser.</div>
   <div style="display:flex;gap:8px;justify-content:space-between;margin-top:14px">
@@ -556,6 +558,7 @@ en: {
   err3d:'3D needs internet on first load (Three.js from unpkg.com).<br>2D works fully offline.',
   copy:'Copy', close:'Close', save:'Save',
   settingsTitle:'⚙ Settings', setLang:'Language', setSiteName:'House / site name', setLat:'Latitude', setLon:'Longitude', setRender:'Render server URL',
+  setGemini:'Gemini API key', setGeminiT:'Lets ✨ Find walls use Google Gemini to read the floor-plan photo — a free key from aistudio.google.com is enough. Used when the desktop app\'s Claude path is unavailable. Stored only in this browser.',
   setNote:'Location drives the sun simulator (stored in the plan file). Times use this browser’s timezone. Render server is optional and stored only in this browser.',
   existingWall:'Existing wall', newWall:'New wall', lengthLbl:'Length (m)', thickLbl:'Thickness', notesPh:'notes for the agent…',
   demolishBtn:'🔨 Demolish in this variant', keepBtn:'↩ Keep this wall', deleteFromBase:'Delete from base (all variants)', deleteWall:'Delete wall',
@@ -604,6 +607,8 @@ en: {
   hintTraceNutid:'Auto-trace draws the house as it is today — switch to tab 1 · The house today.',
   hintTraceScale:'Set the scale first (Scale: click two points with a known distance).',
   hintTraced:n=>`✨ ${n} walls drawn from the photo — tidy up by hand; Ctrl+Z undoes`,
+  hintAiTracing:'🤖 Claude is reading the floor plan — takes a minute or two…',
+  hintAiFailed:'🤖 AI trace failed — using the built-in detector instead.',
   hintTraceNone:'No walls found — is the scale right, and are the walls dark and solid in the photo?',
   mineEmptyHint:'No imported 3D models yet — use the import buttons on the right, or pick pieces from the 📚 Catalog tab.',
   catalogFileHint:'📚 140 free furniture models ship with the tool in the <b>catalog</b> folder — click <b>📁 Whole folder…</b> above and pick that folder to import them all at once (the browser cannot read it by itself when the tool is opened as a file).',
@@ -705,6 +710,7 @@ da: {
   err3d:'3D kræver internet ved første load (Three.js fra unpkg.com).<br>2D virker helt offline.',
   copy:'Kopiér', close:'Luk', save:'Gem',
   settingsTitle:'⚙ Indstillinger', setLang:'Sprog', setSiteName:'Hus / adresse', setLat:'Breddegrad', setLon:'Længdegrad', setRender:'Render-server URL',
+  setGemini:'Gemini API-nøgle', setGeminiT:'Lader ✨ Find vægge bruge Google Gemini til at læse plantegnings-fotoet — en gratis nøgle fra aistudio.google.com er nok. Bruges når skrivebords-appens Claude-vej ikke er tilgængelig. Gemmes kun i denne browser.',
   setNote:'Placeringen styrer sol-simulatoren (gemmes i plan-filen). Tider bruger browserens tidszone. Render-server er valgfri og gemmes kun i denne browser.',
   existingWall:'Eksisterende væg', newWall:'Ny væg', lengthLbl:'Længde (m)', thickLbl:'Tykkelse', notesPh:'noter til agenten…',
   demolishBtn:'🔨 Riv ned i denne variant', keepBtn:'↩ Behold denne væg', deleteFromBase:'Slet fra basen (alle varianter)', deleteWall:'Slet væg',
@@ -753,6 +759,8 @@ da: {
   hintTraceNutid:'Auto-optegning tegner huset som det er i dag — skift til fane 1 · Huset i dag.',
   hintTraceScale:'Sæt målestokken først (Målestok: klik på to punkter med kendt afstand).',
   hintTraced:n=>`✨ ${n} vægge tegnet ud fra fotoet — ryd op i hånden; Ctrl+Z fortryder`,
+  hintAiTracing:'🤖 Claude læser plantegningen — tager et minut eller to…',
+  hintAiFailed:'🤖 AI-optegning fejlede — bruger den indbyggede detektor i stedet.',
   hintTraceNone:'Ingen vægge fundet — passer målestokken, og er væggene mørke og massive i fotoet?',
   mineEmptyHint:'Ingen importerede 3D-modeller endnu — brug importknapperne til højre, eller hent fra 📚 Katalog-fanen.',
   catalogFileHint:'📚 140 gratis møbler følger med værktøjet i mappen <b>catalog</b> — klik <b>📁 Hel mappe…</b> ovenfor og vælg den mappe, så importeres de alle på én gang (browseren kan ikke selv læse mappen, når værktøjet er åbnet som fil).',
@@ -3421,11 +3429,81 @@ document.getElementById('underlayFile').onchange=e=>{
   rd.readAsDataURL(f);
 };
 document.getElementById('underlayOpacity').oninput=e=>{ if(underlay){ underlay.opacity=+e.target.value; saveUnderlay(); draw(); } };
-document.getElementById('traceBtn').onclick=e=>{
+/* AI trace: when the desktop launcher is running and the claude CLI is installed, let a
+   vision model read the drawing — it tells roof overhangs, dimension lines and furniture
+   symbols from real walls far better than pixel heuristics. Falls back to the built-in
+   detector otherwise (Alt-click forces the built-in one). */
+async function aiTraceAvailable(){
+  try{
+    const r=await fetch('/trace/check',{signal:AbortSignal.timeout(1200)});
+    if(r.ok) return !!(await r.json()).claude;
+  }catch(e){}
+  return false;
+}
+async function claudeTraceText(){
+  const r=await fetch('/trace',{method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({png:underlay.dataUrl, mppx:underlay.mppx, x:underlay.x, y:underlay.y})});
+  if(!r.ok) throw new Error(await r.text());
+  return r.text();
+}
+/* free path: Google Gemini straight from the browser (free API key from aistudio.google.com) */
+async function geminiTraceText(){
+  const mm=underlay.dataUrl.match(/^data:([^;]+);base64,(.*)$/s);
+  if(!mm) throw new Error('underlay is not a base64 image');
+  const pxm=(1/underlay.mppx).toFixed(2);
+  const prompt=`This image is a scanned/photographed architectural floor plan (often a hand-drawn Danish byggesag drawing).
+Coordinate mapping: the image's top-left pixel is world coordinate (${underlay.x}, ${underlay.y}) in metres. world_x = ${underlay.x} + pixel_x * ${underlay.mppx}; world_y = ${underlay.y} + pixel_y * ${underlay.mppx}. (Scale: ${pxm} pixels per metre. x grows east/right, y grows south/down.)
+Identify every WALL of the buildings on the plan: outer walls (often hatched bands or double parallel lines ~0.3-0.4 m thick) and interior partition walls (thin single or double lines, ~0.1 m). Include attached garages/outbuildings.
+Do NOT include: roof-overhang outlines (thin lines running just outside and parallel to the facades), dimension/measurement lines and their numbers, dashed module/axis grid lines, door swing arcs, window symbols, furniture and fixture symbols, terrace edges and posts, stairs, text, the sheet border, stamps and title blocks.
+Doors and windows are openings IN a wall: output the full wall run straight through them, not fragments. Walls are axis-aligned unless clearly diagonal.
+Reply with ONLY a JSON object, nothing else:
+{"walls":[{"from":[x1,y1],"to":[x2,y2],"t":0.35}, ...]}
+Coordinates in world metres rounded to 2 decimals; t = estimated thickness in metres (~0.35 outer, ~0.1 inner).`;
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(PREFS.geminiKey),
+    {method:'POST', headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:mm[1], data:mm[2]}},{text:prompt}]}]})});
+  if(!r.ok) throw new Error('Gemini: '+(await r.text()).slice(0,300));
+  const j=await r.json();
+  return (j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+}
+async function aiTraceWalls(getText){
+  const btn=document.getElementById('traceBtn');
+  btn.disabled=true;
+  const t0=Date.now();
+  const tick=setInterval(()=>{ btn.textContent='🤖 '+Math.round((Date.now()-t0)/1000)+' s…'; },500);
+  flashHint(T('hintAiTracing'));
+  try{
+    const txt=await getText();
+    const m=txt.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('no JSON in AI reply');
+    const walls=(JSON.parse(m[0]).walls||[]).filter(w=>
+      Array.isArray(w.from)&&Array.isArray(w.to)&&w.from.length===2&&w.to.length===2&&
+      [...w.from,...w.to].every(Number.isFinite)&&
+      Math.hypot(w.to[0]-w.from[0], w.to[1]-w.from[1])>=0.3);
+    if(!walls.length) throw new Error('AI found no walls');
+    for(const w of walls)
+      S.base.walls.push({id:nextId('wall'), from:w.from.map(v=>+(+v).toFixed(2)), to:w.to.map(v=>+(+v).toFixed(2)),
+        t:Math.min(0.6,Math.max(0.08,+(+w.t||0.35).toFixed(2))), notes:'auto-traced from the floor-plan photo (AI)'});
+    changed();
+    flashHint(T('hintTraced')(walls.length));
+  }catch(e){
+    console.warn('AI trace failed:', e);
+    flashHint(T('hintAiFailed'));
+    traceWallsFromUnderlay(false);
+  }
+  clearInterval(tick);
+  btn.disabled=false;
+  btn.textContent=T('traceWalls');
+}
+document.getElementById('traceBtn').onclick=async e=>{
   if(e.shiftKey){ traceWallsFromUnderlay(true); return; }   // debug overlay, plan untouched
   traceDbg=null;
+  if(!underlay || !underlayImg){ flashHint(T('hintTraceNoUnderlay')); return; }
+  if(!editingNutid()){ flashHint(T('hintTraceNutid')); return; }
   try{ saveVersion('before-auto-trace'); }catch(err){}
-  traceWallsFromUnderlay(false);
+  if(!e.altKey && await aiTraceAvailable()) aiTraceWalls(claudeTraceText);
+  else if(!e.altKey && (PREFS.geminiKey||'').trim()) aiTraceWalls(geminiTraceText);
+  else traceWallsFromUnderlay(false);
 };
 document.getElementById('underlayClear').onclick=()=>{ underlay=null; underlayImg=null; saveUnderlay(); draw(); };
 
@@ -3916,6 +3994,7 @@ document.getElementById('settingsBtn').onclick=()=>{
   document.getElementById('setLat').value=S.meta.site?.lat??'';
   document.getElementById('setLon').value=S.meta.site?.lon??'';
   document.getElementById('setRender').value=PREFS.renderServer||'';
+  document.getElementById('setGemini').value=PREFS.geminiKey||'';
   document.getElementById('setRenderMode').value=PREFS.renderMode||'native';
   setModal.style.display='block';
 };
@@ -3994,6 +4073,7 @@ setModal.onclick=e=>{ if(e.target===setModal) setModal.style.display='none'; };
 document.getElementById('setSave').onclick=()=>{
   PREFS.lang=document.getElementById('setLang').value;
   PREFS.renderServer=document.getElementById('setRender').value.trim();
+  PREFS.geminiKey=document.getElementById('setGemini').value.trim();
   PREFS.renderMode=document.getElementById('setRenderMode').value;
   savePrefs();
   LANG=PREFS.lang;
