@@ -2010,7 +2010,7 @@ function trBigWhite(ink,w,h,minArea){
     else { interior.x1=Math.min(interior.x1,b.x1); interior.y1=Math.min(interior.y1,b.y1);
            interior.x2=Math.max(interior.x2,b.x2); interior.y2=Math.max(interior.y2,b.y2); }
   }
-  return {big, interior};
+  return {big, interior, lab, areas, border};
 }
 /* text eraser: letters and digits are SMALL, LOW-DENSITY ink blobs (each glyph its own
    component) — walls, hatching and symbol lines are long or solid. Erasing glyphs from
@@ -2471,105 +2471,41 @@ function traceWallsFromUnderlay(debugMode){
     if(lo-loE[di]>0.8) loE[di]=+lo.toFixed(2);
     if(hiE[di]-hi>0.8) hiE[di]=+hi.toFixed(2);
   }
-  // sealed micro-cells are FURNITURE: you cannot walk into a kitchen counter. Every real
-  // room, however small, has a door — a door-sized low-ink gap somewhere in its boundary.
-  // A small enclosed cell whose boundary ink is solid all the way round is a counter or
-  // wardrobe box: drop the lines that only outline it.
+  // furniture fronts: kitchen counters and wardrobes are drawn as CLOSED boxes in the
+  // ink, so their interiors are micro-cells — small enclosed white pockets (0.15–1.3 m²).
+  // A thin traced line whose flank is lined with micro-cells along most of its length is
+  // outlining furniture, not separating rooms (rooms are bigger; the outside touches the
+  // image border; door-swing pockets cover only a short stretch).
   {
-    let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;
+    const ppm2=ppm*ppm;
+    const microAt=(x4,y4)=>{
+      const px4=wxp(x4), py4=wyp(y4);
+      if(px4<0||py4<0||px4>=w||py4>=h) return false;
+      const id=bwRes.lab[py4*w+px4];
+      if(!id || bwRes.border[id]) return false;
+      const A=bwRes.areas[id]/ppm2;
+      return A>=0.15 && A<=1.3;
+    };
+    const keep=[];
     for(const s of segs){
-      mnx=Math.min(mnx,s.a[0],s.b[0]); mxx=Math.max(mxx,s.a[0],s.b[0]);
-      mny=Math.min(mny,s.a[1],s.b[1]); mxy=Math.max(mxy,s.a[1],s.b[1]);
-    }
-    const cell=0.06, pad=0.4, gx0=mnx-pad, gy0=mny-pad;
-    const gw2=Math.ceil((mxx-mnx+2*pad)/cell), gh2=Math.ceil((mxy-mny+2*pad)/cell);
-    if(segs.length && gw2>0 && gh2>0 && gw2*gh2<5e6){
-      const blocked=new Uint8Array(gw2*gh2);
-      for(const s of segs){
-        const L=Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1]); if(L<0.02) continue;
-        const r2=Math.max((Math.min(s.t,0.45)||0.1)/2, cell*0.8), rr=Math.ceil(r2/cell);
-        const steps=Math.ceil(L/(cell*0.5));
-        for(let i=0;i<=steps;i++){
-          const px2=s.a[0]+(s.b[0]-s.a[0])*i/steps, py2=s.a[1]+(s.b[1]-s.a[1])*i/steps;
-          const ci=Math.round((px2-gx0)/cell), cj=Math.round((py2-gy0)/cell);
-          for(let a3=-rr;a3<=rr;a3++) for(let b3=-rr;b3<=rr;b3++){
-            const x3=ci+a3, y3=cj+b3;
-            if(x3>=0&&x3<gw2&&y3>=0&&y3<gh2 && Math.hypot(a3,b3)*cell<=r2+cell*0.5) blocked[y3*gw2+x3]=1;
-          }
-        }
-      }
-      const lab2=new Int32Array(gw2*gh2), st2=new Int32Array(gw2*gh2);
-      const areas2=[0], openC=[false];
-      let nid=0;
-      for(let s0=0;s0<gw2*gh2;s0++){
-        if(blocked[s0]||lab2[s0]) continue;
-        const id=++nid; let cnt=0, open=false, sp=0;
-        st2[sp++]=s0; lab2[s0]=id;
-        while(sp){
-          const p=st2[--sp]; cnt++;
-          const x3=p%gw2, y3=(p-x3)/gw2;
-          if(x3===0||x3===gw2-1||y3===0||y3===gh2-1) open=true;
-          if(x3>0        && !blocked[p-1]   && !lab2[p-1])  { lab2[p-1]=id;   st2[sp++]=p-1; }
-          if(x3<gw2-1    && !blocked[p+1]   && !lab2[p+1])  { lab2[p+1]=id;   st2[sp++]=p+1; }
-          if(y3>0        && !blocked[p-gw2] && !lab2[p-gw2]){ lab2[p-gw2]=id; st2[sp++]=p-gw2; }
-          if(y3<gh2-1    && !blocked[p+gw2] && !lab2[p+gw2]){ lab2[p+gw2]=id; st2[sp++]=p+gw2; }
-        }
-        areas2.push(cnt*cell*cell); openC.push(open);
-      }
-      const regionAt=(x4,y4)=>{
-        const ci=Math.round((x4-gx0)/cell), cj=Math.round((y4-gy0)/cell);
-        return (ci>=0&&ci<gw2&&cj>=0&&cj<gh2) ? lab2[cj*gw2+ci] : 0;
-      };
-      // per-STATION flank sampling: register each seg to every region either flank faces
-      const segRegions=segs.map(()=>new Set());
-      const cellSegs=new Map();
-      segs.forEach((s,si)=>{
+      let kill=false;
+      if(s.t<0.24){
         const di=s.vert?1:0, fi=s.vert?0:1;
         const a1=Math.min(s.a[di],s.b[di]), a2=Math.max(s.a[di],s.b[di]);
-        const c=s.a[fi], off=(Math.min(s.t,0.45)||0.1)/2+0.12;
-        for(let st=a1+0.15; st<=a2-0.15+1e-6; st+=0.35){
-          for(const sgn of [-1,1]){
-            const id = s.vert ? regionAt(c+sgn*off, st) : regionAt(st, c+sgn*off);
-            if(!id) continue;
-            segRegions[si].add(id);
-            if(!cellSegs.has(id)) cellSegs.set(id,new Set());
-            cellSegs.get(id).add(si);
+        const c=s.a[fi], off=(Math.min(s.t,0.45)||0.1)/2+0.14;
+        for(const sgn of [-1,1]){
+          let micro=0, n=0;
+          for(let st=a1+0.15; st<=a2-0.15+1e-6; st+=0.25){
+            n++;
+            if(s.vert ? microAt(c+sgn*off, st) : microAt(st, c+sgn*off)) micro++;
           }
-        }
-      });
-      // door test: longest low-ink run along the seg centreline (post-erase ink)
-      const doorRun=s=>{
-        const L=Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1]);
-        const hw=Math.max((Math.min(s.t,0.45)||0.1)/2, 0.05);
-        let run=0, best=0;
-        for(let d4=0.1; d4<L-0.1; d4+=0.1){
-          const cx4=s.a[0]+(s.b[0]-s.a[0])*d4/L, cy4=s.a[1]+(s.b[1]-s.a[1])*d4/L;
-          const v=s.vert ? sample(ink,wxp(cx4-hw),wyp(cy4-0.07),wxp(cx4+hw),wyp(cy4+0.07))
-                         : sample(ink,wxp(cx4-0.07),wyp(cy4-hw),wxp(cx4+0.07),wyp(cy4+hw));
-          if(v>=0 && v<0.1){ run+=0.1; best=Math.max(best,run); } else run=0;
-        }
-        return best;
-      };
-      const drop=new Set();
-      for(const [id,siSet] of cellSegs){
-        if(openC[id] || areas2[id]>6 || areas2[id]<0.25) continue;
-        const members=[...siSet];
-        if(members.some(si=>doorRun(segs[si])>=0.55)) continue;   // has a door → real room
-        for(const si of members){
-          const s=segs[si];
-          // never drop a wall that also faces the OUTSIDE (facades) or that is thick
-          if(s.t>=0.24) continue;
-          if([...segRegions[si]].some(r2=>openC[r2])) continue;
-          drop.add(s);
+          if(n>=3 && micro/n>=0.6){ kill=true; break; }
         }
       }
-      if(drop.size){
-        const keep=[];
-        for(const s of segs) (drop.has(s)?dbg.killed.flank:{push:x=>keep.push(x)}).push(s);
-        segs=keep;
-        dbg.furnitureCells=drop.size;
-      }
+      if(kill) dbg.killed.flank.push(s); else keep.push(s);
     }
+    if(keep.length<segs.length) dbg.furnitureCells=segs.length-keep.length;
+    segs=keep;
   }
   dbg.final=segs.length;
   dbg.ms=Math.round(performance.now()-t0);
