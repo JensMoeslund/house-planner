@@ -8,14 +8,17 @@ name: Auto-fix crash reports
 # setup-token`, billed to the Claude subscription — no API key needed).
 on:
   issues:
-    types: [opened, labeled]
+    # labeled alone is enough: creating an issue WITH a label fires both opened
+    # and labeled, which double-ran the pipeline. Gating on the added label also
+    # gives maintainers a clean override (re-add the label to re-trigger).
+    types: [labeled]
 
 jobs:
   triage:
     if: >-
-      contains(github.event.issue.labels.*.name, 'crash-report') ||
-      contains(github.event.issue.labels.*.name, 'bug-report') ||
-      contains(github.event.issue.labels.*.name, 'feature-request')
+      github.event.label.name == 'crash-report' ||
+      github.event.label.name == 'bug-report' ||
+      github.event.label.name == 'feature-request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
