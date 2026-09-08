@@ -6,8 +6,19 @@ GitHub issues labeled `crash-report`, and `.github/workflows/auto-fix.yml` lets
 Claude investigate each one and open a fix PR for review.
 
 ```
-browser error → diagBeacon (index.html) → error-worker.js → GitHub issue → Claude PR
+browser error → diagBeacon (index.html) → error-worker.js → GitHub issue
+                                                               ↓
+                             Haiku triage (spam / prompt-injection filter)
+                                                               ↓
+                                                    Claude fix PR (human merges)
 ```
+
+Because the endpoint accepts anonymous text that ends up in an AI agent's
+prompt, every issue is first classified by a cheap model (claude-haiku-4-5,
+fractions of a cent per report): `legit` dispatches the fixer, `spam` /
+`injection` gets the `triage-rejected` label and a comment instead. The fixer
+itself also treats issue text as untrusted data and may only touch index.html,
+README.md and docs/.
 
 Client-side the beacon is deduped per message per day and capped at 8 reports/day,
 so a crashing render loop cannot spam. The worker dedupes again (a repeat of an
