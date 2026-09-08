@@ -646,7 +646,7 @@ en: {
   reset:'Reset', resetT:'Reset to an empty plan',
   legendKept:'existing (kept)', legendRemoved:'demolished here', legendNew:'new in this variant', legendSketch:'sketch (note for the AI assistant)',
   firstRun:'<b>👋 Empty plan.</b><br>Draw walls with <b>W</b>, or load a photo of your floor plan (<b>1 · The house today → Load…</b>) and trace over it (set the scale with <b>Scale</b>).<br>Draw the house <b>as it is today</b> first — then switch to <b>2 · Ideas</b> and copy it (+) for each idea you want to try.',
-  hintBar:'V select · W wall · D door · N window · L label · S sketch · Del delete · R = toggle demolish · walls snap to 45°/90° — hold Shift for free angles · drag empty/middle = pan · wheel = zoom',
+  hintBar:'V select · W wall · D door · N window · L label · S sketch · Del delete · R = toggle demolish · Shift+click/drag = multi-select · walls snap to 45°/90° — hold Shift for free angles · drag empty/middle = pan · wheel = zoom',
   clickCycle:'click again to switch wall',
   walkBtn:'🚶 Walk', walkBtnT:'Walk around the house: WASD + mouse (Shift = run). Esc releases the mouse.',
   rgOffer:'See it in higher quality?', rgOfferXT:'Not now — the guide stays under File → Picture guide and Export', rgMenu:'Picture guide',
@@ -700,6 +700,8 @@ en: {
   hintDemolished:'🔨 Marked as demolished in this idea — the real house is untouched. Permanent deletion is only possible in the today-plan.',
   hintClosedHere:'🔒 Closed in this idea only — the real house is untouched. Permanent deletion is only possible in the today-plan.',
   confirmDelWall:'Delete this wall PERMANENTLY from the base plan (it does not exist in reality)?\n\nOK = delete completely.\nCancel = keep it.',
+  multiSelN:n=>`${n} selected (shift+click / shift+drag)`,
+  confirmDelMulti:n=>`Delete ${n} selected items? Walls and doors/windows that exist today are deleted PERMANENTLY from the base plan.`,
   confirmDelOpening:'Delete this door/window PERMANENTLY from the base plan (it does not exist in reality)?\n\nOK = delete completely (all ideas + nutid).\nCancel = keep it.',
   confirmDelBaseLayer:'Delete this wall from the BASE layer (affects every variant)?',
   keptPartOf:'kept part of', extensionOf:'extension of', partialSuffix:'(partial demolition)',
@@ -833,7 +835,7 @@ da: {
   reset:'Nulstil', resetT:'Nulstil til en tom plan',
   legendKept:'eksisterende (beholdt)', legendRemoved:'revet ned her', legendNew:'ny i denne variant', legendSketch:'skitse (note til AI-assistenten)',
   firstRun:'<b>👋 Tom plan.</b><br>Tegn vægge med <b>W</b>, eller indlæs et foto af din plantegning (<b>1 · Huset i dag → Indlæs…</b>) og tegn ovenpå (sæt målestokken med <b>Målestok</b>).<br>Tegn huset <b>som det er i dag</b> først — skift så til <b>2 · Idéer</b> og kopiér det (+) for hver idé du vil prøve.',
-  hintBar:'V vælg · W væg · D dør · N vindue · L tekst · S skitse · Del slet · R = riv ned/behold · vægge snapper til 45°/90° — hold Shift for frie vinkler · træk tomt/midterklik = panorér · hjul = zoom',
+  hintBar:'V vælg · W væg · D dør · N vindue · L tekst · S skitse · Del slet · R = riv ned/behold · Shift+klik/træk = vælg flere · vægge snapper til 45°/90° — hold Shift for frie vinkler · træk tomt/midterklik = panorér · hjul = zoom',
   clickCycle:'klik igen for at skifte væg',
   walkBtn:'🚶 Gå-tur', walkBtnT:'Gå rundt i huset: WASD + mus (Shift = løb). Esc slipper musen igen.',
   rgOffer:'Se det i højere kvalitet?', rgOfferXT:'Ikke nu — guiden ligger under Filer → Billed-guide og Eksport', rgMenu:'Billed-guide',
@@ -887,6 +889,8 @@ da: {
   hintDemolished:'🔨 Markeret som revet ned i denne idé — det rigtige hus er urørt. Permanent sletning kan kun ske i Nutid.',
   hintClosedHere:'🔒 Lukket kun i denne idé — det rigtige hus er urørt. Permanent sletning kan kun ske i Nutid.',
   confirmDelWall:'Slet denne væg PERMANENT fra basisplanen (den findes ikke i virkeligheden)?\n\nOK = slet helt.\nAnnullér = behold den.',
+  multiSelN:n=>`${n} valgt (shift+klik / shift+træk)`,
+  confirmDelMulti:n=>`Slet ${n} valgte elementer? Vægge og døre/vinduer der findes i dag slettes PERMANENT fra basisplanen.`,
   confirmDelOpening:'Slet denne dør/dette vindue PERMANENT fra basisplanen (findes ikke i virkeligheden)?\n\nOK = slet helt (alle idéer + nutid).\nAnnullér = behold.',
   confirmDelBaseLayer:'Slet denne væg fra BASE-laget (påvirker alle varianter)?',
   keptPartOf:'beholdt del af', extensionOf:'forlængelse af', partialSuffix:'(delvis nedrivning)',
@@ -981,7 +985,7 @@ document.addEventListener('click', ()=>document.querySelectorAll('.menu.open').f
 let wmode='huset', lastIdea=null, hideVariantGrp=false;
 function switchVariantTo(id){
   if(cv().id===id) return;
-  saveVersion('variant-switch'); S.meta.activeVariant=id; sel=null; updateProps(); refreshVariants(); changed();
+  saveVersion('variant-switch'); S.meta.activeVariant=id; sel=null; multiSel=[]; updateProps(); refreshVariants(); changed();
 }
 function setRtab(name){
   const tab=document.querySelector(`#ribbonTabs .rtab[data-rtab="${name}"]`);
@@ -1695,7 +1699,7 @@ function recordHistory(){
 }
 function restoreState(json){
   S = JSON.parse(json); normalize();
-  sel=null; drawing=null; sketchStroke=null; roomAreasCache=null;
+  sel=null; multiSel=[]; drawing=null; sketchStroke=null; roomAreasCache=null;
   refreshVariants(); updateProps(); draw();
   clearTimeout(rebuild3dTimer); rebuild3dTimer=setTimeout(rebuild3d,80);
   snapshotNow(); persist();
@@ -1815,6 +1819,34 @@ const W2S = (x,y)=>[(x-view.ox)*view.ppm, (y-view.oy)*view.ppm];
 const S2W = (x,y)=>[x/view.ppm+view.ox, y/view.ppm+view.oy];
 
 let tool='select', drawing=null, sel=null, mouse={wx:0,wy:0};
+let multiSel=[];   // shift+click / shift+drag box — mass select, Del deletes them all
+const sameItem=(a,b)=>a.type===b.type && ((a.id&&a.id===b.id) || (a.rw&&a.rw===b.rw) || (a.f&&a.f===b.f) || (a.g&&a.g===b.g) || (a.l&&a.l===b.l));
+function itemsInRect(ax,ay,bx,by){
+  const rx0=Math.min(ax,bx), rx1=Math.max(ax,bx), ry0=Math.min(ay,by), ry1=Math.max(ay,by);
+  const inR=(x,y)=>x>=rx0&&x<=rx1&&y>=ry0&&y<=ry1;
+  const out=[];
+  for(const w of S.base.walls) if(inR(...w.from)&&inR(...w.to)) out.push({type:'wall',id:w.id,w,isBase:true});
+  for(const w of cv().walls) if(inR(...w.from)&&inR(...w.to)) out.push({type:'wall',id:w.id,w,isBase:false});
+  for(const {o} of visibleOpenings()){
+    const w=findWall(o.wall); if(!w) continue;
+    const t=atOf(o,w)/(wallLen(w)||1);
+    if(inR(w.from[0]+(w.to[0]-w.from[0])*t, w.from[1]+(w.to[1]-w.from[1])*t)) out.push({type:'opening',id:o.id,o});
+  }
+  for(const f of cv().furniture||[]) if(inR(...f.at)) out.push({type:'furn',id:f.id,f});
+  for(const l of cv().labels) if(inR(...l.at)) out.push({type:'label',id:l.id,l});
+  for(const st of cv().sketch) if(st.points?.length && st.points.every(p=>inR(...p))) out.push({type:'sketch',id:st.id,st});
+  for(const g of (S.base.garden||[])) if(inR(...g.at)) out.push({type:'plant',id:g.id,g});
+  return out;
+}
+function anchorOf(it){   // world point used to mark a multi-selected item
+  if(it.type==='wall'){ const w=findWall(it.id)||it.w; return [(w.from[0]+w.to[0])/2,(w.from[1]+w.to[1])/2]; }
+  if(it.type==='opening'){ const w=findWall(it.o.wall); if(!w) return null; const t=atOf(it.o,w)/(wallLen(w)||1); return [w.from[0]+(w.to[0]-w.from[0])*t, w.from[1]+(w.to[1]-w.from[1])*t]; }
+  if(it.type==='furn') return it.f.at;
+  if(it.type==='plant') return it.g.at;
+  if(it.type==='label') return it.l.at;
+  if(it.type==='sketch') return it.st.points?.[0];
+  return null;
+}
 let walkPos=null;   // {x,y,ang} — position/heading in the 2D plan while walking in 3D
 let guide=null;     // {step:1..4, kind:'reno'|'new'|null} — beginner wizard, active only on empty plans
 window.__walkDot=(x,y,ang)=>{ walkPos = x==null ? null : {x,y,ang:ang||0}; draw(); };  // debug/agent hook
@@ -2997,6 +3029,28 @@ function draw(){
   for(const m of measures) drawMeasure(m[0],m[1]);
   if(tool==='measure' && measureStart) drawMeasure(measureStart, snap(mouse.wx,mouse.wy).slice(0,2));
 
+  // multi-select: marquee box + a ring on every selected item
+  if(dragging?.type==='marquee'){
+    const [mp1x,mp1y]=W2S(dragging.x0,dragging.y0), [mp2x,mp2y]=W2S(dragging.x1,dragging.y1);
+    ctx.fillStyle='rgba(77,163,255,.08)'; ctx.fillRect(mp1x,mp1y,mp2x-mp1x,mp2y-mp1y);
+    ctx.strokeStyle='#4da3ff'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+    ctx.strokeRect(mp1x,mp1y,mp2x-mp1x,mp2y-mp1y); ctx.setLineDash([]);
+  }
+  if(multiSel.length){
+    ctx.strokeStyle='#4da3ff'; ctx.lineWidth=2;
+    for(const it of multiSel){
+      if(it.type==='wall'){
+        const w=findWall(it.id); if(!w) continue;
+        ctx.setLineDash([6,4]); ctx.beginPath();
+        ctx.moveTo(...W2S(...w.from)); ctx.lineTo(...W2S(...w.to)); ctx.stroke(); ctx.setLineDash([]);
+      } else {
+        const a=anchorOf(it); if(!a) continue;
+        const [apx,apy]=W2S(...a);
+        ctx.beginPath(); ctx.arc(apx,apy,9,0,7); ctx.stroke();
+      }
+    }
+  }
+
   // north arrow + scale (north = up on screen)
   ctx.save();
   ctx.translate(Wpx-42, 46);
@@ -3306,6 +3360,19 @@ c2d.addEventListener('pointerdown', e=>{
     }
     draw(); return;
   }
+  // shift = multi-select: click toggles an item, drag on empty space draws a selection box
+  if(e.shiftKey && tool==='select'){
+    const hit0=pick(wx,wy);
+    if(hit0){
+      if(sel && !multiSel.length) multiSel.push(sel);
+      const i=multiSel.findIndex(m=>sameItem(m,hit0));
+      if(i>=0) multiSel.splice(i,1); else multiSel.push(hit0);
+      sel = multiSel.length===1 ? multiSel[0] : null;
+      updateProps(); draw(); return;
+    }
+    dragging={type:'marquee', x0:wx, y0:wy, x1:wx, y1:wy};
+    draw(); return;
+  }
   // rotate + corner-resize handles on selected furniture
   if(sel?.type==='furn'){
     const f=sel.f, th=(f.angle||0)*Math.PI/180;
@@ -3341,7 +3408,7 @@ c2d.addEventListener('pointerdown', e=>{
       }
     }
   }
-  sel=hit||null; updateProps();
+  sel=hit||null; multiSel=[]; updateProps();
   if(hit){
     if(hit.type==='opening'){
       if(isBaseOpeningObj(hit.o) && !editingNutid())
@@ -3391,6 +3458,7 @@ c2d.addEventListener('pointermove', e=>{
     draw(); return;
   }
   if(dragging){
+    if(dragging.type==='marquee'){ dragging.x1=mouse.wx; dragging.y1=mouse.wy; draw(); return; }
     if(dragging.type==='underlay'){ underlay.x=dragging.x0+(mouse.wx-dragging.wx); underlay.y=dragging.y0+(mouse.wy-dragging.wy); }
     else if(dragging.type==='opening'){
       const w=findWall(dragging.o.wall), n=nearestOnWall(w,mouse.wx,mouse.wy), L=wallLen(w);
@@ -3447,6 +3515,15 @@ c2d.addEventListener('pointermove', e=>{
   if(drawing||tool==='wall'||tool==='velux'||(tool==='room'&&roomStart)||(tool==='measure'&&measureStart)) draw();
 });
 c2d.addEventListener('pointerup', ()=>{
+  if(dragging?.type==='marquee'){
+    const {x0,y0,x1,y1}=dragging; dragging=null;
+    if(Math.abs(x1-x0)>0.1 && Math.abs(y1-y0)>0.1){
+      for(const it of itemsInRect(x0,y0,x1,y1))
+        if(!multiSel.some(m=>sameItem(m,it))) multiSel.push(it);
+      sel = multiSel.length===1 ? multiSel[0] : null;
+    }
+    updateProps(); draw(); return;
+  }
   if(dragging?.type==='room'){
     const noSnap=mouse.shift;
     const [mx,my]= noSnap ? [Math.round(mouse.wx*20)/20, Math.round(mouse.wy*20)/20] : snap(mouse.wx,mouse.wy);
@@ -3542,7 +3619,7 @@ window.addEventListener('keydown', e=>{
       lenBuf=''; draw(); return;
     }
   }
-  if(k==='escape'){ drawing=null; sel=null; calibPts=[]; sketchStroke=null; measures=[]; measureStart=null; lenBuf=''; roomStart=null; traceDbg=null; if(dragging?.type==='room') dragging=null; toggleFurnBar(false); updateProps(); draw(); }
+  if(k==='escape'){ drawing=null; sel=null; multiSel=[]; calibPts=[]; sketchStroke=null; measures=[]; measureStart=null; lenBuf=''; roomStart=null; traceDbg=null; if(dragging?.type==='room') dragging=null; toggleFurnBar(false); updateProps(); draw(); }
   else if(k==='v') setTool('select');
   else if(k==='m') setTool('measure');
   else if(k==='w') setTool('wall');
@@ -3567,45 +3644,56 @@ function hardDeleteBaseWall(id){
   S.base.openings = S.base.openings.filter(o=>o.wall!==id);
   for(const v of S.variants){ v.demolish=v.demolish.filter(x=>x!==id); v.openings=v.openings.filter(o=>o.wall!==id); }
 }
-function deleteSel(){
-  if(!sel) return;
-  if(sel.type==='wall'){
-    if(sel.isBase){
+function deleteItem(it, bulk){   // bulk = part of a mass delete (one confirm up front, no per-item prompts)
+  if(it.type==='wall'){
+    if(it.isBase){
       if(!editingNutid()){
-        if(!cv().demolish.includes(sel.id)) cv().demolish.push(sel.id);
-        flashHint(T('hintDemolished'));
-      } else if(confirm(T('confirmDelWall'))){
-        hardDeleteBaseWall(sel.id);
+        if(!cv().demolish.includes(it.id)) cv().demolish.push(it.id);
+        if(!bulk) flashHint(T('hintDemolished'));
+      } else if(bulk || confirm(T('confirmDelWall'))){
+        hardDeleteBaseWall(it.id);
       }
     }
     else{
-      cv().walls=cv().walls.filter(w=>w.id!==sel.id);
-      cv().openings=cv().openings.filter(o=>o.wall!==sel.id);
+      cv().walls=cv().walls.filter(w=>w.id!==it.id);
+      cv().openings=cv().openings.filter(o=>o.wall!==it.id);
     }
-  } else if(sel.type==='opening'){
-    if(S.base.openings.some(o=>o.id===sel.id)){
+  } else if(it.type==='opening'){
+    if(S.base.openings.some(o=>o.id===it.id)){
       if(!editingNutid()){
-        if(!cv().removeOpenings.includes(sel.id)) cv().removeOpenings.push(sel.id);
-        flashHint(T('hintClosedHere'));
-      } else if(confirm(T('confirmDelOpening'))){
-        S.base.openings=S.base.openings.filter(o=>o.id!==sel.id);
-        for(const v of S.variants) v.removeOpenings=v.removeOpenings.filter(id=>id!==sel.id);
+        if(!cv().removeOpenings.includes(it.id)) cv().removeOpenings.push(it.id);
+        if(!bulk) flashHint(T('hintClosedHere'));
+      } else if(bulk || confirm(T('confirmDelOpening'))){
+        S.base.openings=S.base.openings.filter(o=>o.id!==it.id);
+        for(const v of S.variants) v.removeOpenings=v.removeOpenings.filter(id=>id!==it.id);
       }
     }
-    cv().openings=cv().openings.filter(o=>o.id!==sel.id);
-  } else if(sel.type==='velux'){
+    cv().openings=cv().openings.filter(o=>o.id!==it.id);
+  } else if(it.type==='velux'){
     const v=cv();
-    v.roofWindows=(v.roofWindows||[]).filter(r=>r!==sel.rw);
+    v.roofWindows=(v.roofWindows||[]).filter(r=>r!==it.rw);
     if(!v.roofWindows.length) delete v.roofWindows;
-  } else if(sel.type==='furn'){
-    cv().furniture=cv().furniture.filter(f=>f!==sel.f);
-  } else if(sel.type==='plant'){
-    S.base.garden=(S.base.garden||[]).filter(g=>g.id!==sel.id);
-  } else if(sel.type==='label'){
-    cv().labels=cv().labels.filter(l=>l.id!==sel.id);
-  } else if(sel.type==='sketch'){
-    cv().sketch=cv().sketch.filter(s=>s.id!==sel.id);
+  } else if(it.type==='furn'){
+    cv().furniture=cv().furniture.filter(f=>f!==it.f);
+  } else if(it.type==='plant'){
+    S.base.garden=(S.base.garden||[]).filter(g=>g.id!==it.id);
+  } else if(it.type==='label'){
+    cv().labels=cv().labels.filter(l=>l.id!==it.id);
+  } else if(it.type==='sketch'){
+    cv().sketch=cv().sketch.filter(s=>s.id!==it.id);
   }
+}
+function deleteSel(){
+  if(multiSel.length){
+    const risky = editingNutid() && multiSel.some(it=>
+      (it.type==='wall'&&it.isBase) || (it.type==='opening'&&S.base.openings.some(o=>o.id===it.id)));
+    if(risky && !confirm(T('confirmDelMulti')(multiSel.length))) return;
+    for(const it of multiSel) deleteItem(it,true);
+    multiSel=[]; sel=null; updateProps(); changed();
+    return;
+  }
+  if(!sel) return;
+  deleteItem(sel,false);
   sel=null; updateProps(); changed();
 }
 
@@ -3613,6 +3701,13 @@ function deleteSel(){
 const propsEl=document.getElementById('props');
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 function updateProps(){
+  if(multiSel.length>1){
+    propsEl.style.display='block';
+    propsEl.innerHTML=`<h3>${T('multiSelN')(multiSel.length)}</h3>
+      <div class="row"><button id="pDelMulti" class="danger" style="width:100%">${esc(T('deleteLbl'))}</button></div>`;
+    document.getElementById('pDelMulti').onclick=deleteSel;
+    return;
+  }
   if(!sel){ propsEl.style.display='none'; return; }
   propsEl.style.display='block';
   if(sel.type==='wall'){
@@ -3783,7 +3878,7 @@ function refreshVariants(){
   refreshLightToggles();
   if(typeof refreshCmpUI==='function') refreshCmpUI();
 }
-vsel.onchange=()=>{ saveVersion('variant-switch'); S.meta.activeVariant=vsel.value; sel=null; updateProps(); refreshLightToggles(); changed(); };
+vsel.onchange=()=>{ saveVersion('variant-switch'); S.meta.activeVariant=vsel.value; sel=null; multiSel=[]; updateProps(); refreshLightToggles(); changed(); };
 document.getElementById('variantAdd').onclick=()=>{
   const name=prompt(T('promptVariantName'),'Idea '+(S.variants.length+1));
   if(!name) return;
@@ -4992,10 +5087,48 @@ function sunPos(dayOfYear, hourLocal){
 /* ---------- weather: scales the sun, softens the sky — one source of truth for
    the live 3D view, the native path tracer, the Blender script and the render server */
 const WEATHER={
-  sunny:   {direct:1.0,  hemi:1.0,  amb:1.0,  skyTop:0x8ab8e8, skyBot:0x46505c, bg:0x2a3038, env:0.45},
-  partly:  {direct:0.55, hemi:1.2,  amb:1.25, skyTop:0xa9bfd4, skyBot:0x4a525c, bg:0x2d343d, env:0.65},
-  overcast:{direct:0.0,  hemi:1.45, amb:1.6,  skyTop:0xb9c2cc, skyBot:0x4e565e, bg:0x333a43, env:0.95},
+  sunny:   {direct:1.0,  hemi:1.0,  amb:1.0,  skyTop:0x4f8ad2, skyBot:0xdcecf8, bg:0x9fc3e8, env:0.45},
+  partly:  {direct:0.55, hemi:1.2,  amb:1.25, skyTop:0x7fa5c9, skyBot:0xdde7ef, bg:0xb6c9db, env:0.65},
+  overcast:{direct:0.0,  hemi:1.45, amb:1.6,  skyTop:0x9aa6b1, skyBot:0xd8dde2, bg:0xc3cad2, env:0.95},
 };
+/* live-view sky: equirect canvas — blue gradient + soft clouds, per weather */
+const _skyCache={};
+function skyTexture(kind){
+  if(_skyCache[kind]) return _skyCache[kind];
+  const THREE=three.THREE;
+  const P={
+    sunny:   {top:'#3d7dd2', mid:'#7db2e8', hor:'#dcecf8', clouds:20, cA:0.85, cCol:'255,255,255'},
+    partly:  {top:'#5b8fc9', mid:'#94b9dd', hor:'#dde7ef', clouds:42, cA:0.9,  cCol:'250,250,252'},
+    overcast:{top:'#9aa6b1', mid:'#b4bec7', hor:'#d8dde2', clouds:60, cA:0.6,  cCol:'228,231,235'},
+  }[kind];
+  const w=1024, h=512, c=document.createElement('canvas'); c.width=w; c.height=h;
+  const g=c.getContext('2d');
+  const sky=g.createLinearGradient(0,0,0,h*0.52);
+  sky.addColorStop(0,P.top); sky.addColorStop(0.6,P.mid); sky.addColorStop(1,P.hor);
+  g.fillStyle=sky; g.fillRect(0,0,w,h*0.52);
+  const gnd=g.createLinearGradient(0,h*0.5,0,h);
+  gnd.addColorStop(0,P.hor); gnd.addColorStop(0.3,'#8d9aa5'); gnd.addColorStop(1,'#6d747c');
+  g.fillStyle=gnd; g.fillRect(0,h*0.5,w,h*0.5);
+  let s=7; const rnd=()=> (s=s*16807%2147483647)/2147483647;   // deterministic — same sky every launch
+  for(let i=0;i<P.clouds;i++){
+    const cy=h*(0.16+0.32*Math.pow(rnd(),0.7));
+    const near=cy/(h*0.5);                                     // 1 = at horizon → flatter, smaller
+    const cx=rnd()*w, rx=(30+rnd()*90)*(1-0.3*near), sq=0.35-0.22*near;
+    const a=P.cA*(0.35+0.5*rnd());
+    for(const ox of [cx-w,cx,cx+w]){                           // wrap seam
+      g.save(); g.translate(ox,cy); g.scale(1,sq);
+      const rg=g.createRadialGradient(0,0,0,0,0,rx);
+      rg.addColorStop(0,`rgba(${P.cCol},${a})`);
+      rg.addColorStop(0.65,`rgba(${P.cCol},${a*0.5})`);
+      rg.addColorStop(1,`rgba(${P.cCol},0)`);
+      g.fillStyle=rg; g.beginPath(); g.arc(0,0,rx,0,7); g.fill(); g.restore();
+    }
+  }
+  const t=new THREE.CanvasTexture(c);
+  t.mapping=THREE.EquirectangularReflectionMapping;
+  t.colorSpace=THREE.SRGBColorSpace;
+  _skyCache[kind]=t; return t;
+}
 const weather=()=>WEATHER[PREFS.weather] ? PREFS.weather : 'sunny';
 {
   const ws=document.getElementById('weatherSel');
@@ -5018,10 +5151,10 @@ function updateSun(){
   const W=WEATHER[weather()];
   if(!on){
     sunLight.intensity=0; hemi.intensity=1.1; amb.intensity=0.5; baseSun.intensity=1.6;
-    three.scene.background.set(0x2a3038);
+    three.scene.background=skyTexture(weather());
     return;
   }
-  three.scene.background.set(W.bg);
+  three.scene.background=skyTexture(weather());
   baseSun.intensity=0.15;
   let cx=0, cz=0, nb=0;
   for(const w of S.base.walls){ cx+=w.from[0]+w.to[0]; cz+=w.from[1]+w.to[1]; nb+=2; }
@@ -5047,7 +5180,7 @@ async function init3d(){
     renderer.setPixelRatio(devicePixelRatio);
     wrap.appendChild(renderer.domElement);
     const scene=new THREE.Scene();
-    scene.background=new THREE.Color(0x2a3038);
+    scene.background=new THREE.Color(0x9fc3e8);   // placeholder — updateSun() swaps in the cloud sky
     const camera=new THREE.PerspectiveCamera(55,1,0.1,500);
     camera.position.set(14,16,22);
     const controls=new OrbitControls(camera,renderer.domElement);
