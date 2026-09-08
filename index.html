@@ -156,6 +156,7 @@
       <button id="introBtn" data-i18n-title="menuIntroT">👋 <span data-i18n="menuIntro">Intro & guide</span></button>
       <button id="installBtn" data-i18n-title="installT" style="display:none">📲 <span data-i18n="installApp">Install app</span></button>
       <button id="renderGuideMenuBtn" data-i18n-title="rgBtnT">📷 <span data-i18n="rgMenu">Picture guide</span></button>
+      <button id="reportBtn" data-i18n-title="reportT">🐞 <span data-i18n="reportMenu">Report bug / wish</span></button>
       <button id="diagBtn" data-i18n-title="diagT">🩺 <span data-i18n="diagMenu">Copy diagnostics</span></button>
     </div>
   </div>
@@ -431,6 +432,19 @@
     <button id="modalCopy" data-i18n="copy">Copy</button><button id="modalClose" data-i18n="close">Close</button>
   </div>
 </div></div>
+<div id="reportDlg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);align-items:center;justify-content:center;z-index:60"><div class="box" style="background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px 18px;width:min(460px,92vw);display:flex;flex-direction:column;gap:10px">
+  <h3 style="color:var(--accent);margin:0" data-i18n="repTitle">🐞 Report a bug / request a feature</h3>
+  <div style="display:flex;gap:16px;font-size:13px">
+    <label style="display:flex;gap:5px;align-items:center"><input type="radio" name="repKind" value="bug" checked> <span data-i18n="repBug">Something is broken</span></label>
+    <label style="display:flex;gap:5px;align-items:center"><input type="radio" name="repKind" value="feature"> <span data-i18n="repFeature">I wish it could…</span></label>
+  </div>
+  <textarea id="repText" rows="5" style="width:100%;background:var(--panel2);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:6px;font-size:13px;resize:vertical"></textarea>
+  <label id="repDiagRow" style="display:flex;gap:6px;align-items:flex-start;font-size:12px;color:var(--dim)"><input type="checkbox" id="repDiag" checked style="margin-top:2px"> <span data-i18n="repDiagLbl">Also send technical info (browser type, screen size, recent error log — no plan contents)</span></label>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button id="repCancel" data-i18n="close">Close</button>
+    <button id="repSend" data-i18n="repSend" style="border-color:var(--accent);color:var(--accent)">Send</button>
+  </div>
+</div></div>
 <div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60"><div class="box" style="max-width:440px;margin:10vh auto;background:#1c212a;border:1px solid #3a4250;border-radius:10px;padding:18px 20px">
   <h3 style="color:var(--accent);margin-top:0" data-i18n="settingsTitle">⚙ Settings</h3>
   <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center">
@@ -687,6 +701,12 @@ en: {
   walkLockFailed:'🚶 The browser would not hand over the mouse — wait 2 seconds after Esc, then click Walk again.',
   diagMenu:'Copy diagnostics', diagT:'Copy a small technical report (browser, errors) to send when something misbehaves',
   diagCopied:'🩺 Diagnostics copied — paste it to whoever is helping you', diagCopyManual:'Copy this report:',
+  reportMenu:'Report bug / wish', reportT:'Something broken, or a feature you wish for? Describe it and it goes straight to the developer',
+  repTitle:'🐞 Report a bug / request a feature', repBug:'Something is broken', repFeature:'I wish it could…',
+  repPh:'Describe it in your own words — what did you do, what happened, what did you expect?',
+  repDiagLbl:'Also send technical info (browser type, screen size, recent error log — no plan contents)',
+  repSend:'Send', repSentOk:'🐞 Sent — thank you! It goes straight into the workshop.',
+  repSentMail:'🐞 Opening your email app with the report — just press send.',
   rgOffer:'See it in higher quality?', rgOfferXT:'Not now — the guide stays under File → Picture guide and Export', rgMenu:'Picture guide',
   shareIdea:'Share this idea (copy link)', shareIdeaT:'Copies a link containing the house today + this idea — anyone can open it on the House Planner website. Imported 3D furniture shows as plain boxes for the recipient.',
   shareCopied:kb=>`🔗 Link copied (${kb} kB) — paste it anywhere. The recipient sees the house today + this idea.`,
@@ -879,6 +899,12 @@ da: {
   walkLockFailed:'🚶 Browseren ville ikke give musen fra sig — vent 2 sekunder efter Esc, og klik Gå-tur igen.',
   diagMenu:'Kopiér fejlrapport', diagT:'Kopiér en lille teknisk rapport (browser, fejl) du kan sende, når noget driller',
   diagCopied:'🩺 Fejlrapport kopieret — send den til den, der hjælper dig', diagCopyManual:'Kopiér denne rapport:',
+  reportMenu:'Meld fejl / ønske', reportT:'Er noget i stykker, eller ønsker du dig en funktion? Beskriv det, så ryger det direkte til udvikleren',
+  repTitle:'🐞 Meld en fejl / ønsk en funktion', repBug:'Noget er i stykker', repFeature:'Jeg ville ønske den kunne…',
+  repPh:'Beskriv det med dine egne ord — hvad gjorde du, hvad skete der, hvad havde du forventet?',
+  repDiagLbl:'Send også teknisk info med (browsertype, skærmstørrelse, seneste fejl-log — intet fra din tegning)',
+  repSend:'Send', repSentOk:'🐞 Sendt — tak! Det ryger direkte ind på værkstedet.',
+  repSentMail:'🐞 Åbner dit mailprogram med rapporten — tryk bare send.',
   rgOffer:'Se det i højere kvalitet?', rgOfferXT:'Ikke nu — guiden ligger under Filer → Billed-guide og Eksport', rgMenu:'Billed-guide',
   shareIdea:'Del denne idé (kopiér link)', shareIdeaT:'Kopierer et link med huset i dag + denne idé — alle kan åbne det på House Planner-hjemmesiden. Importerede 3D-møbler vises som simple kasser hos modtageren.',
   shareCopied:kb=>`🔗 Link kopieret (${kb} kB) — sæt det ind hvor som helst. Modtageren ser huset i dag + denne idé.`,
@@ -4832,13 +4858,13 @@ document.getElementById('renderGuideBtn').onclick=openRenderGuide;
 // standing invitation in the 3D view — also for people who skipped the drawing guide.
 // ✕ dismisses without opening; the guide stays under File → Picture guide and Export.
 document.getElementById('renderGuideMenuBtn').onclick=openRenderGuide;
-document.getElementById('diagBtn').onclick=async ()=>{
+function buildDiagReport(){
   let gl='?';
   try{
     const dbg=three?.renderer?.getContext().getExtension('WEBGL_debug_renderer_info');
     if(dbg) gl=three.renderer.getContext().getParameter(dbg.UNMASKED_RENDERER_WEBGL);
   }catch(e){}
-  const report=[
+  return [
     'House Planner diagnostics — '+new Date().toISOString(),
     'ua: '+navigator.userAgent,
     'viewport: '+innerWidth+'x'+innerHeight+' @'+devicePixelRatio+'  view: '+(document.body.className||'2d+3d'),
@@ -4849,8 +4875,54 @@ document.getElementById('diagBtn').onclick=async ()=>{
     'recent errors:',
     ...(JSON.parse(localStorage.getItem('hp_diag')||'[]').map(x=>'  '+x.t+'  '+x.m) || []),
   ].join('\n');
+}
+document.getElementById('diagBtn').onclick=async ()=>{
+  const report=buildDiagReport();
   try{ await navigator.clipboard.writeText(report); flashHint(T('diagCopied')); }
   catch(e){ prompt(T('diagCopyManual'), report); }
+};
+
+/* ---------- report bug / request feature — files a GitHub issue via the telemetry
+   worker; falls back to a prefilled email when the worker is unreachable ---------- */
+const reportDlg=document.getElementById('reportDlg');
+document.getElementById('reportBtn').onclick=()=>{
+  document.getElementById('repText').placeholder=T('repPh');
+  reportDlg.style.display='flex';
+  document.getElementById('repText').focus();
+};
+document.getElementById('repCancel').onclick=()=>reportDlg.style.display='none';
+reportDlg.onclick=e=>{ if(e.target===reportDlg) reportDlg.style.display='none'; };
+for(const r of document.querySelectorAll('input[name=repKind]'))
+  r.onchange=()=>{ document.getElementById('repDiagRow').style.display =
+    document.querySelector('input[name=repKind]:checked').value==='bug' ? 'flex' : 'none'; };
+document.getElementById('repSend').onclick=async ()=>{
+  const text=document.getElementById('repText').value.trim();
+  if(!text) return;
+  const kind=document.querySelector('input[name=repKind]:checked').value;
+  const withDiag = kind==='bug' && document.getElementById('repDiag').checked;
+  const payload={
+    kind, desc:text, title:text.split('\n')[0].slice(0,80),
+    diag: withDiag ? buildDiagReport() : '',
+    ua:navigator.userAgent, view:document.body.className||'2d+3d',
+    vp:innerWidth+'x'+innerHeight+'@'+devicePixelRatio, t:new Date().toISOString(),
+  };
+  const btn=document.getElementById('repSend'); btn.disabled=true;
+  let ok=false;
+  if(HP_ERR_ENDPOINT){
+    try{ ok=(await fetch(HP_ERR_ENDPOINT,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)})).ok; }
+    catch(e){}
+  }
+  btn.disabled=false;
+  if(ok){
+    reportDlg.style.display='none'; document.getElementById('repText').value='';
+    flashHint(T('repSentOk'));
+  } else {
+    // no worker (or offline): hand the report over by mail instead
+    const body=(kind==='bug'?'BUG':'FEATURE WISH')+'\n\n'+text+(withDiag?'\n\n---\n'+payload.diag:'');
+    location.href='mailto:jens@permasat.com?subject='+encodeURIComponent('[house-planner] '+payload.title)
+      +'&body='+encodeURIComponent(body.slice(0,1800));
+    flashHint(T('repSentMail'));
+  }
 };
 function retireRgOffer(){
   PREFS.renderGuideShown=true; savePrefs();

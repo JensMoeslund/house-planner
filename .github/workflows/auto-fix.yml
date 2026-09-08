@@ -1,14 +1,18 @@
 name: Auto-fix crash reports
-# Crash beacons from the live app (telemetry/error-worker.js) arrive as issues
-# labeled `crash-report`; Claude investigates and opens a PR — a human reviews
-# and merges. Requires the Claude GitHub App + ANTHROPIC_API_KEY secret.
+# Reports from the live app (telemetry/error-worker.js) arrive as issues labeled
+# crash-report (automatic beacons), bug-report or feature-request (written by a
+# user in the in-app dialog); Claude investigates/implements and opens a PR — a
+# human reviews and merges. Requires the Claude GitHub App + ANTHROPIC_API_KEY.
 on:
   issues:
     types: [opened, labeled]
 
 jobs:
   claude-fix:
-    if: contains(github.event.issue.labels.*.name, 'crash-report')
+    if: >-
+      contains(github.event.issue.labels.*.name, 'crash-report') ||
+      contains(github.event.issue.labels.*.name, 'bug-report') ||
+      contains(github.event.issue.labels.*.name, 'feature-request')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -24,17 +28,23 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            A crash report from the live House Planner app was filed as issue #${{ github.event.issue.number }}:
+            A report from the live House Planner app was filed as issue #${{ github.event.issue.number }}:
             "${{ github.event.issue.title }}"
 
-            Read the full issue with `gh issue view ${{ github.event.issue.number }}`.
-            The whole app is the single file index.html. Investigate the error message
-            and stack trace, find the root cause, and fix it — smallest correct change,
-            matching the existing code style. Do not refactor unrelated code.
+            Read the full issue with `gh issue view ${{ github.event.issue.number }}`
+            and check its label. The whole app is the single file index.html.
 
-            Then create a pull request with the fix and comment on issue
+            - crash-report / bug-report: investigate the description, error message and
+              stack trace, find the root cause, and fix it — smallest correct change,
+              matching the existing code style. Do not refactor unrelated code.
+            - feature-request: implement a minimal, well-integrated version of the
+              feature, following the app's existing patterns (i18n dict for all user
+              text in both EN and DA, same UI style). If the request is large or
+              ambiguous, implement the smallest sensible core of it.
+
+            Then create a pull request and comment on issue
             #${{ github.event.issue.number }} with a link to the PR and a one-paragraph
-            explanation of the cause. If you cannot reproduce or confidently identify
-            the cause, do NOT guess a fix — instead comment on the issue with your
-            analysis and what extra information is needed.
+            explanation. If you cannot confidently identify a bug's cause, do NOT guess
+            a fix — comment on the issue with your analysis and what extra information
+            is needed.
           claude_args: '--max-turns 25'
