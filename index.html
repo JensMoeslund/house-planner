@@ -156,6 +156,7 @@
       <button id="introBtn" data-i18n-title="menuIntroT">👋 <span data-i18n="menuIntro">Intro & guide</span></button>
       <button id="installBtn" data-i18n-title="installT" style="display:none">📲 <span data-i18n="installApp">Install app</span></button>
       <button id="renderGuideMenuBtn" data-i18n-title="rgBtnT">📷 <span data-i18n="rgMenu">Picture guide</span></button>
+      <button id="diagBtn" data-i18n-title="diagT">🩺 <span data-i18n="diagMenu">Copy diagnostics</span></button>
     </div>
   </div>
   <button class="rtab active" data-rtab="huset" data-panel="draw" data-i18n-title="tabTodayT"><span data-i18n="tabToday">1 · The house today</span></button>
@@ -569,6 +570,19 @@
     <button id="lightsSave" data-i18n="save">Save</button><button id="lightsClose" data-i18n="close">Close</button>
   </div>
 </div></div>
+<script>
+/* diagnostics: keep the last errors in localStorage so a user can copy-paste them
+   when something misbehaves — there is no server, so the report IS the telemetry */
+window.diagLog=function(msg){
+  try{
+    const log=JSON.parse(localStorage.getItem('hp_diag')||'[]');
+    log.push({t:new Date().toISOString(), m:String(msg).slice(0,300)});
+    localStorage.setItem('hp_diag', JSON.stringify(log.slice(-80)));
+  }catch(e){}
+};
+window.addEventListener('error', e=>diagLog('error: '+(e.message||'?')+' @ '+(e.filename||'').split('/').pop()+':'+(e.lineno||'?')));
+window.addEventListener('unhandledrejection', e=>diagLog('rejection: '+(e.reason&&(e.reason.message||e.reason))||'?'));
+</script>
 <script type="module">
 /* =========================================================================
    Data model = house-plan.json, verbatim. See meta.axes: x=east, y=south.
@@ -650,6 +664,8 @@ en: {
   clickCycle:'click again to switch wall',
   walkBtn:'🚶 Walk', walkBtnT:'Walk around the house: WASD + mouse (Shift = run). Esc releases the mouse.',
   walkLockFailed:'🚶 The browser would not hand over the mouse — wait 2 seconds after Esc, then click Walk again.',
+  diagMenu:'Copy diagnostics', diagT:'Copy a small technical report (browser, errors) to send when something misbehaves',
+  diagCopied:'🩺 Diagnostics copied — paste it to whoever is helping you', diagCopyManual:'Copy this report:',
   rgOffer:'See it in higher quality?', rgOfferXT:'Not now — the guide stays under File → Picture guide and Export', rgMenu:'Picture guide',
   shareIdea:'Share this idea (copy link)', shareIdeaT:'Copies a link containing the house today + this idea — anyone can open it on the House Planner website. Imported 3D furniture shows as plain boxes for the recipient.',
   shareCopied:kb=>`🔗 Link copied (${kb} kB) — paste it anywhere. The recipient sees the house today + this idea.`,
@@ -840,6 +856,8 @@ da: {
   clickCycle:'klik igen for at skifte væg',
   walkBtn:'🚶 Gå-tur', walkBtnT:'Gå rundt i huset: WASD + mus (Shift = løb). Esc slipper musen igen.',
   walkLockFailed:'🚶 Browseren ville ikke give musen fra sig — vent 2 sekunder efter Esc, og klik Gå-tur igen.',
+  diagMenu:'Kopiér fejlrapport', diagT:'Kopiér en lille teknisk rapport (browser, fejl) du kan sende, når noget driller',
+  diagCopied:'🩺 Fejlrapport kopieret — send den til den, der hjælper dig', diagCopyManual:'Kopiér denne rapport:',
   rgOffer:'Se det i højere kvalitet?', rgOfferXT:'Ikke nu — guiden ligger under Filer → Billed-guide og Eksport', rgMenu:'Billed-guide',
   shareIdea:'Del denne idé (kopiér link)', shareIdeaT:'Kopierer et link med huset i dag + denne idé — alle kan åbne det på House Planner-hjemmesiden. Importerede 3D-møbler vises som simple kasser hos modtageren.',
   shareCopied:kb=>`🔗 Link kopieret (${kb} kB) — sæt det ind hvor som helst. Modtageren ser huset i dag + denne idé.`,
@@ -4793,6 +4811,26 @@ document.getElementById('renderGuideBtn').onclick=openRenderGuide;
 // standing invitation in the 3D view — also for people who skipped the drawing guide.
 // ✕ dismisses without opening; the guide stays under File → Picture guide and Export.
 document.getElementById('renderGuideMenuBtn').onclick=openRenderGuide;
+document.getElementById('diagBtn').onclick=async ()=>{
+  let gl='?';
+  try{
+    const dbg=three?.renderer?.getContext().getExtension('WEBGL_debug_renderer_info');
+    if(dbg) gl=three.renderer.getContext().getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+  }catch(e){}
+  const report=[
+    'House Planner diagnostics — '+new Date().toISOString(),
+    'ua: '+navigator.userAgent,
+    'viewport: '+innerWidth+'x'+innerHeight+' @'+devicePixelRatio+'  view: '+(document.body.className||'2d+3d'),
+    'gpu: '+gl,
+    '3d ready: '+!!three+'  pointer lock supported: '+('pointerLockElement' in document),
+    'plan: '+S.base.walls.length+' base walls, '+S.variants.length+' variants, active: '+S.meta.activeVariant,
+    '',
+    'recent errors:',
+    ...(JSON.parse(localStorage.getItem('hp_diag')||'[]').map(x=>'  '+x.t+'  '+x.m) || []),
+  ].join('\n');
+  try{ await navigator.clipboard.writeText(report); flashHint(T('diagCopied')); }
+  catch(e){ prompt(T('diagCopyManual'), report); }
+};
 function retireRgOffer(){
   PREFS.renderGuideShown=true; savePrefs();
   document.getElementById('rgOfferWrap').style.display='none';
@@ -5220,7 +5258,7 @@ async function init3d(){
         plc.removeEventListener('lock',onLock);
         if(got) return;                      // it worked (even if the user already left again)
         plc.lock();
-        setTimeout(()=>{ if(!plc.isLocked) flashHint(T('walkLockFailed')); }, 300);
+        setTimeout(()=>{ if(!plc.isLocked){ diagLog('walk: pointer lock refused twice (view: '+(document.body.className||'2d+3d')+')'); flashHint(T('walkLockFailed')); } }, 300);
       }, 1600);
     };
     plc.addEventListener('lock',()=>{ controls.enabled=false; });
