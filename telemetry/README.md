@@ -24,12 +24,12 @@ Client-side the beacon is deduped per message per day and capped at 8 reports/da
 so a crashing render loop cannot spam. The worker dedupes again (a repeat of an
 open crash becomes a comment on the existing issue) and refuses to create more
 than 15 new issues per day — the endpoint is public, and every labeled issue
-triggers a paid agent run, so also set a monthly spend limit on the Anthropic key.
+triggers an agent run billed against the Claude subscription quota.
 
 All credentials stay on the owner's side (personal accounts are fine): a
 fine-grained GitHub PAT limited to this repo + Issues read/write, a free
 Cloudflare account holding it as a secret, and an Anthropic API key with a
-spend cap. Reporting users need no account of any kind.
+Claude subscription OAuth token. Reporting users need no account of any kind.
 
 ## One-time setup
 
@@ -46,10 +46,10 @@ spend cap. Reporting users need no account of any kind.
 2. **Enable the beacon**: put the worker URL into `HP_ERR_ENDPOINT` in index.html
    (empty string = telemetry fully off).
 
-3. **Auto-fixer**:
+3. **Auto-fixer** (runs on a Claude subscription — no API key needed):
    - Install the Claude GitHub App on the repo: https://github.com/apps/claude
-   - Add repo secret `ANTHROPIC_API_KEY` (from https://platform.claude.com), or a
-     `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token` if on a Claude subscription
-     (then swap the input name in auto-fix.yml).
+   - Run `claude setup-token` locally, then store the token:
+     `gh secret set CLAUDE_CODE_OAUTH_TOKEN -R JensMoeslund/house-planner`
+   - Both triage (Haiku) and the fixer bill against the subscription quota.
 
 Claude only ever opens a PR — nothing lands on master without a human merging it.
