@@ -134,4 +134,4 @@ jobs:
             explanation. If you cannot confidently identify a bug's cause, do NOT guess
             a fix — comment on the issue with your analysis and what extra information
             is needed.
-          claude_args: '--max-turns 25 --allowedTools "Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(git:*),Read,Write,Edit,Glob,Grep"'
+          claude_args: '--model claude-opus-4-8 --max-turns 80 --allowedTools "Bash(gh issue view:*),Bash(gh issue comment:*),Bash(gh pr create:*),Bash(git:*),Read,Write,Edit,Glob,Grep"'
