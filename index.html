@@ -706,7 +706,7 @@ en: {
   repPh:'Describe it in your own words — what did you do, what happened, what did you expect?',
   repDiagLbl:'Also send technical info (browser type, screen size, recent error log — no plan contents)',
   repSend:'Send', repSentOk:'🐞 Sent — thank you! It goes straight into the workshop.',
-  repSentMail:'🐞 Opening your email app with the report — just press send.',
+  repSentFail:'🐞 Could not send right now — please try again later.',
   rgOffer:'See it in higher quality?', rgOfferXT:'Not now — the guide stays under File → Picture guide and Export', rgMenu:'Picture guide',
   shareIdea:'Share this idea (copy link)', shareIdeaT:'Copies a link containing the house today + this idea — anyone can open it on the House Planner website. Imported 3D furniture shows as plain boxes for the recipient.',
   shareCopied:kb=>`🔗 Link copied (${kb} kB) — paste it anywhere. The recipient sees the house today + this idea.`,
@@ -904,7 +904,7 @@ da: {
   repPh:'Beskriv det med dine egne ord — hvad gjorde du, hvad skete der, hvad havde du forventet?',
   repDiagLbl:'Send også teknisk info med (browsertype, skærmstørrelse, seneste fejl-log — intet fra din tegning)',
   repSend:'Send', repSentOk:'🐞 Sendt — tak! Det ryger direkte ind på værkstedet.',
-  repSentMail:'🐞 Åbner dit mailprogram med rapporten — tryk bare send.',
+  repSentFail:'🐞 Kunne ikke sende lige nu — prøv igen senere.',
   rgOffer:'Se det i højere kvalitet?', rgOfferXT:'Ikke nu — guiden ligger under Filer → Billed-guide og Eksport', rgMenu:'Billed-guide',
   shareIdea:'Del denne idé (kopiér link)', shareIdeaT:'Kopierer et link med huset i dag + denne idé — alle kan åbne det på House Planner-hjemmesiden. Importerede 3D-møbler vises som simple kasser hos modtageren.',
   shareCopied:kb=>`🔗 Link kopieret (${kb} kB) — sæt det ind hvor som helst. Modtageren ser huset i dag + denne idé.`,
@@ -4917,11 +4917,7 @@ document.getElementById('repSend').onclick=async ()=>{
     reportDlg.style.display='none'; document.getElementById('repText').value='';
     flashHint(T('repSentOk'));
   } else {
-    // no worker (or offline): hand the report over by mail instead
-    const body=(kind==='bug'?'BUG':'FEATURE WISH')+'\n\n'+text+(withDiag?'\n\n---\n'+payload.diag:'');
-    location.href='mailto:jens@permasat.com?subject='+encodeURIComponent('[house-planner] '+payload.title)
-      +'&body='+encodeURIComponent(body.slice(0,1800));
-    flashHint(T('repSentMail'));
+    flashHint(T('repSentFail'));   // keep the dialog open so the text is not lost
   }
 };
 function retireRgOffer(){
