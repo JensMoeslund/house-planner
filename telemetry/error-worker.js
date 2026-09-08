@@ -58,6 +58,15 @@ export default {
       b.diag ? '<details><summary>diagnostics (sent with consent)</summary>\n\n```\n' + String(b.diag).slice(0, 4000) + '\n```\n</details>' : '',
     ].join('\n');
 
+    // the endpoint is public and every issue triggers an agent run, so cap the
+    // number of new issues per day — beyond that, reports are dropped
+    const today = new Date().toISOString().slice(0, 10);
+    const madeToday = await gh('/search/issues?q=' + encodeURIComponent(
+      `repo:${REPO} is:issue created:>=${today} label:crash-report,bug-report,feature-request`
+    )).then(r => r.json()).catch(() => null);
+    if ((madeToday?.total_count ?? 0) >= 15)
+      return new Response('daily cap reached', { status: 429, headers: cors });
+
     // crashes: one open issue per distinct message — repeats become comments
     if (kind === 'crash') {
       const q = `repo:${REPO} is:issue is:open label:crash-report "${title.slice(0, 60).replace(/"/g, '')}" in:title`;

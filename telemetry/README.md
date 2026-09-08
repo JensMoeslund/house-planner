@@ -10,8 +10,15 @@ browser error → diagBeacon (index.html) → error-worker.js → GitHub issue �
 ```
 
 Client-side the beacon is deduped per message per day and capped at 8 reports/day,
-so a crashing render loop cannot spam. The worker dedupes again: a repeat of an
-open crash becomes a comment on the existing issue.
+so a crashing render loop cannot spam. The worker dedupes again (a repeat of an
+open crash becomes a comment on the existing issue) and refuses to create more
+than 15 new issues per day — the endpoint is public, and every labeled issue
+triggers a paid agent run, so also set a monthly spend limit on the Anthropic key.
+
+All credentials stay on the owner's side (personal accounts are fine): a
+fine-grained GitHub PAT limited to this repo + Issues read/write, a free
+Cloudflare account holding it as a secret, and an Anthropic API key with a
+spend cap. Reporting users need no account of any kind.
 
 ## One-time setup
 
