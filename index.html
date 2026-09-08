@@ -649,6 +649,7 @@ en: {
   hintBar:'V select · W wall · D door · N window · L label · S sketch · Del delete · R = toggle demolish · Shift+click/drag = multi-select · walls snap to 45°/90° — hold Shift for free angles · drag empty/middle = pan · wheel = zoom',
   clickCycle:'click again to switch wall',
   walkBtn:'🚶 Walk', walkBtnT:'Walk around the house: WASD + mouse (Shift = run). Esc releases the mouse.',
+  walkLockFailed:'🚶 The browser would not hand over the mouse — wait 2 seconds after Esc, then click Walk again.',
   rgOffer:'See it in higher quality?', rgOfferXT:'Not now — the guide stays under File → Picture guide and Export', rgMenu:'Picture guide',
   shareIdea:'Share this idea (copy link)', shareIdeaT:'Copies a link containing the house today + this idea — anyone can open it on the House Planner website. Imported 3D furniture shows as plain boxes for the recipient.',
   shareCopied:kb=>`🔗 Link copied (${kb} kB) — paste it anywhere. The recipient sees the house today + this idea.`,
@@ -838,6 +839,7 @@ da: {
   hintBar:'V vælg · W væg · D dør · N vindue · L tekst · S skitse · Del slet · R = riv ned/behold · Shift+klik/træk = vælg flere · vægge snapper til 45°/90° — hold Shift for frie vinkler · træk tomt/midterklik = panorér · hjul = zoom',
   clickCycle:'klik igen for at skifte væg',
   walkBtn:'🚶 Gå-tur', walkBtnT:'Gå rundt i huset: WASD + mus (Shift = løb). Esc slipper musen igen.',
+  walkLockFailed:'🚶 Browseren ville ikke give musen fra sig — vent 2 sekunder efter Esc, og klik Gå-tur igen.',
   rgOffer:'Se det i højere kvalitet?', rgOfferXT:'Ikke nu — guiden ligger under Filer → Billed-guide og Eksport', rgMenu:'Billed-guide',
   shareIdea:'Del denne idé (kopiér link)', shareIdeaT:'Kopierer et link med huset i dag + denne idé — alle kan åbne det på House Planner-hjemmesiden. Importerede 3D-møbler vises som simple kasser hos modtageren.',
   shareCopied:kb=>`🔗 Link kopieret (${kb} kB) — sæt det ind hvor som helst. Modtageren ser huset i dag + denne idé.`,
@@ -5206,7 +5208,21 @@ async function init3d(){
     const plc=new PointerLockControls(camera, renderer.domElement);
     three={THREE,scene,camera,renderer,controls,group,groupB,hemi,amb,baseSun,sunLight,plc};
     if(furnBarOpen()) buildFurnPicker();   // thumbs could not render before three was ready
-    document.getElementById('walkBtn').onclick=()=>{ if(document.body.className!=='only2d') plc.lock(); };
+    // Chrome silently refuses pointer lock for ~1.5 s after an Esc exit — retry once
+    // inside the click's transient activation, and say so if it still fails
+    document.getElementById('walkBtn').onclick=()=>{
+      if(document.body.className==='only2d') return;
+      let got=false;
+      const onLock=()=>{ got=true; };
+      plc.addEventListener('lock',onLock);
+      plc.lock();
+      setTimeout(()=>{
+        plc.removeEventListener('lock',onLock);
+        if(got) return;                      // it worked (even if the user already left again)
+        plc.lock();
+        setTimeout(()=>{ if(!plc.isLocked) flashHint(T('walkLockFailed')); }, 300);
+      }, 1600);
+    };
     plc.addEventListener('lock',()=>{ controls.enabled=false; });
     plc.addEventListener('unlock',()=>{
       // keep the camera exactly where the walk ended: orbit pivot = 3 m straight ahead
