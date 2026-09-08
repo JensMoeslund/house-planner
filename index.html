@@ -598,7 +598,7 @@ window.diagLog=function(msg,stack){
 /* error beacon: reports errors to a tiny worker that files them as GitHub issues
    (telemetry/error-worker.js). Empty endpoint = fully disabled. Deduped per message
    per day, max 8 reports a day, so a render loop crash can't spam anyone. */
-const HP_ERR_ENDPOINT='';
+const HP_ERR_ENDPOINT='https://house-planner-errors.jensmoeslund.workers.dev';
 function diagBeacon(msg,stack){
   if(!HP_ERR_ENDPOINT) return;
   try{

@@ -36,9 +36,11 @@ Claude subscription OAuth token. Reporting users need no account of any kind.
 1. **Worker** (free Cloudflare account):
    ```
    npx wrangler login
-   npx wrangler deploy telemetry/error-worker.js --name house-planner-errors
+   npx wrangler deploy --config telemetry/wrangler.toml
    npx wrangler secret put GITHUB_TOKEN --name house-planner-errors
    ```
+   (first-time accounts must verify their email and register a workers.dev
+   subdomain in the Cloudflare dashboard before the deploy succeeds)
    The token is a fine-grained PAT scoped to ONLY this repo with permission
    *Issues: read and write* (github.com → Settings → Developer settings →
    Fine-grained tokens).
