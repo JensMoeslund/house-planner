@@ -573,15 +573,36 @@
 <script>
 /* diagnostics: keep the last errors in localStorage so a user can copy-paste them
    when something misbehaves — there is no server, so the report IS the telemetry */
-window.diagLog=function(msg){
+window.diagLog=function(msg,stack){
   try{
     const log=JSON.parse(localStorage.getItem('hp_diag')||'[]');
     log.push({t:new Date().toISOString(), m:String(msg).slice(0,300)});
     localStorage.setItem('hp_diag', JSON.stringify(log.slice(-80)));
   }catch(e){}
+  diagBeacon(msg,stack);
 };
-window.addEventListener('error', e=>diagLog('error: '+(e.message||'?')+' @ '+(e.filename||'').split('/').pop()+':'+(e.lineno||'?')));
-window.addEventListener('unhandledrejection', e=>diagLog('rejection: '+(e.reason&&(e.reason.message||e.reason))||'?'));
+/* error beacon: reports errors to a tiny worker that files them as GitHub issues
+   (telemetry/error-worker.js). Empty endpoint = fully disabled. Deduped per message
+   per day, max 8 reports a day, so a render loop crash can't spam anyone. */
+const HP_ERR_ENDPOINT='';
+function diagBeacon(msg,stack){
+  if(!HP_ERR_ENDPOINT) return;
+  try{
+    const day=new Date().toISOString().slice(0,10);
+    const seen=JSON.parse(localStorage.getItem('hp_beaconed')||'{}');
+    if(seen.day!==day){ seen.day=day; seen.msgs=[]; }
+    const key=String(msg).slice(0,120);
+    if(seen.msgs.includes(key) || seen.msgs.length>=8) return;
+    seen.msgs.push(key); localStorage.setItem('hp_beaconed', JSON.stringify(seen));
+    fetch(HP_ERR_ENDPOINT, {method:'POST', keepalive:true, headers:{'content-type':'application/json'},
+      body: JSON.stringify({m:String(msg).slice(0,300), stack:String(stack||'').slice(0,1200),
+        ua:navigator.userAgent, view:document.body.className||'2d+3d',
+        vp:innerWidth+'x'+innerHeight+'@'+devicePixelRatio, t:new Date().toISOString()})
+    }).catch(()=>{});
+  }catch(e){}
+}
+window.addEventListener('error', e=>diagLog('error: '+(e.message||'?')+' @ '+(e.filename||'').split('/').pop()+':'+(e.lineno||'?'), e.error&&e.error.stack));
+window.addEventListener('unhandledrejection', e=>diagLog('rejection: '+(e.reason&&(e.reason.message||e.reason))||'?', e.reason&&e.reason.stack));
 </script>
 <script type="module">
 /* =========================================================================

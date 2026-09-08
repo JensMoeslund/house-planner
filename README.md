@@ -118,6 +118,9 @@ and an open-kitchen idea.
   plain-language difference summary
 
 **Later**
+- 3D modelling of the landscape: terrain around the house (slopes, height contours),
+  so the garden, driveway and the house's placement on the plot read correctly in 3D
+  and in renders
 - Furniture styles: pick the *look* of each piece (round vs. rectangular dining table,
   corner sofa vs. two-seater, freestanding vs. built-in tub …) so the model matches what
   you would actually put in your house

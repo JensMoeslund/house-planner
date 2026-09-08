@@ -1,0 +1,40 @@
+name: Auto-fix crash reports
+# Crash beacons from the live app (telemetry/error-worker.js) arrive as issues
+# labeled `crash-report`; Claude investigates and opens a PR — a human reviews
+# and merges. Requires the Claude GitHub App + ANTHROPIC_API_KEY secret.
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  claude-fix:
+    if: contains(github.event.issue.labels.*.name, 'crash-report')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            A crash report from the live House Planner app was filed as issue #${{ github.event.issue.number }}:
+            "${{ github.event.issue.title }}"
+
+            Read the full issue with `gh issue view ${{ github.event.issue.number }}`.
+            The whole app is the single file index.html. Investigate the error message
+            and stack trace, find the root cause, and fix it — smallest correct change,
+            matching the existing code style. Do not refactor unrelated code.
+
+            Then create a pull request with the fix and comment on issue
+            #${{ github.event.issue.number }} with a link to the PR and a one-paragraph
+            explanation of the cause. If you cannot reproduce or confidently identify
+            the cause, do NOT guess a fix — instead comment on the issue with your
+            analysis and what extra information is needed.
+          claude_args: '--max-turns 25'
