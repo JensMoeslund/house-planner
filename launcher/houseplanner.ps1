@@ -37,7 +37,7 @@ function Find-Blender {
 }
 
 function Find-ClaudeCli {
-    $c = Get-Command claude -ErrorAction SilentlyContinue
+    $c = Get-Command claude -CommandType Application -ErrorAction SilentlyContinue
     if ($c) { return $c.Source }
     foreach ($x in @("$env:APPDATA\npm\claude.cmd", "$env:USERPROFILE\.local\bin\claude.exe")) {
         if (Test-Path $x) { return $x }
@@ -72,8 +72,15 @@ Reply with ONLY a JSON object, nothing else:
 Coordinates in world metres rounded to 2 decimals; t = estimated thickness in metres (~0.35 outer, ~0.1 inner).
 "@
         [System.IO.File]::WriteAllText((Join-Path $work 'prompt.txt'), $prompt)
-        $p = Start-Process cmd -ArgumentList '/c', 'claude -p --output-format json < prompt.txt > out.json 2> err.txt' `
-            -WorkingDirectory $work -PassThru -WindowStyle Hidden
+        # Expand the path once from the child environment: literal %NAME% and !NAME! stay literal.
+        $start = New-Object System.Diagnostics.ProcessStartInfo
+        $start.FileName = $env:ComSpec
+        $start.Arguments = '/d /s /v:off /c ""%HP_CLAUDE_EXECUTABLE%" -p --output-format json < prompt.txt > out.json 2> err.txt"'
+        $start.WorkingDirectory = $work
+        $start.UseShellExecute = $false
+        $start.CreateNoWindow = $true
+        $start.EnvironmentVariables['HP_CLAUDE_EXECUTABLE'] = $claude
+        $p = [System.Diagnostics.Process]::Start($start)
         if (-not $p.WaitForExit(6 * 60 * 1000)) {
             try { $p.Kill() } catch {}
             Send-Text $resp 'AI trace timed out after 6 minutes.' 'text/plain' 500

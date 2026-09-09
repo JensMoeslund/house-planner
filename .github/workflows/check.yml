@@ -1,0 +1,29 @@
+name: Regression checks
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser-and-launcher:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test-only browser tools
+        shell: pwsh
+        run: |
+          npm install --prefix "$env:RUNNER_TEMP/hp-check" playwright@1.58.2
+          & "$env:RUNNER_TEMP/hp-check/node_modules/.bin/playwright.cmd" install chromium
+      - name: Browser regression
+        shell: pwsh
+        run: |
+          $env:NODE_PATH = "$env:RUNNER_TEMP/hp-check/node_modules"
+          node tests/cleanup-check.cjs
+      - name: Windows launcher regression
+        shell: powershell
+        run: ./tests/launcher-check.ps1
