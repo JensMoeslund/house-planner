@@ -14,9 +14,10 @@ const root=path.resolve(__dirname,'..');
 (async()=>{
   // Expose internals only in the test response, never in the shipped application.
   const html=(await fs.readFile(path.join(root,'index.html'),'utf8')).replace(
-    '\n</script>\n</body>',
+    /\r?\n<\/script>\r?\n<\/body>/,
     '\nwindow.__cleanup={idbKV,otsuThreshold,traceImageSize,underlayGray,thumbCtxGet,prevCtxGet,deflateB64,showRenderResult,'+
     'getTool:()=>tool,setThree:value=>{three=value;thumbCtx=prevCtx=null;}};\n</script>\n</body>');
+  assert.ok(html.includes('window.__cleanup='),'Test hooks must be injected for LF and CRLF checkouts');
   const server=http.createServer(async(req,res)=>{
     const name=path.resolve(root,'.'+new URL(req.url,'http://local').pathname);
     if(!name.startsWith(root+path.sep) && name!==root){ res.writeHead(403).end(); return; }
